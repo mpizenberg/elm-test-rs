@@ -68,3 +68,24 @@ Random links to related articles:
 
 [forum-cross]: https://users.rust-lang.org/t/cross-compile-macos-and-ms-windows/38323
 [medium-github-action]: https://medium.com/@jondot/building-rust-on-multiple-platforms-using-github-6f3e6f8b8458
+
+## Embedding another executable?
+
+Would it be possible to embed another binary at build time inside ours (such as elmi-to-json)
+and execute it at runtime?
+I don't think it is possible to embed another executable and run it from our binary,
+especially with cross-platform support, it seems very unlikely.
+
+- [pyros2097/rust-embed][rust-embed]: Rust Macro which loads files into the rust Binary at compile time
+
+[rust-embed]: https://github.com/pyros2097/rust-embed
+
+## Executing another command
+
+An alternative, if we do not rewrite elmi-to-json,
+is to assume a user of elm-test-rs has it installed already on their system.
+Therefore, we can execute it as a command.
+
+- `std::process::Command` [documentation][command]
+
+[command]: https://doc.rust-lang.org/std/process/struct.Command.html
