@@ -62,11 +62,13 @@ Random links to related articles:
 
 ## Cross compilation for OSX and Windows
 
+- Look at configuration of [BurntSushi/ripgrep][ripgrep]
 - Look at configuration of [zwilias/elm-json][elm-json]
 - Discussion on Rust forum: [Cross compile macOS and MS Windows][forum-cross]
 - Medium post by Dotan Nahum:
   [Building Rust for Multiple Platforms Using Github Actions][medium-github-action]
 
+[ripgrep]: https://github.com/BurntSushi/ripgrep
 [elm-json]: https://github.com/zwilias/elm-json
 [forum-cross]: https://users.rust-lang.org/t/cross-compile-macos-and-ms-windows/38323
 [medium-github-action]: https://medium.com/@jondot/building-rust-on-multiple-platforms-using-github-6f3e6f8b8458
