@@ -59,3 +59,12 @@ Random links to related articles:
 - Norbert de Langen, 2017, [Communicating between NodeJS processes][norbert2017]
 
 [norbert2017]: https://medium.com/@NorbertdeLangen/communicating-between-nodejs-processes-4e68be42b917
+
+## Cross compilation for OSX and Windows
+
+- Discussion on Rust forum: [Cross compile macOS and MS Windows][forum-cross]
+- Medium post by Dotan Nahum:
+  [Building Rust for Multiple Platforms Using Github Actions][medium-github-action]
+
+[forum-cross]: https://users.rust-lang.org/t/cross-compile-macos-and-ms-windows/38323
+[medium-github-action]: https://medium.com/@jondot/building-rust-on-multiple-platforms-using-github-6f3e6f8b8458
