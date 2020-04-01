@@ -10,7 +10,8 @@ fn main() {
         .version(std::env!("CARGO_PKG_VERSION"))
         .action(default_action)
         .flag(Flag::new("version", "elm-test-rs --version(-v)", FlagType::Bool).alias("v"))
-        .command(init_command());
+        .command(init_command())
+        .command(install_command());
     app.run(args);
 }
 
@@ -29,11 +30,23 @@ fn print_version() {
 fn init_command() -> Command {
     Command::new()
         .name("init")
-        .usage("elm-test-rs init [arg]")
+        .usage("elm-test-rs init")
         .action(init_action)
 }
 
 fn init_action(context: &seahorse::Context) {
     println!("TODO: init command");
+    println!("args: {:?}", context.args);
+}
+
+fn install_command() -> Command {
+    Command::new()
+        .name("install")
+        .usage("elm-test-rs install package [package]")
+        .action(install_action)
+}
+
+fn install_action(context: &seahorse::Context) {
+    println!("TODO: install command");
     println!("args: {:?}", context.args);
 }
