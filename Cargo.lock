@@ -3,3 +3,12 @@
 [[package]]
 name = "elm-test-rs"
 version = "0.1.0"
+dependencies = [
+ "seahorse",
+]
+
+[[package]]
+name = "seahorse"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24ad40c7a40cb8a26a35098088edc42c29044f273645d9ff4d50b1853a176eaa"
