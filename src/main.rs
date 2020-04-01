@@ -10,6 +10,11 @@ fn main() {
         .version(std::env!("CARGO_PKG_VERSION"))
         .action(default_action)
         .flag(Flag::new("version", "elm-test-rs --version(-v)", FlagType::Bool).alias("v"))
+        .flag(Flag::new(
+            "compiler",
+            "elm-test-rs --compiler /path/to/elm",
+            FlagType::String,
+        ))
         .command(init_command())
         .command(install_command());
     app.run(args);
@@ -18,9 +23,17 @@ fn main() {
 fn default_action(context: &seahorse::Context) {
     if context.bool_flag("version") {
         print_version();
+    } else if let Some(elm_path) = context.string_flag("compiler") {
+        println!("compiler: {}", elm_path);
+        run(context);
     } else {
-        println!("args: {:?}", context.args);
+        run(context);
     }
+}
+
+fn run(context: &seahorse::Context) {
+    println!("TODO: main program");
+    println!("args: {:?}", context.args);
 }
 
 fn print_version() {
