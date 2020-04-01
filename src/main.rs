@@ -1,65 +1,57 @@
-use seahorse::{App, Command, Flag, FlagType};
+use pico_args;
 
-fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    let app = App::new()
-        .name("elm-test-rs")
-        .author(std::env!("CARGO_PKG_AUTHORS"))
-        .description(std::env!("CARGO_PKG_DESCRIPTION"))
-        .usage("elm-test-rs [command] [arg]")
-        .version(std::env!("CARGO_PKG_VERSION"))
-        .action(default_action)
-        .flag(Flag::new("version", "elm-test-rs --version(-v)", FlagType::Bool).alias("v"))
-        .flag(Flag::new(
-            "compiler",
-            "elm-test-rs --compiler /path/to/elm",
-            FlagType::String,
-        ))
-        .command(init_command())
-        .command(install_command());
-    app.run(args);
+#[derive(Debug)]
+enum Args {
+    Init,
+    Install {
+        packages: Vec<String>,
+    },
+    Global {
+        help: bool,
+        version: bool,
+        compiler: Option<String>,
+        files: Vec<String>,
+    },
 }
 
-fn default_action(context: &seahorse::Context) {
-    if context.bool_flag("version") {
-        print_version();
-    } else if let Some(elm_path) = context.string_flag("compiler") {
-        println!("compiler: {}", elm_path);
-        run(context);
-    } else {
-        run(context);
+fn main() {
+    match main_args() {
+        Ok(args) => println!("{:?}", args),
+        Err(e) => eprintln!("Error: {:?}.", e),
     }
 }
 
-fn run(context: &seahorse::Context) {
-    println!("TODO: main program");
-    println!("args: {:?}", context.args);
+fn main_args() -> Result<Args, Box<dyn std::error::Error>> {
+    let mut args = pico_args::Arguments::from_env();
+    match args.subcommand()?.as_deref() {
+        Some("init") => Ok(Args::Init),
+        Some("install") => Ok(Args::Install {
+            packages: args.free()?,
+        }),
+        // The first arg may be mistaken for an unknown subcommand
+        Some(first_arg) => no_subcommand_args(Some(first_arg.to_string()), args),
+        None => no_subcommand_args(None, args),
+    }
 }
 
-fn print_version() {
-    println!("{}", std::env!("CARGO_PKG_VERSION"));
-}
-
-fn init_command() -> Command {
-    Command::new()
-        .name("init")
-        .usage("elm-test-rs init")
-        .action(init_action)
-}
-
-fn init_action(context: &seahorse::Context) {
-    println!("TODO: init command");
-    println!("args: {:?}", context.args);
-}
-
-fn install_command() -> Command {
-    Command::new()
-        .name("install")
-        .usage("elm-test-rs install package [package]")
-        .action(install_action)
-}
-
-fn install_action(context: &seahorse::Context) {
-    println!("TODO: install command");
-    println!("args: {:?}", context.args);
+/// first_arg is here in case it was mistaken for an unknown subcommand
+/// and will be prepended to the rest of free arguments.
+/// This happens for example with `elm-test-rs /path/to/some/Module.elm`.
+fn no_subcommand_args(
+    first_arg: Option<String>,
+    args: pico_args::Arguments,
+) -> Result<Args, Box<dyn std::error::Error>> {
+    let mut args = args;
+    Ok(Args::Global {
+        help: args.contains("--help"),
+        version: args.contains("--version"),
+        compiler: args.opt_value_from_str("--compiler")?,
+        files: {
+            let mut files = args.free()?;
+            if let Some(file) = first_arg {
+                files.insert(0, file);
+            }
+            files
+        },
+    })
 }

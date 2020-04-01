@@ -8,4 +8,4 @@ description = "Simple and fast rust alternative to node-test-runner for elm-test
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-seahorse = "0.7.1"
+pico-args = "0.3.1"

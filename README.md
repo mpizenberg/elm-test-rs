@@ -26,12 +26,12 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 ## Some thoughts
 
 - This new alternative for elm-test should be as simple and lightweight as possible.
-- For the CLI, we could use [seahorse][seahorse] (lightweight)
+- For the CLI, we could use [pico-args][pico-args] (lightweight)
   or [clap][clap] (heavyheight but most used).
 - Other useful CLI tools may be available (see https://lib.rs/command-line-interface)
 - For the generation of the main elm file, we could use [TinyTemplate][TinyTemplate].
 
-[seahorse]: https://github.com/ksk001100/seahorse
+[pico-args]: https://github.com/RazrFalcon/pico-args
 [clap]: https://github.com/clap-rs/clap
 [TinyTemplate]: https://github.com/bheisler/TinyTemplate
 
