@@ -62,6 +62,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 - [ ] Remove the report option from the elm test worker,
       it should only be concerned by one communication format,
       it's the supervisor work to convert to the appropriate output.
+- [ ] Make cross-platform binaries
 
 ## Some thoughts
 
