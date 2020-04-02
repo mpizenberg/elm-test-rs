@@ -6,6 +6,7 @@ version = "0.1.0"
 dependencies = [
  "glob",
  "pico-args",
+ "varj",
 ]
 
 [[package]]
@@ -19,3 +20,9 @@ name = "pico-args"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ad1f1b834a05d42dae330066e9699a173b28185b3bdc3dbf14ca239585de8cc"
+
+[[package]]
+name = "varj"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3faa0617fbc4e45d02504b977ba6020897f1dba5cfd9dce84e1b76bf027d64f2"

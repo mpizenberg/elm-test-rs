@@ -10,3 +10,4 @@ description = "Simple and fast rust alternative to node-test-runner for elm-test
 [dependencies]
 pico-args = "0.3.1"
 glob = "0.3.0"
+varj = "0.1.0"

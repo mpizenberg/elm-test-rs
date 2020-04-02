@@ -54,7 +54,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 - [ ] Parse test files or .elmi files to find all exposed tests.
 - [ ] Parse test files to find unexposed tests.
       Might be tricky to avoid false positive due to functions like `describe` that can embed tests.
-- [ ] Generate a templated `Main.elm` file from a list of tests.
+- [x] `examples/template.rs` Generate a templated `Main.elm` file from a list of tests.
 - [ ] Generate a templated JS file.
 - [ ] Create a server socket able to exchange data with client test workers.
 - [ ] Spawn a Node test worker.
@@ -71,10 +71,12 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
   or [clap][clap] (heavyheight but most used).
 - Other useful CLI tools may be available (see https://lib.rs/command-line-interface)
 - For the generation of the main elm file, we could use [TinyTemplate][TinyTemplate].
+  I opted for [sonro/varj][varj] which is quite minimalist.
 
 [pico-args]: https://github.com/RazrFalcon/pico-args
 [clap]: https://github.com/clap-rs/clap
 [TinyTemplate]: https://github.com/bheisler/TinyTemplate
+[varj]: https://github.com/sonro/varj
 
 ## Communication between the Elm (node) process and Rust supervisor
 
