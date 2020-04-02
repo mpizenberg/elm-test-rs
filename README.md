@@ -50,7 +50,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 - [x] `examples/glob.rs` List all test module files. We must be able to expand globs passed as arguments.
 - [ ] Read and write a correct `elm.json`. Leverage zwilias/elm-json library for dependencies.
 - [ ] Make zwilias/elm-json offline capable by limiting constraints to installed packages.
-- [ ] Call the elm compiler binary (`std::process::Command`).
+- [x] `examples/command.rs` Call the elm compiler binary.
 - [ ] Parse test files or .elmi files to find all exposed tests.
 - [ ] Parse test files to find unexposed tests.
       Might be tricky to avoid false positive due to functions like `describe` that can embed tests.
