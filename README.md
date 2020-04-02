@@ -54,8 +54,8 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 - [ ] Parse test files or .elmi files to find all exposed tests.
 - [ ] Parse test files to find unexposed tests.
       Might be tricky to avoid false positive due to functions like `describe` that can embed tests.
-- [x] `examples/template.rs` Generate a templated `Main.elm` file from a list of tests.
-- [ ] Generate a templated JS file.
+- [x] `examples/template_elm.rs` Generate a templated `Main.elm` file from a list of tests.
+- [x] `examples/template_js.rs` Generate a templated JS file.
 - [ ] Create a server socket able to exchange data with client test workers.
 - [ ] Spawn a Node test worker.
 - [ ] Convert results into console/json/junit reports.

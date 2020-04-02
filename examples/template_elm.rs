@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use varj;
 
-/// cargo run --example template
+/// cargo run --example template_elm
 pub fn main() {
     // String template of elm main file.
     // Could be loaded from a file on disk instead.
