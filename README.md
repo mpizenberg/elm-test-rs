@@ -47,7 +47,21 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 
 ## Proof of concept TODOs
 
-- [ ] Write the todos
+- [ ] List all test module files. We must be able to expand globs passed as arguments.
+- [ ] Read and write a correct `elm.json`. Leverage zwilias/elm-json library for dependencies.
+- [ ] Make zwilias/elm-json offline capable by limiting constraints to installed packages.
+- [ ] Call the elm compiler binary (`std::process::Command`).
+- [ ] Parse test files or .elmi files to find all exposed tests.
+- [ ] Parse test files to find unexposed tests.
+      Might be tricky to avoid false positive due to functions like `describe` that can embed tests.
+- [ ] Generate a templated `Main.elm` file from a list of tests.
+- [ ] Generate a templated JS file.
+- [ ] Create a server socket able to exchange data with client test workers.
+- [ ] Spawn a Node test worker.
+- [ ] Convert results into console/json/junit reports.
+- [ ] Remove the report option from the elm test worker,
+      it should only be concerned by one communication format,
+      it's the supervisor work to convert to the appropriate output.
 
 ## Some thoughts
 
