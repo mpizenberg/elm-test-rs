@@ -23,6 +23,32 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 - [ ] elm-test-rs --watch
 - [ ] (new) elm-test-rs --processes integer
 
+## Workflow of a test runner
+
+1. Generate the list of test modules and their file paths.
+2. Generate a correct `elm.json` for the to-be-generated new `Main.elm`.
+    1. Join project and this test runner `source-directories`.
+    2. Generate a correct list of `dependencies` (leverage elm-json).
+3. Compile all test files with `elm make --output=/dev/null <all/test/files>`
+   such that we know they are correct elm files.
+4. Find all tests
+    1. Either parse directly the test files.
+    2. Or parse the .elmi compilation artifacts (contains only exposed values?).
+5. Generate the `Main.elm` with one test concatenating all found exposed tests.
+6. Compile this main into a JS file.
+7. Compose a Node module "test worker" (JS file) encapsulating the main elm js file
+   with the ports and all network communication code to exchange data with the supervisor.
+8. Run the supervisor program.
+    1. Create a server socket that will listen to connections from test workers.
+    2. Spawn node test workers.
+    3. Distribute work to the workers.
+    4. Gather test results.
+    5. Print test results according to the report format.
+
+## Proof of concept TODOs
+
+- [ ] Write the todos
+
 ## Some thoughts
 
 - This new alternative for elm-test should be as simple and lightweight as possible.
