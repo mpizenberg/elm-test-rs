@@ -2,6 +2,8 @@ const { Worker } = require("worker_threads");
 const readline = require("readline");
 const EventEmitter = require("events");
 
+process.chdir(__dirname);
+
 // Global variables
 let nbTests, doneTests, todoTests;
 let reporter, runner;

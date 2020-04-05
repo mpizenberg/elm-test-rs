@@ -1,6 +1,7 @@
 const { Worker } = require("worker_threads");
 
 // Start supervisor with stdin enabled
+process.chdir(__dirname);
 const supervisor = new Worker("./supervisor.js", { stdin: true });
 supervisor.on("online", () => {
   // Send first round of tests
