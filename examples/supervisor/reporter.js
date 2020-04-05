@@ -1,10 +1,11 @@
 const { parentPort } = require("worker_threads");
 
-const tests = { nbTests: 0, doneTests: 0 };
+let tests = { nbTests: 0, doneTests: 0 };
 
 parentPort.on("message", (msg) => {
   if (msg.type == "START") {
     tests.nbTests = msg.nbTests;
+    tests.doneTests = 0;
     console.log("reporter: Starting with", tests.nbTests, "tests");
   } else if (msg.type == "TEST_RESULT") {
     tests.doneTests += 1;
