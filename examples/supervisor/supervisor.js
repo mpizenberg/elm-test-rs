@@ -1,8 +1,8 @@
+process.chdir(__dirname);
+
 const { Worker } = require("worker_threads");
 const readline = require("readline");
 const EventEmitter = require("events");
-
-process.chdir(__dirname);
 
 // Global variables
 let nbTests, doneTests, todoTests;
@@ -11,10 +11,10 @@ let working = false;
 const supervisorEvent = new EventEmitter();
 
 // Create a long lived reporter worker
-reporter = new Worker("./reporter.js");
+reporter = require("./reporter.js");
 
 // When the reporter has finished clean runners
-reporter.on("message", (_) => {
+reporter.setCallback(() => {
   runner.terminate();
   working = false;
   supervisorEvent.emit("finishedWork");
@@ -45,20 +45,20 @@ function startWork(config) {
     .map((_, id) => id);
 
   // Reset reporter with config
-  reporter.postMessage({ type: "START", nbTests: nbTests });
+  reporter.start(nbTests);
 
   // Start runner worker and prevent piped stdout and sdterr
   runner = new Worker(config.runner, { stdout: true, stderr: true });
-  runner.on("message", handleRunnerMsg);
+  runner.on("message", handleRunnerResult);
   runner.on("online", () => {
     runner.postMessage({ type: "TEST", id: todoTests.pop() });
   });
 }
 
 // Handle result of a test
-function handleRunnerMsg(msg) {
-  reporter.postMessage(msg);
-  doneTests[msg.id] = true;
+function handleRunnerResult(result) {
+  reporter.sendResult(result);
+  doneTests[result.id] = true;
   const nextTest = todoTests.pop();
   if (nextTest != undefined) {
     runner.postMessage({ type: "TEST", id: nextTest });
