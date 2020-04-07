@@ -48,6 +48,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 ## Proof of concept TODOs
 
 - [x] `examples/glob.rs` List all test module files. We must be able to expand globs passed as arguments.
+- [x] `examples/elm-json-bin.rs` Read and write a correct `elm.json`. Leverage zwilias/elm-json binary for dependencies.
 - [ ] Read and write a correct `elm.json`. Leverage zwilias/elm-json library for dependencies.
 - [ ] Make zwilias/elm-json offline capable by limiting constraints to installed packages.
 - [x] `examples/command.rs` Call the elm compiler binary.
