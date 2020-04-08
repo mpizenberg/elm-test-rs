@@ -2,7 +2,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-/// usage: cargo run --example elm-json
+/// usage: cargo run --example elm-json-bin
 pub fn main() {
     let output = Command::new("elm-json")
         .arg("solve")
