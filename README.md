@@ -60,7 +60,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 - [x] `examples/template_js.rs` Generate a templated JS file.
 - [x] `examples/tcp_server.rs` Create a server tcp socket able to exchange data with client tcp socket.
 - [x] `examples/supervisor.rs` Example worker communication between supervisor, runner and reporter.
-- [ ] Convert results into console/json/junit reports.
+- [x] `examples/reporter/` (run `make` inside directory) Convert results into console/json/junit reports.
 - [ ] Remove the report option from the elm test worker,
       it should only be concerned by one communication format,
       it's the supervisor work to convert to the appropriate output.
