@@ -52,6 +52,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 - [ ] Read and write a correct `elm.json`. Leverage zwilias/elm-json library for dependencies.
 - [ ] Make zwilias/elm-json offline capable by limiting constraints to installed packages.
 - [x] `examples/command.rs` Call the elm compiler binary.
+- [x] `examples/elmi-to-json-bin.rs` Leverage stoeffel/elmi-to-json binary to find all exposed tests.
 - [ ] Parse test files or .elmi files to find all exposed tests.
 - [ ] Parse test files to find unexposed tests.
       Might be tricky to avoid false positive due to functions like `describe` that can embed tests.
