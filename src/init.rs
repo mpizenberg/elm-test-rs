@@ -8,7 +8,7 @@ pub fn main() {
         .arg("--test")
         .arg("elm-explorations/test@1")
         .status()
-        .expect("Command failed to start");
+        .expect("Command elm-json failed to start");
     if !status.success() {
         eprintln!(
             "There was an error when trying to add elm-explorations/test to your dependencies"
