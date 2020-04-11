@@ -1,5 +1,8 @@
-use elm_test_rs::init;
-use elm_test_rs::install;
+mod help;
+mod init;
+mod install;
+mod run;
+
 use pico_args;
 
 #[derive(Debug)]
@@ -8,7 +11,7 @@ enum Args {
     Install {
         packages: Vec<String>,
     },
-    Global {
+    Run {
         help: bool,
         version: bool,
         compiler: Option<String>,
@@ -20,7 +23,12 @@ fn main() {
     match main_args() {
         Ok(Args::Init) => init::main(),
         Ok(Args::Install { packages }) => install::main(packages),
-        Ok(args) => println!("{:?}", args),
+        Ok(Args::Run {
+            help,
+            version,
+            compiler,
+            files,
+        }) => run::main(help, version, compiler, files),
         Err(e) => eprintln!("Error: {:?}.", e),
     }
 }
@@ -46,7 +54,7 @@ fn no_subcommand_args(
     args: pico_args::Arguments,
 ) -> Result<Args, Box<dyn std::error::Error>> {
     let mut args = args;
-    Ok(Args::Global {
+    Ok(Args::Run {
         help: args.contains("--help"),
         version: args.contains("--version"),
         compiler: args.opt_value_from_str("--compiler")?,

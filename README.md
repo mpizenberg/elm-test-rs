@@ -10,6 +10,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 
 ## Already implemented
 
+- [x] elm-test-rs --help
 - [x] elm-test-rs --version
 - [x] elm-test-rs init
 - [x] elm-test-rs install
