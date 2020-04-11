@@ -11,7 +11,7 @@ Attempt at a simpler, faster alternative to the current node test runner for elm
 ## Already implemented
 
 - [x] elm-test-rs --version
-- [ ] elm-test-rs init
+- [x] elm-test-rs init
 - [ ] elm-test-rs install
 - [ ] elm-test-rs
 - [ ] elm-test-rs TESTFILES

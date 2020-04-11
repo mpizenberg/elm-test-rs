@@ -1,3 +1,4 @@
+use elm_test_rs::init;
 use pico_args;
 
 #[derive(Debug)]
@@ -16,6 +17,7 @@ enum Args {
 
 fn main() {
     match main_args() {
+        Ok(Args::Init) => init::main(),
         Ok(args) => println!("{:?}", args),
         Err(e) => eprintln!("Error: {:?}.", e),
     }
