@@ -139,10 +139,12 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
     if !status.success() {
         std::process::exit(1);
     }
-    return;
 
     // Find all tests
-    todo!();
+    let all_tests = crate::elmi::all_tests(&tests_root, &module_paths).unwrap();
+    all_tests.iter().for_each(|m| println!("{:#?}", m));
+    return;
+
     // Generate the Runner.elm concatenating all tests
     todo!();
     // Compile the Reporter.elm
