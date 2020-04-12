@@ -9,7 +9,7 @@ An alternative Elm test runner to node-test-runner
 USAGE:
     elm-test-rs [<SUBCOMMAND>] [FLAGS] [TESTFILES]
     For example:
-        elm-test-rs tests/**/*.elm
+        elm-test-rs tests/*.elm
 
 FLAGS:
     --help                       # Print this message and exit

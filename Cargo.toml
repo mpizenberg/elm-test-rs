@@ -11,6 +11,6 @@ description = "Simple and fast rust alternative to node-test-runner for elm-test
 pico-args = "0.3.1"
 glob = "0.3.0"
 varj = "0.1.0"
+miniserde = "0.1"
 
 [dev-dependencies]
-miniserde = "0.1"

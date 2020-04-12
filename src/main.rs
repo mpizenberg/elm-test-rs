@@ -1,7 +1,9 @@
+mod elm_json;
 mod help;
 mod init;
 mod install;
 mod run;
+mod utils;
 
 use pico_args;
 
