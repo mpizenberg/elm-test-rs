@@ -66,3 +66,39 @@ struct ProjectType {
     #[serde(rename = "type")]
     pub type_: String,
 }
+
+// Convert a package elm.json into an application elm.json
+impl TryFrom<&PackageConfig> for ApplicationConfig {
+    type Error = String;
+    fn try_from(package: &PackageConfig) -> Result<Self, Self::Error> {
+        // Helper closure to map on the HashMap
+        let to_exact =
+            |(name, range): (&String, _)| Ok((name.to_owned(), to_exact_version(range)?));
+        // Convert package dependencies into app direct dependencies
+        let direct_dependencies: Result<HashMap<String, String>, Self::Error> =
+            package.dependencies.iter().map(to_exact).collect();
+        let direct_test_dependencies: Result<HashMap<String, String>, Self::Error> =
+            package.test_dependencies.iter().map(to_exact).collect();
+        // Return converted config
+        Ok(ApplicationConfig {
+            type_: "application".into(),
+            source_directories: vec!["src".into()],
+            elm_version: "0.19.1".into(),
+            dependencies: Dependencies {
+                direct: direct_dependencies?,
+                indirect: HashMap::new(),
+            },
+            test_dependencies: Dependencies {
+                direct: direct_test_dependencies?,
+                indirect: HashMap::new(),
+            },
+        })
+    }
+}
+
+fn to_exact_version<T: AsRef<str>>(range: T) -> Result<String, String> {
+    let low_bound = range.as_ref().split('<').next();
+    low_bound
+        .map(|s| s.trim().to_string())
+        .ok_or(format!("Invalid package version range: {}", range.as_ref()))
+}

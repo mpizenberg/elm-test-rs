@@ -1,3 +1,4 @@
+use crate::elm_json::Config;
 use glob::glob;
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -51,8 +52,14 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
     // Read project elm.json
     let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
         .expect("Unable to read elm.json");
-    let info = crate::elm_json::Config::try_from(elm_json_str.as_ref()).unwrap();
-    println!("elm.json:\n{:?}", info);
+    let info = Config::try_from(elm_json_str.as_ref()).unwrap();
+
+    // Convert package elm.json to an application elm.json if needed
+    let mut elm_json_tests = match info {
+        Config::Package(package) => crate::elm_json::ApplicationConfig::try_from(&package).unwrap(),
+        Config::Application(application) => application,
+    };
+    println!("elm_json_tests:\n{:?}", elm_json_tests);
     return;
     let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();
     let elm_test_rs_src_dirs = elm_test_rs_root.join("elm/src");
