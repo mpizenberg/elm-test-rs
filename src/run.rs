@@ -1,8 +1,9 @@
 use crate::elm_json::Config;
 use glob::glob;
+use pathdiff;
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<String>) {
     // The help option is prioritary over the other options
@@ -62,10 +63,24 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
 
     // Promote test dependencies to normal ones
     elm_json_tests.promote_test_dependencies();
-    println!("elm_json_tests:\n{:?}", elm_json_tests);
-    return;
+
+    // Make src dirs relative to the generated tests root
+    let tests_root = elm_project_root.join("elm-stuff/tests-0.19.1");
+    let mut source_directories: Vec<PathBuf> = elm_json_tests
+        .source_directories
+        .iter()
+        // Get canonical form
+        .map(|path| elm_project_root.join(path).canonicalize().unwrap())
+        // Get path relative to tests_root
+        .map(|path| pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path"))
+        .collect();
+
+    // Add src/ and elm-test-rs/elm/src/ to the source directories
     let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();
-    let elm_test_rs_src_dirs = elm_test_rs_root.join("elm/src");
+    source_directories.push(Path::new("src").into());
+    source_directories.push(elm_test_rs_root.join("elm/src"));
+    println!("source_directories:\n{:?}", source_directories);
+    return;
 
     // Compile all test files
     todo!();
