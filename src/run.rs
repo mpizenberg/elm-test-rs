@@ -59,6 +59,9 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
         Config::Package(package) => crate::elm_json::ApplicationConfig::try_from(&package).unwrap(),
         Config::Application(application) => application,
     };
+
+    // Promote test dependencies to normal ones
+    elm_json_tests.promote_test_dependencies();
     println!("elm_json_tests:\n{:?}", elm_json_tests);
     return;
     let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();

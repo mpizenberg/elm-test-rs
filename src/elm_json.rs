@@ -102,3 +102,14 @@ fn to_exact_version<T: AsRef<str>>(range: T) -> Result<String, String> {
         .map(|s| s.trim().to_string())
         .ok_or(format!("Invalid package version range: {}", range.as_ref()))
 }
+
+impl ApplicationConfig {
+    pub fn promote_test_dependencies(&mut self) {
+        let direct_test = self.test_dependencies.direct.clone();
+        let indirect_test = self.test_dependencies.indirect.clone();
+        self.dependencies.direct.extend(direct_test);
+        self.dependencies.indirect.extend(indirect_test);
+        self.test_dependencies.direct = HashMap::new();
+        self.test_dependencies.indirect = HashMap::new();
+    }
+}
