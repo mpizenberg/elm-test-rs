@@ -69,6 +69,8 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
     let mut source_directories: Vec<PathBuf> = elm_json_tests
         .source_directories
         .iter()
+        // Add tests/ to the list of source directories
+        .chain(std::iter::once(&"tests".to_string()))
         // Get canonical form
         .map(|path| elm_project_root.join(path).canonicalize().unwrap())
         // Get path relative to tests_root
@@ -89,7 +91,8 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
 
     // Write the elm.json file to disk
     let elm_json_tests_path = tests_root.join("elm.json");
-    std::fs::create_dir_all(tests_root).expect("Could not create tests dir");
+    std::fs::create_dir_all(&tests_root).expect("Could not create tests dir");
+    std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
     std::fs::File::create(&elm_json_tests_path)
         .expect("Unable to create generated elm.json")
         .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
@@ -121,11 +124,23 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
         .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
         .expect("Unable to write to generated elm.json");
 
-    // println!("source_directories:\n{:?}", source_directories);
+    // Compile all test files
+    let status = Command::new("elm")
+        .arg("make")
+        .arg("--output=/dev/null")
+        .args(module_paths.iter())
+        .current_dir(&tests_root)
+        // stdio config, comment to see elm make output for debug
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .status()
+        .expect("Command elm make --output=/dev/null failed to start");
+    if !status.success() {
+        std::process::exit(1);
+    }
     return;
 
-    // Compile all test files
-    todo!();
     // Find all tests
     todo!();
     // Generate the Runner.elm concatenating all tests
