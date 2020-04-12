@@ -2,7 +2,7 @@ use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use miniserde;
 use pathdiff;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -140,13 +140,41 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
         std::process::exit(1);
     }
 
-    // Find all tests
-    let all_tests = crate::elmi::all_tests(&tests_root, &module_paths).unwrap();
-    all_tests.iter().for_each(|m| println!("{:#?}", m));
+    // Find all modules and tests
+    let all_modules_and_tests = crate::elmi::all_tests(&tests_root, &module_paths).unwrap();
+    let runner_imports: Vec<String> = all_modules_and_tests
+        .iter()
+        .map(|m| "import ".to_string() + &m.module_name)
+        .collect();
+    let runner_tests: Vec<String> = all_modules_and_tests
+        .iter()
+        .flat_map(|m| {
+            m.tests
+                .iter()
+                .map(move |test| m.module_name.clone() + "." + test)
+        })
+        .collect();
+
+    // Retrieve the Runner.elm template
+    let runner_template_path = elm_test_rs_root.join("templates/Runner.elm");
+    let runner_template =
+        std::fs::read_to_string(&runner_template_path).expect("Runner.elm template missing");
+
+    // Hash map containing values for all keys {{ key }} in the template
+    let replacements: HashMap<String, String> = vec![
+        ("user_imports".to_string(), runner_imports.join("\n")),
+        ("tests".to_string(), runner_tests.join(", ")),
+        ("flags".to_string(), r#"{ some = "flag" }"#.to_string()),
+    ]
+    .into_iter()
+    .collect();
+
+    // Generate the Runner.elm file
+    let runner_content = varj::parse(&runner_template, &replacements)
+        .expect("The template does not match with the replacement keys");
+    println!("Runner.elm\n{}", runner_content);
     return;
 
-    // Generate the Runner.elm concatenating all tests
-    todo!();
     // Compile the Reporter.elm
     todo!();
     // Generate the supervisor Node module
