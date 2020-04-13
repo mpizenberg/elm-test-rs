@@ -11,27 +11,15 @@ use pico_args;
 #[derive(Debug)]
 enum Args {
     Init,
-    Install {
-        packages: Vec<String>,
-    },
-    Run {
-        help: bool,
-        version: bool,
-        compiler: Option<String>,
-        files: Vec<String>,
-    },
+    Install { packages: Vec<String> },
+    Run(run::Options),
 }
 
 fn main() {
     match main_args() {
         Ok(Args::Init) => init::main(),
         Ok(Args::Install { packages }) => install::main(packages),
-        Ok(Args::Run {
-            help,
-            version,
-            compiler,
-            files,
-        }) => run::main(help, version, compiler, files),
+        Ok(Args::Run(options)) => run::main(options),
         Err(e) => eprintln!("Error: {:?}.", e),
     }
 }
@@ -57,10 +45,12 @@ fn no_subcommand_args(
     args: pico_args::Arguments,
 ) -> Result<Args, Box<dyn std::error::Error>> {
     let mut args = args;
-    Ok(Args::Run {
+    Ok(Args::Run(run::Options {
         help: args.contains("--help"),
         version: args.contains("--version"),
         compiler: args.opt_value_from_str("--compiler")?,
+        seed: args.opt_value_from_str("--seed")?,
+        fuzz: args.opt_value_from_str("--fuzz")?,
         files: {
             let mut files = args.free()?;
             if let Some(file) = first_arg {
@@ -68,5 +58,5 @@ fn no_subcommand_args(
             }
             files
         },
-    })
+    }))
 }

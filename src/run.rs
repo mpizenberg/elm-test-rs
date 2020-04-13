@@ -2,19 +2,31 @@ use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use miniserde;
 use pathdiff;
+use rand::Rng;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<String>) {
+#[derive(Debug)]
+pub struct Options {
+    pub help: bool,
+    pub version: bool,
+    pub compiler: Option<String>,
+    pub seed: Option<u32>,
+    pub fuzz: Option<u32>,
+    pub files: Vec<String>,
+}
+
+// pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<String>) {
+pub fn main(options: Options) {
     // The help option is prioritary over the other options
-    if help {
+    if options.help {
         crate::help::main();
         return;
     // The version option is the second priority
-    } else if version {
+    } else if options.version {
         println!("{}", std::env!("CARGO_PKG_VERSION"));
         return;
     }
@@ -23,17 +35,22 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
     let elm_project_root = crate::utils::elm_project_root().unwrap();
 
     // Set the compiler
-    let elm_compiler = compiler.unwrap_or("elm".to_string());
+    let elm_compiler = options.compiler.unwrap_or("elm".to_string());
+
+    // Default seed and fuzz are random if not provided
+    let mut rng = rand::thread_rng();
+    let initial_seed: u32 = options.seed.unwrap_or(rng.gen());
+    let fuzz_runs: u32 = options.fuzz.unwrap_or(rng.gen());
 
     // Default with tests in the tests/ directory
-    let module_globs = if files.is_empty() {
+    let module_globs = if options.files.is_empty() {
         let root_string = &elm_project_root.to_str().unwrap().to_string();
         vec![
             format!("{}/{}", root_string, "tests/*.elm"),
             format!("{}/{}", root_string, "tests/**/*.elm"),
         ]
     } else {
-        files
+        options.files
     };
 
     // Get file paths of all modules in canonical form
@@ -195,6 +212,29 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
     }
 
     // Generate the runner.js node module embedding the Elm runner
+    let node_runner_template_path = elm_test_rs_root.join("templates/runner.js");
+    let node_runner_template =
+        std::fs::read_to_string(&node_runner_template_path).expect("runner.js template missing");
+    let polyfills_path = elm_test_rs_root.join("templates/polyfills.js");
+    let polyfills =
+        std::fs::read_to_string(&polyfills_path).expect("polyfills.js template missing");
+    let compiled_elm =
+        std::fs::read_to_string(&compiled_elm_file).expect("Compiled Elm runner file missing");
+    let replacements: HashMap<String, String> = vec![
+        ("polyfills".to_string(), polyfills),
+        ("compiled_elm".to_string(), compiled_elm),
+        ("initialSeed".to_string(), initial_seed.to_string()),
+        ("fuzzRuns".to_string(), fuzz_runs.to_string()),
+    ]
+    .into_iter()
+    .collect();
+    let node_runner_content = varj::parse(&node_runner_template, &replacements)
+        .expect("The template does not match with the replacement keys");
+    let node_runner_file_path = tests_root.join("node_runner.js");
+    std::fs::File::create(&node_runner_file_path)
+        .expect("Unable to create generated node_runner.js")
+        .write_all(node_runner_content.as_bytes())
+        .expect("Unable to write to generated node_runner.js");
     return;
 
     // Compile the Reporter.elm
