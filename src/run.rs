@@ -164,15 +164,37 @@ pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<Stri
     let replacements: HashMap<String, String> = vec![
         ("user_imports".to_string(), runner_imports.join("\n")),
         ("tests".to_string(), runner_tests.join(", ")),
-        ("flags".to_string(), r#"{ some = "flag" }"#.to_string()),
     ]
     .into_iter()
     .collect();
 
-    // Generate the Runner.elm file
+    // Generate the src/Runner.elm file
     let runner_content = varj::parse(&runner_template, &replacements)
         .expect("The template does not match with the replacement keys");
-    println!("Runner.elm\n{}", runner_content);
+    let runner_file_path = tests_root.join("src/Runner.elm");
+    std::fs::File::create(&runner_file_path)
+        .expect("Unable to create generated Runner.elm")
+        .write_all(runner_content.as_bytes())
+        .expect("Unable to write to generated Runner.elm");
+
+    // Compile the src/Runner.elm file into Runner.elm.js
+    let compiled_elm_file = tests_root.join("Runner.elm.js");
+    let status = Command::new("elm")
+        .arg("make")
+        .arg(format!("--output={}", compiled_elm_file.to_str().unwrap()))
+        .arg("src/Runner.elm")
+        .current_dir(&tests_root)
+        // stdio config, comment to see elm make output for debug
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .status()
+        .expect("Command elm make failed to start");
+    if !status.success() {
+        std::process::exit(1);
+    }
+
+    // Generate the runner.js node module embedding the Elm runner
     return;
 
     // Compile the Reporter.elm

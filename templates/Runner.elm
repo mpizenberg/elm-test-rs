@@ -2,10 +2,10 @@ module Runner exposing (main)
 
 {{ user_imports }}
 import Test
-import ElmTestRs.Runner
+import ElmTestRs.Test.Runner
 
-main : ElmTestRs.Runner.Program
+main : ElmTestRs.Test.Runner.Program
 main =
     [ {{ tests }} ]
         |> Test.concat
-        |> ElmTestRs.Runner.run {{ flags }}
+        |> ElmTestRs.Test.Runner.start
