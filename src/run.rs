@@ -3,7 +3,7 @@ use glob::glob;
 use miniserde;
 use pathdiff;
 use rand::Rng;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -187,27 +187,15 @@ pub fn main(options: Options) {
         })
         .collect();
 
-    // Retrieve the Runner.elm template
-    let runner_template_path = elm_test_rs_root.join("templates/Runner.elm");
-    let runner_template =
-        std::fs::read_to_string(&runner_template_path).expect("Runner.elm template missing");
-
-    // Hash map containing values for all keys {{ key }} in the template
-    let replacements: HashMap<String, String> = vec![
-        ("user_imports".to_string(), runner_imports.join("\n")),
-        ("tests".to_string(), runner_tests.join(", ")),
-    ]
-    .into_iter()
-    .collect();
-
-    // Generate the src/Runner.elm file
-    let runner_content = varj::parse(&runner_template, &replacements)
-        .expect("The template does not match with the replacement keys");
-    let runner_file_path = tests_root.join("src/Runner.elm");
-    std::fs::File::create(&runner_file_path)
-        .expect("Unable to create generated Runner.elm")
-        .write_all(runner_content.as_bytes())
-        .expect("Unable to write to generated Runner.elm");
+    // Generate templated src/Runner.elm
+    create_templated(
+        elm_test_rs_root.join("templates/Runner.elm"), // template
+        tests_root.join("src/Runner.elm"),             // output
+        vec![
+            ("user_imports".to_string(), runner_imports.join("\n")),
+            ("tests".to_string(), runner_tests.join(", ")),
+        ],
+    );
 
     // Compile the src/Runner.elm file into Runner.elm.js
     let compiled_elm_file = tests_root.join("Runner.elm.js");
@@ -227,29 +215,20 @@ pub fn main(options: Options) {
     }
 
     // Generate the node_runner.js node module embedding the Elm runner
-    let node_runner_template_path = elm_test_rs_root.join("templates/runner.js");
-    let node_runner_template =
-        std::fs::read_to_string(&node_runner_template_path).expect("runner.js template missing");
-    let polyfills_path = elm_test_rs_root.join("templates/polyfills.js");
-    let polyfills =
-        std::fs::read_to_string(&polyfills_path).expect("polyfills.js template missing");
+    let polyfills = std::fs::read_to_string(&elm_test_rs_root.join("templates/polyfills.js"))
+        .expect("polyfills.js template missing");
     let compiled_elm =
         std::fs::read_to_string(&compiled_elm_file).expect("Compiled Elm runner file missing");
-    let replacements: HashMap<String, String> = vec![
-        ("polyfills".to_string(), polyfills),
-        ("compiled_elm".to_string(), compiled_elm),
-        ("initialSeed".to_string(), initial_seed.to_string()),
-        ("fuzzRuns".to_string(), fuzz_runs.to_string()),
-    ]
-    .into_iter()
-    .collect();
-    let node_runner_content = varj::parse(&node_runner_template, &replacements)
-        .expect("The template does not match with the replacement keys");
-    let node_runner_file_path = tests_root.join("node_runner.js");
-    std::fs::File::create(&node_runner_file_path)
-        .expect("Unable to create generated node_runner.js")
-        .write_all(node_runner_content.as_bytes())
-        .expect("Unable to write to generated node_runner.js");
+    create_templated(
+        elm_test_rs_root.join("templates/runner.js"), // template
+        tests_root.join("node_runner.js"),            // output
+        vec![
+            ("polyfills".to_string(), polyfills),
+            ("compiled_elm".to_string(), compiled_elm),
+            ("initialSeed".to_string(), initial_seed.to_string()),
+            ("fuzzRuns".to_string(), fuzz_runs.to_string()),
+        ],
+    );
 
     // Compile the Reporter.elm into Reporter.elm.js
     let compiled_reporter = tests_root.join("Reporter.elm.js");
@@ -270,31 +249,33 @@ pub fn main(options: Options) {
     }
 
     // Generate the node_reporter.js module embedding the Elm reporter
-    let node_reporter_template_path = elm_test_rs_root.join("templates/reporter.js");
-    let node_reporter_template = std::fs::read_to_string(&node_reporter_template_path)
-        .expect("reporter.js template missing");
     let compiled_elm =
         std::fs::read_to_string(&compiled_reporter).expect("Compiled Elm reporter file missing");
-    let replacements: HashMap<String, String> = vec![
-        ("compiled_elm".to_string(), compiled_elm),
-        ("initialSeed".to_string(), initial_seed.to_string()),
-        ("fuzzRuns".to_string(), fuzz_runs.to_string()),
-        ("reporter".to_string(), reporter.clone()),
-        ("nbTests".to_string(), runner_tests.len().to_string()),
-    ]
-    .into_iter()
-    .collect();
-    let node_reporter_content = varj::parse(&node_reporter_template, &replacements)
-        .expect("The template does not match with the replacement keys");
-    let node_reporter_file_path = tests_root.join("node_reporter.js");
-    std::fs::File::create(&node_reporter_file_path)
-        .expect("Unable to create generated node_reporter.js")
-        .write_all(node_reporter_content.as_bytes())
-        .expect("Unable to write to generated node_reporter.js");
-    return;
+    create_templated(
+        elm_test_rs_root.join("templates/reporter.js"), // template
+        tests_root.join("node_reporter.js"),            // output
+        vec![
+            ("compiled_elm".to_string(), compiled_elm),
+            ("initialSeed".to_string(), initial_seed.to_string()),
+            ("fuzzRuns".to_string(), fuzz_runs.to_string()),
+            ("reporter".to_string(), reporter.clone()),
+            ("nbTests".to_string(), runner_tests.len().to_string()),
+        ],
+    );
 
     // Generate the supervisor Node module
     todo!();
     // Start the tests supervisor
     todo!();
+}
+
+/// Replace the template keys and write result to output file.
+fn create_templated<P: AsRef<Path>>(template: P, output: P, replacements: Vec<(String, String)>) {
+    let template_content = std::fs::read_to_string(template).expect("template missing");
+    let content = varj::parse(&template_content, &replacements.into_iter().collect())
+        .expect("The template does not match with the replacement keys");
+    std::fs::File::create(output)
+        .expect("Unable to create generated file")
+        .write_all(content.as_bytes())
+        .expect("Unable to write to generated file");
 }
