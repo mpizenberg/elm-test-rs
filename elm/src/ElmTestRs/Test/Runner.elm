@@ -86,7 +86,7 @@ init masterTest { initialSeed, fuzzRuns } =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case ( msg, model.testRunners ) of
+    case ( Debug.log "Runner.elm msg" msg, model.testRunners ) of
         ( ReceiveRunTest id, Plain runners ) ->
             ( model, runPlain id runners )
 
@@ -102,15 +102,26 @@ update msg model =
 
 runPlain : Int -> Array Runner -> Cmd Msg
 runPlain id runners =
-    case Array.get id runners of
+    case Debug.log "Runner.elm Array.get id" (Array.get id runners) of
         Nothing ->
             Cmd.none
 
         Just runner ->
             runner.run ()
+                |> Debug.log "Runner.elm: finished run"
                 |> ElmTestRs.Test.Result.fromExpectations runner.labels
                 |> ElmTestRs.Test.Result.encode
-                |> sendResult
+                |> sendResultWithId id
+                |> Debug.log "Runner.elm: command ready"
+
+
+sendResultWithId : Int -> Value -> Cmd msg
+sendResultWithId id result =
+    sendResult <|
+        Json.Encode.object
+            [ ( "id", Json.Encode.int id )
+            , ( "result", result )
+            ]
 
 
 

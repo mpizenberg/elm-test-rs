@@ -8,17 +8,16 @@ const Elm = (function(module) {
 const flags = {
   initialSeed: {{ initialSeed }},
   fuzzRuns: {{ fuzzRuns }},
-  reporter: "{{ reporter }}",
-  nbTests: {{ nbTests }}
+  mode: "{{ reporter }}",
 };
-const app = Elm.Reporter.init({ flags: flags });
+const app = Elm.{{ elmMain }}.init({ flags: flags });
 
 // Pipe the Elm stdout port to stdout
 app.ports.stdout.subscribe((str) => process.stdout.write(str));
 
 // Export function to set the callback function when reports are finished
 let finishCallback = () => console.error("finishCallback not defined yet");
-app.ports.signalFinished.subscribe((str) => { console.err(str); finishCallback(); });
+app.ports.signalFinished.subscribe((str) => { console.error(str); finishCallback(); });
 exports.setCallback = (callback) => { finishCallback = callback; };
 
 // Export function to restart the Elm reporter

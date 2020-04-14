@@ -131,6 +131,7 @@ pub fn main(options: Options) {
         .expect("Unable to write to generated elm.json");
 
     // Finish preparing the elm.json file by solving any dependency issue (use elm-json)
+    eprintln!("Run elm-json to solve dependency issues");
     let output = Command::new("elm-json")
         .arg("solve")
         .arg("--test")
@@ -158,6 +159,7 @@ pub fn main(options: Options) {
         .expect("Unable to write to generated elm.json");
 
     // Compile all test files
+    eprintln!("Compiling all test files");
     compile(
         &tests_root,                        // current_dir
         &elm_compiler,                      // compiler
@@ -166,6 +168,7 @@ pub fn main(options: Options) {
     );
 
     // Find all modules and tests
+    eprintln!("Finding all modules and tests");
     let all_modules_and_tests = crate::elmi::all_tests(&tests_root, &module_paths).unwrap();
     let runner_imports: Vec<String> = all_modules_and_tests
         .iter()
@@ -173,10 +176,17 @@ pub fn main(options: Options) {
         .collect();
     let runner_tests: Vec<String> = all_modules_and_tests
         .iter()
-        .flat_map(|m| {
-            m.tests
+        .map(|module| {
+            let full_module_tests: Vec<String> = module
+                .tests
                 .iter()
-                .map(move |test| m.module_name.clone() + "." + test)
+                .map(move |test| module.module_name.clone() + "." + test)
+                .collect();
+            format!(
+                r#"Test.describe "{}" [ {} ]"#,
+                &module.module_name,
+                full_module_tests.join(", ")
+            )
         })
         .collect();
 
@@ -186,11 +196,12 @@ pub fn main(options: Options) {
         tests_root.join("src/Runner.elm"),             // output
         vec![
             ("user_imports".to_string(), runner_imports.join("\n")),
-            ("tests".to_string(), runner_tests.join(", ")),
+            ("tests".to_string(), runner_tests.join("\n    , ")),
         ],
     );
 
     // Compile the src/Runner.elm file into Runner.elm.js
+    eprintln!("Compiling the generated templated src/Runner.elm");
     let compiled_elm_file = tests_root.join("Runner.elm.js");
     compile(
         &tests_root,         // current_dir
@@ -204,9 +215,10 @@ pub fn main(options: Options) {
         .expect("polyfills.js template missing");
     let compiled_elm =
         std::fs::read_to_string(&compiled_elm_file).expect("Compiled Elm runner file missing");
+    let node_runner_path = tests_root.join("node_runner.js");
     create_templated(
         elm_test_rs_root.join("templates/runner.js"), // template
-        tests_root.join("node_runner.js"),            // output
+        node_runner_path.clone(),                     // output
         vec![
             ("polyfills".to_string(), polyfills),
             ("compiled_elm".to_string(), compiled_elm),
@@ -216,6 +228,7 @@ pub fn main(options: Options) {
     );
 
     // Compile the Reporter.elm into Reporter.elm.js
+    eprintln!("Compiling Reporter.elm.js");
     let compiled_reporter = tests_root.join("Reporter.elm.js");
     compile(
         &tests_root,        // current_dir
@@ -227,23 +240,65 @@ pub fn main(options: Options) {
     // Generate the node_reporter.js module embedding the Elm reporter
     let compiled_elm =
         std::fs::read_to_string(&compiled_reporter).expect("Compiled Elm reporter file missing");
+    let node_reporter_path = tests_root.join("node_reporter.js");
     create_templated(
         elm_test_rs_root.join("templates/reporter.js"), // template
-        tests_root.join("node_reporter.js"),            // output
+        node_reporter_path.clone(),                     // output
         vec![
             ("compiled_elm".to_string(), compiled_elm),
             ("initialSeed".to_string(), initial_seed.to_string()),
             ("fuzzRuns".to_string(), fuzz_runs.to_string()),
             ("reporter".to_string(), reporter.clone()),
-            ("nbTests".to_string(), runner_tests.len().to_string()),
+            ("elmMain".to_string(), "ElmTestRs.Test.Reporter".to_string()),
         ],
     );
-    return;
 
     // Generate the supervisor Node module
-    todo!();
+    let node_reporter_path_string = node_reporter_path.to_str().unwrap().to_string();
+    create_templated(
+        elm_test_rs_root.join("templates/supervisor.js"), // template
+        tests_root.join("node_supervisor.js"),            // output
+        vec![("node_reporter".to_string(), node_reporter_path_string)],
+    );
+
     // Start the tests supervisor
-    todo!();
+    eprintln!("Start the supervisor");
+    let mut supervisor = Command::new("node")
+        .arg("node_supervisor.js")
+        .current_dir(&tests_root)
+        .stdin(Stdio::piped())
+        .spawn()
+        .expect("command failed to start");
+
+    // Helper closure to write to supervisor
+    let stdin = supervisor.stdin.as_mut().expect("Failed to open stdin");
+    let mut writeln = |msg| {
+        stdin.write_all(msg).expect("writeln");
+        stdin.write_all(b"\n").expect("writeln");
+    };
+
+    // Prepare start message for the supervisor
+    let node_runner_path_string = node_runner_path.to_str().unwrap().to_string();
+    let start_msg = format!(
+        r#"{{ "nbTests": {}, "runner": "{}" }}"#,
+        runner_tests.len(),
+        &node_runner_path_string,
+    );
+
+    // Send multiple rounds of tests (simulate --watch)
+    writeln(&start_msg.as_bytes());
+    // thread::sleep(time::Duration::from_secs(3));
+    // writeln(b"{\"nbTests\": 6, \"runner\": \"./runner.js\"}");
+
+    // Wait for supervisor child process to end and graciously exit
+    match supervisor.try_wait() {
+        Ok(Some(status)) => println!("exited with: {:?}", status),
+        Ok(None) => {
+            let status = supervisor.wait();
+            println!("exited with: {:?}", status);
+        }
+        Err(e) => println!("error attempting to wait: {}", e),
+    }
 }
 
 /// Compile an Elm module into a JS file.

@@ -36,8 +36,9 @@ main =
 
 
 type alias Flags =
-    { mode : String
-    , nbTests : Int
+    { initialSeed : Int
+    , fuzzRuns : Int
+    , mode : String
     }
 
 
@@ -73,17 +74,17 @@ chooseReporter str =
 
 
 init : Flags -> ( Model, Cmd Msg )
-init { mode, nbTests } =
+init { initialSeed, fuzzRuns, mode } =
     let
         reporter =
             chooseReporter mode
     in
-    ( Model reporter nbTests Array.empty, report reporter.onBegin () )
+    ( Model reporter 0 Array.empty, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "update msg" msg of
         Restart nbTests ->
             ( Model model.reporter nbTests Array.empty, report model.reporter.onBegin () )
 

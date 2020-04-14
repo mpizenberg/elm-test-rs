@@ -14,8 +14,8 @@ const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }} };
 const app = Elm.Runner.init({ flags: flags });
 
 // Communication from Supervisor to Elm runner via port
-parentPort.on("message", app.ports.receiveRunTest.send);
+parentPort.on("message", (msg) => app.ports.receiveRunTest.send(msg));
 
 // Communication from Elm runner to Supervisor via port
 // Subscribe to outgoing Elm ports defined in elm/src/ElmTestRs/Test/Runner.elm
-app.ports.sendResult.subscribe(parentPort.postMessage);
+app.ports.sendResult.subscribe((msg) => parentPort.postMessage(msg));
