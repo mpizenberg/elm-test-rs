@@ -5,6 +5,7 @@ use pathdiff;
 use rand::Rng;
 use std::collections::HashSet;
 use std::convert::TryFrom;
+use std::ffi::OsStr;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -157,20 +158,12 @@ pub fn main(options: Options) {
         .expect("Unable to write to generated elm.json");
 
     // Compile all test files
-    let status = Command::new(&elm_compiler)
-        .arg("make")
-        .arg("--output=/dev/null")
-        .args(module_paths.iter())
-        .current_dir(&tests_root)
-        // stdio config, comment to see elm make output for debug
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::inherit())
-        .status()
-        .expect("Command elm make --output=/dev/null failed to start");
-    if !status.success() {
-        std::process::exit(1);
-    }
+    compile(
+        &tests_root,                        // current_dir
+        &elm_compiler,                      // compiler
+        &Path::new("/dev/null").to_owned(), // output
+        module_paths.iter(),                // src
+    );
 
     // Find all modules and tests
     let all_modules_and_tests = crate::elmi::all_tests(&tests_root, &module_paths).unwrap();
@@ -199,20 +192,12 @@ pub fn main(options: Options) {
 
     // Compile the src/Runner.elm file into Runner.elm.js
     let compiled_elm_file = tests_root.join("Runner.elm.js");
-    let status = Command::new(&elm_compiler)
-        .arg("make")
-        .arg(format!("--output={}", compiled_elm_file.to_str().unwrap()))
-        .arg("src/Runner.elm")
-        .current_dir(&tests_root)
-        // stdio config, comment to see elm make output for debug
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::inherit())
-        .status()
-        .expect("Command elm make failed to start");
-    if !status.success() {
-        std::process::exit(1);
-    }
+    compile(
+        &tests_root,         // current_dir
+        &elm_compiler,       // compiler
+        &compiled_elm_file,  // output
+        &["src/Runner.elm"], // src
+    );
 
     // Generate the node_runner.js node module embedding the Elm runner
     let polyfills = std::fs::read_to_string(&elm_test_rs_root.join("templates/polyfills.js"))
@@ -232,21 +217,12 @@ pub fn main(options: Options) {
 
     // Compile the Reporter.elm into Reporter.elm.js
     let compiled_reporter = tests_root.join("Reporter.elm.js");
-    let status = Command::new(&elm_compiler)
-        .arg("make")
-        .arg("--optimize")
-        .arg(format!("--output={}", compiled_reporter.to_str().unwrap()))
-        .arg(elm_test_rs_root.join("elm/src/ElmTestRs/Test/Reporter.elm"))
-        .current_dir(&tests_root)
-        // stdio config, comment to see elm make output for debug
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::inherit())
-        .status()
-        .expect("Command elm make failed to start");
-    if !status.success() {
-        std::process::exit(1);
-    }
+    compile(
+        &tests_root,        // current_dir
+        &elm_compiler,      // compiler
+        &compiled_reporter, // output
+        &[elm_test_rs_root.join("elm/src/ElmTestRs/Test/Reporter.elm")],
+    );
 
     // Generate the node_reporter.js module embedding the Elm reporter
     let compiled_elm =
@@ -262,11 +238,35 @@ pub fn main(options: Options) {
             ("nbTests".to_string(), runner_tests.len().to_string()),
         ],
     );
+    return;
 
     // Generate the supervisor Node module
     todo!();
     // Start the tests supervisor
     todo!();
+}
+
+/// Compile an Elm module into a JS file.
+fn compile<P, I, S>(current_dir: P, compiler: &str, output: P, src: I)
+where
+    P: AsRef<Path>,
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let status = Command::new(compiler)
+        .arg("make")
+        .arg(format!("--output={}", output.as_ref().to_str().unwrap()))
+        .args(src)
+        .current_dir(current_dir)
+        // stdio config, comment to see elm make output for debug
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .status()
+        .expect("Command elm make failed to start");
+    if !status.success() {
+        std::process::exit(1);
+    }
 }
 
 /// Replace the template keys and write result to output file.
