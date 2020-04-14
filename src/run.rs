@@ -16,6 +16,7 @@ pub struct Options {
     pub compiler: Option<String>,
     pub seed: Option<u32>,
     pub fuzz: Option<u32>,
+    pub report: Option<String>,
     pub files: Vec<String>,
 }
 
@@ -41,6 +42,19 @@ pub fn main(options: Options) {
     let mut rng = rand::thread_rng();
     let initial_seed: u32 = options.seed.unwrap_or(rng.gen());
     let fuzz_runs: u32 = options.fuzz.unwrap_or(rng.gen());
+
+    // Default reporter is console if not provided
+    let reporter = match options.report.as_deref() {
+        None => "console".to_string(),
+        Some("console") => "console".to_string(),
+        Some("json") => "json".to_string(),
+        Some("junit") => "junit".to_string(),
+        Some(value) => {
+            eprintln!("Wrong --report value: {}", value);
+            crate::help::main();
+            return;
+        }
+    };
 
     // Default with tests in the tests/ directory
     let module_globs = if options.files.is_empty() {
@@ -124,6 +138,7 @@ pub fn main(options: Options) {
         .arg("elm/json")
         .arg("elm/time")
         .arg("elm/random")
+        .arg("billstclair/elm-xml-eeue56")
         .arg("--")
         .arg(&elm_json_tests_path)
         // stdio config
@@ -142,7 +157,7 @@ pub fn main(options: Options) {
         .expect("Unable to write to generated elm.json");
 
     // Compile all test files
-    let status = Command::new("elm")
+    let status = Command::new(&elm_compiler)
         .arg("make")
         .arg("--output=/dev/null")
         .args(module_paths.iter())
@@ -196,7 +211,7 @@ pub fn main(options: Options) {
 
     // Compile the src/Runner.elm file into Runner.elm.js
     let compiled_elm_file = tests_root.join("Runner.elm.js");
-    let status = Command::new("elm")
+    let status = Command::new(&elm_compiler)
         .arg("make")
         .arg(format!("--output={}", compiled_elm_file.to_str().unwrap()))
         .arg("src/Runner.elm")
@@ -211,7 +226,7 @@ pub fn main(options: Options) {
         std::process::exit(1);
     }
 
-    // Generate the runner.js node module embedding the Elm runner
+    // Generate the node_runner.js node module embedding the Elm runner
     let node_runner_template_path = elm_test_rs_root.join("templates/runner.js");
     let node_runner_template =
         std::fs::read_to_string(&node_runner_template_path).expect("runner.js template missing");
@@ -235,10 +250,49 @@ pub fn main(options: Options) {
         .expect("Unable to create generated node_runner.js")
         .write_all(node_runner_content.as_bytes())
         .expect("Unable to write to generated node_runner.js");
+
+    // Compile the Reporter.elm into Reporter.elm.js
+    let compiled_reporter = tests_root.join("Reporter.elm.js");
+    let status = Command::new(&elm_compiler)
+        .arg("make")
+        .arg("--optimize")
+        .arg(format!("--output={}", compiled_reporter.to_str().unwrap()))
+        .arg(elm_test_rs_root.join("elm/src/ElmTestRs/Test/Reporter.elm"))
+        .current_dir(&tests_root)
+        // stdio config, comment to see elm make output for debug
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .status()
+        .expect("Command elm make failed to start");
+    if !status.success() {
+        std::process::exit(1);
+    }
+
+    // Generate the node_reporter.js module embedding the Elm reporter
+    let node_reporter_template_path = elm_test_rs_root.join("templates/reporter.js");
+    let node_reporter_template = std::fs::read_to_string(&node_reporter_template_path)
+        .expect("reporter.js template missing");
+    let compiled_elm =
+        std::fs::read_to_string(&compiled_reporter).expect("Compiled Elm reporter file missing");
+    let replacements: HashMap<String, String> = vec![
+        ("compiled_elm".to_string(), compiled_elm),
+        ("initialSeed".to_string(), initial_seed.to_string()),
+        ("fuzzRuns".to_string(), fuzz_runs.to_string()),
+        ("reporter".to_string(), reporter.clone()),
+        ("nbTests".to_string(), runner_tests.len().to_string()),
+    ]
+    .into_iter()
+    .collect();
+    let node_reporter_content = varj::parse(&node_reporter_template, &replacements)
+        .expect("The template does not match with the replacement keys");
+    let node_reporter_file_path = tests_root.join("node_reporter.js");
+    std::fs::File::create(&node_reporter_file_path)
+        .expect("Unable to create generated node_reporter.js")
+        .write_all(node_reporter_content.as_bytes())
+        .expect("Unable to write to generated node_reporter.js");
     return;
 
-    // Compile the Reporter.elm
-    todo!();
     // Generate the supervisor Node module
     todo!();
     // Start the tests supervisor

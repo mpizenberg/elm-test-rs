@@ -1,8 +1,8 @@
 port module ElmTestRs.Test.Runner exposing (Program, start)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Result exposing (TestResult)
-import Json.Encode as Encode exposing (Value)
+import ElmTestRs.Test.Result
+import Json.Encode exposing (Value)
 import Platform
 import Random
 import Test exposing (Test)
