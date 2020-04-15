@@ -12,6 +12,7 @@ version = "0.1.0"
 dependencies = [
  "glob",
  "miniserde",
+ "num_cpus",
  "pathdiff",
  "pico-args",
  "rand",
@@ -34,6 +35,15 @@ name = "glob"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
+
+[[package]]
+name = "hermit-abi"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "725cf19794cf90aa94e65050cb4191ff5d8fa87a498383774c47b332e3af952e"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "itoa"
@@ -67,6 +77,16 @@ dependencies = [
  "itoa",
  "mini-internal",
  "ryu",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46203554f085ff89c235cd12f7075f3233af9b11ed7c9e16dfe2560d03313ce6"
+dependencies = [
+ "hermit-abi",
+ "libc",
 ]
 
 [[package]]

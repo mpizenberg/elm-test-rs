@@ -51,6 +51,7 @@ fn no_subcommand_args(
         compiler: args.opt_value_from_str("--compiler")?,
         seed: args.opt_value_from_str("--seed")?,
         fuzz: args.opt_value_from_str("--fuzz")?,
+        workers: args.opt_value_from_str("--workers")?,
         report: args.opt_value_from_str("--report")?,
         files: {
             let mut files = args.free()?;

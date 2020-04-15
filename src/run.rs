@@ -1,6 +1,7 @@
 use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use miniserde;
+use num_cpus;
 use pathdiff;
 use rand::Rng;
 use std::collections::HashSet;
@@ -17,6 +18,7 @@ pub struct Options {
     pub compiler: Option<String>,
     pub seed: Option<u32>,
     pub fuzz: Option<u32>,
+    pub workers: Option<u32>,
     pub report: Option<String>,
     pub files: Vec<String>,
 }
@@ -39,10 +41,11 @@ pub fn main(options: Options) {
     // Set the compiler
     let elm_compiler = options.compiler.unwrap_or("elm".to_string());
 
-    // Default seed and fuzz are random if not provided
+    // Default seed, fuzz and workers if not provided
     let mut rng = rand::thread_rng();
     let initial_seed: u32 = options.seed.unwrap_or(rng.gen());
     let fuzz_runs: u32 = options.fuzz.unwrap_or(100);
+    let workers = options.workers.unwrap_or(num_cpus::get() as u32);
 
     // Default reporter is console if not provided
     let reporter = match options.report.as_deref() {
@@ -259,7 +262,10 @@ pub fn main(options: Options) {
     create_templated(
         elm_test_rs_root.join("templates/supervisor.js"), // template
         tests_root.join("node_supervisor.js"),            // output
-        vec![("node_reporter".to_string(), node_reporter_path_string)],
+        vec![
+            ("nb_workers".to_string(), workers.to_string()),
+            ("node_reporter".to_string(), node_reporter_path_string),
+        ],
     );
 
     // Start the tests supervisor

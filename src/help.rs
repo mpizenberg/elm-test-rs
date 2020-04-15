@@ -17,6 +17,7 @@ FLAGS:
     --compiler /path/to/compiler # Use given version of elm
     --seed integer               # Run with initial fuzzer seed
     --fuzz integer               # Precise number of iterations of fuzz tests
+    --workers integer            # Precise number of worker threads
     --report console|json|junit  # Print results to stdout in given format (default to console)
     --watch                      # Run tests on file changes
 

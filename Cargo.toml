@@ -14,5 +14,6 @@ varj = "0.1.0"
 miniserde = "0.1"
 pathdiff = "0.1"
 rand = { version = "0.7.3", default-features = false, features = ["std"] }
+num_cpus = "1"
 
 [dev-dependencies]

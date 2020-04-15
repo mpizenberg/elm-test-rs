@@ -6,8 +6,10 @@ const EventEmitter = require("events");
 
 // Global variables
 let nbTests, doneTests, todoTests;
-let reporter, runner;
+let reporter;
+let runners = [];
 let working = false;
+let nb_workers = {{ nb_workers }};
 const supervisorEvent = new EventEmitter();
 
 // Create a long lived reporter worker
@@ -15,7 +17,7 @@ reporter = require("{{ node_reporter }}");
 
 // When the reporter has finished clean runners
 reporter.setCallback(() => {
-  runner.terminate();
+  runners.forEach((runner) => runner.terminate());
   working = false;
   supervisorEvent.emit("finishedWork");
 });
@@ -34,26 +36,30 @@ function registerWork(runnerFile) {
 
 function startWork(runnerFile) {
   working = true;
-  // Start runner worker and prevent piped stdout and sdterr
-  runner = new Worker(runnerFile); //, { stdout: true, stderr: true });
-  runner.on("message", handleRunnerMsg);
-  runner.on("online", () => runner.postMessage({ type_: "askNbTests" }));
+  // Start first runner worker and prevent piped stdout and sdterr
+  runners[0] = new Worker(runnerFile); //, { stdout: true, stderr: true });
+  runners[0].on("message", (msg) =>
+    handleRunnerMsg(runners[0], runnerFile, msg)
+  );
+  runners[0].on("online", () =>
+    runners[0].postMessage({ type_: "askNbTests" })
+  );
 }
 
 // Handle a test result
-function handleRunnerMsg(msg) {
+function handleRunnerMsg(runner, runnerFile, msg) {
   if (msg.type_ == "nbTests") {
-    setupWithNbTests(msg.nbTests);
+    setupWithNbTests(runnerFile, msg.nbTests);
   } else if (msg.type_ == "result") {
-    handleResult(msg.id, msg.result);
+    handleResult(runner, msg.id, msg.result);
   } else {
     console.error("Invalid runner msg.type_:", msg.type_);
   }
 }
 
 // Reset supervisor tests count and reporter
-// Start work on runner
-function setupWithNbTests(nb) {
+// Start work on all runners
+function setupWithNbTests(runnerFile, nb) {
   // Reset supervisor tests
   nbTests = nb;
   doneTests = Array(nb).fill(false);
@@ -64,11 +70,25 @@ function setupWithNbTests(nb) {
   // Reset reporter
   reporter.restart(nb);
   // Send first runner job
-  runner.postMessage({ type_: "runTest", id: todoTests.pop() });
+  runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
+
+  // Create and send work to all other workers.
+  // Let's say there is no need to spawn a worker for less than 10 tests.
+  let max_workers = Math.min(nb_workers, Math.floor(nbTests / 10));
+  console.error("max_workers:", max_workers);
+  for (let i = 1; i < max_workers; i++) {
+    runners[i] = new Worker(runnerFile); //, { stdout: true, stderr: true });
+    runners[i].on("message", (msg) =>
+      handleRunnerMsg(runners[i], runnerFile, msg)
+    );
+    runners[i].on("online", () =>
+      runners[i].postMessage({ type_: "runTest", id: todoTests.pop() })
+    );
+  }
 }
 
 // Update supervisor tests, transfer result to reporter and ask to run another test
-function handleResult(id, result) {
+function handleResult(runner, id, result) {
   doneTests[id] = true;
   const nextTest = todoTests.pop();
   if (nextTest != undefined) {
