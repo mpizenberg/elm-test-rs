@@ -10,20 +10,17 @@ import Xml.Encode as Encode
 
 implementation : Interface
 implementation =
-    { onBegin = always (Just "Begin JUNIT report\n")
+    { onBegin = always Nothing
     , onResult = always Nothing
-    , onEnd = \results -> Just (summary results)
+    , onEnd = Just << summary
     }
 
 
 summary : Array TestResult -> String
 summary results =
     let
-        nbTests =
-            Array.length results
-
-        ( nbFailures, nbSkipped, duration ) =
-            Array.foldl accStats ( 0, 0, 0 ) results
+        { totalDuration, nbFailed } =
+            TestResult.summary results
 
         encodedTests =
             Array.toList results
@@ -33,10 +30,13 @@ summary results =
         suiteAttributes =
             Dict.fromList
                 [ ( "name", Encode.string "elm-test-rs" )
-                , ( "tests", Encode.int nbTests )
-                , ( "failures", Encode.int nbFailures )
-                , ( "skipped", Encode.int nbSkipped )
-                , ( "time", Encode.float duration )
+                , ( "package", Encode.string "elm-test-rs" )
+                , ( "tests", Encode.int (Array.length results) )
+
+                -- "failures" should be used and not "failed"
+                , ( "failures", Encode.int nbFailed )
+                , ( "skipped", Encode.int 0 )
+                , ( "time", Encode.float totalDuration )
                 ]
     in
     Encode.encode 0 <|
@@ -44,26 +44,6 @@ summary results =
             [ Encode.string "<?xml version=\"1.0\"?>"
             , Encode.object [ ( "testsuite", suiteAttributes, encodedTests ) ]
             ]
-
-
-{-| TODO: I don't know if we should count 1 value per "TestResult"
-or if all outcomes (if multiples) of a test should count.
-In the later case, we should count the number Passed outcomes.
-The annoyingt thing is that passed + todos + failures >= "nbTests"
-in that case so it might be weird to report it that way.
-
-Currently I count 1 value per "TestResult" which is either pass or fail.
-So the "nbSkipped" count does not grow.
-
--}
-accStats : TestResult -> ( Int, Int, Float ) -> ( Int, Int, Float )
-accStats result ( nbFailures, nbSkipped, duration ) =
-    case result of
-        TestResult.Passed passed ->
-            ( nbFailures, nbSkipped, duration + passed.duration )
-
-        TestResult.Failed failure ->
-            ( nbFailures + 1, nbSkipped, duration + failure.duration )
 
 
 encodeTestResult : TestResult -> Xml.Value
@@ -93,20 +73,12 @@ encodeTestResult result =
 
 classAndName : List String -> ( String, String )
 classAndName labels =
-    classAndNameHelper "" labels []
-
-
-classAndNameHelper : String -> List String -> List String -> ( String, String )
-classAndNameHelper defaultName labels accLabels =
     case labels of
         [] ->
-            ( "", defaultName )
+            ( "", "" )
 
-        name :: [] ->
-            ( String.join " " (List.reverse accLabels), name )
-
-        class :: otherLabels ->
-            classAndNameHelper defaultName otherLabels (class :: accLabels)
+        name :: classLabels ->
+            ( String.join " " (List.reverse classLabels), name )
 
 
 encodeFailures : Xml.Value
