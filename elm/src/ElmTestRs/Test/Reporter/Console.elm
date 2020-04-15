@@ -1,5 +1,6 @@
 module ElmTestRs.Test.Reporter.Console exposing (implementation)
 
+import Array exposing (Array)
 import ElmTestRs.Test.Reporter.Interface exposing (Interface)
 import ElmTestRs.Test.Result exposing (TestResult(..))
 import String.Format
@@ -9,7 +10,7 @@ implementation : { seed : Int, fuzzRuns : Int } -> Interface
 implementation options =
     { onBegin = onBegin options
     , onResult = onResult
-    , onEnd = always (Just "End CONSOLE report\n")
+    , onEnd = onEnd
     }
 
 
@@ -62,3 +63,59 @@ formatLabelsHelp formattedLines labels =
 
         ( _, loc :: location ) ->
             formatLabelsHelp (("| " ++ loc) :: formattedLines) location
+
+
+onEnd : Array TestResult -> Maybe String
+onEnd testResults =
+    formatSummary (summary testResults)
+        |> Just
+
+
+type alias Summary =
+    { totalDuration : Float, nbPassed : Int, nbFailed : Int }
+
+
+formatSummary : Summary -> String
+formatSummary { nbPassed, nbFailed } =
+    """
+TEST RUN {{ result }}
+
+Duration: {{ duration }} ms
+Passed:   {{ passed }}
+Failed:   {{ failed }}
+
+"""
+        |> String.Format.namedValue "result" (summaryTitle (nbFailed > 0))
+        |> String.Format.namedValue "duration" "(TODO: measure durations)"
+        |> String.Format.namedValue "passed" (String.fromInt nbPassed)
+        |> String.Format.namedValue "failed" (String.fromInt nbFailed)
+
+
+summaryTitle : Bool -> String
+summaryTitle failed =
+    if failed then
+        "FAILED"
+
+    else
+        "PASSED"
+
+
+summary : Array TestResult -> Summary
+summary =
+    Array.foldl accumStats { totalDuration = 0, nbPassed = 0, nbFailed = 0 }
+
+
+accumStats : TestResult -> Summary -> Summary
+accumStats result { totalDuration, nbPassed, nbFailed } =
+    case result of
+        Passed { duration } ->
+            { totalDuration = totalDuration + duration
+            , nbPassed = nbPassed + 1
+            , nbFailed = nbFailed
+            }
+
+        Failed { duration } ->
+            { totalDuration = totalDuration + duration
+            , nbPassed = nbPassed
+            , nbFailed = nbFailed + 1
+            }
