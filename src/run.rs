@@ -134,7 +134,7 @@ pub fn main(options: Options) {
         .expect("Unable to write to generated elm.json");
 
     // Finish preparing the elm.json file by solving any dependency issue (use elm-json)
-    eprintln!("Run elm-json to solve dependency issues");
+    eprintln!("Running elm-json to solve dependency issues ...");
     let output = Command::new("elm-json")
         .arg("solve")
         .arg("--test")
@@ -162,7 +162,7 @@ pub fn main(options: Options) {
         .expect("Unable to write to generated elm.json");
 
     // Compile all test files
-    eprintln!("Compiling all test files");
+    eprintln!("Compiling all test files ...");
     compile(
         &tests_root,                        // current_dir
         &elm_compiler,                      // compiler
@@ -171,7 +171,7 @@ pub fn main(options: Options) {
     );
 
     // Find all modules and tests
-    eprintln!("Finding all modules and tests");
+    eprintln!("Finding all modules and tests ...");
     let all_modules_and_tests = crate::elmi::all_tests(&tests_root, &module_paths).unwrap();
     let runner_imports: Vec<String> = all_modules_and_tests
         .iter()
@@ -204,7 +204,7 @@ pub fn main(options: Options) {
     );
 
     // Compile the src/Runner.elm file into Runner.elm.js
-    eprintln!("Compiling the generated templated src/Runner.elm");
+    eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_elm_file = tests_root.join("Runner.elm.js");
     compile(
         &tests_root,         // current_dir
@@ -231,7 +231,7 @@ pub fn main(options: Options) {
     );
 
     // Compile the Reporter.elm into Reporter.elm.js
-    eprintln!("Compiling Reporter.elm.js");
+    eprintln!("Compiling Reporter.elm.js ...");
     let compiled_reporter = tests_root.join("Reporter.elm.js");
     compile(
         &tests_root,        // current_dir
@@ -269,7 +269,7 @@ pub fn main(options: Options) {
     );
 
     // Start the tests supervisor
-    eprintln!("Start the supervisor");
+    eprintln!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
         .arg("node_supervisor.js")
         .current_dir(&tests_root)
@@ -285,6 +285,7 @@ pub fn main(options: Options) {
     };
 
     // Send runner module path to supervisor to start the work
+    eprintln!("Running tests ...");
     let node_runner_path_string = node_runner_path.to_str().unwrap().to_string();
     writeln(&node_runner_path_string.as_bytes());
 
