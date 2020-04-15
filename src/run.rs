@@ -290,12 +290,12 @@ pub fn main(options: Options) {
 
     // Wait for supervisor child process to end and graciously exit
     match supervisor.try_wait() {
-        Ok(Some(status)) => println!("exited with: {:?}", status),
+        Ok(Some(status)) => eprintln!("Supervisor exited with: {:?}", status),
         Ok(None) => {
             let status = supervisor.wait();
-            println!("exited with: {:?}", status);
+            eprintln!("Supervisor exited with: {:?}", status);
         }
-        Err(e) => println!("error attempting to wait: {}", e),
+        Err(e) => eprintln!("Error attempting to wait for supervisor: {}", e),
     }
 }
 
