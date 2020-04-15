@@ -73,9 +73,7 @@ function setupWithNbTests(runnerFile, nb) {
   runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
 
   // Create and send work to all other workers.
-  // Let's say there is no need to spawn a worker for less than 10 tests.
-  let max_workers = Math.min(nb_workers, Math.floor(nbTests / 10));
-  console.error("max_workers:", max_workers);
+  let max_workers = Math.min(nb_workers, nbTests);
   for (let i = 1; i < max_workers; i++) {
     runners[i] = new Worker(runnerFile); //, { stdout: true, stderr: true });
     runners[i].on("message", (msg) =>
