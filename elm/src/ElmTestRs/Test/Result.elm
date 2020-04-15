@@ -1,5 +1,6 @@
-module ElmTestRs.Test.Result exposing (TestResult(..), decoder, encode, fromExpectations)
+module ElmTestRs.Test.Result exposing (Summary, TestResult(..), decoder, encode, fromExpectations, summary)
 
+import Array exposing (Array)
 import ElmTestRs.Test.Failure as Failure exposing (Failure)
 import Expect exposing (Expectation)
 import Json.Decode as Decode
@@ -47,6 +48,31 @@ accumFailuresAndTodos expectation (( todos, failures ) as outcomes) =
 
             else
                 ( todos, failure :: failures )
+
+
+type alias Summary =
+    { totalDuration : Float, nbPassed : Int, nbFailed : Int }
+
+
+summary : Array TestResult -> Summary
+summary =
+    Array.foldl accumStats { totalDuration = 0, nbPassed = 0, nbFailed = 0 }
+
+
+accumStats : TestResult -> Summary -> Summary
+accumStats result { totalDuration, nbPassed, nbFailed } =
+    case result of
+        Passed { duration } ->
+            { totalDuration = totalDuration + duration
+            , nbPassed = nbPassed + 1
+            , nbFailed = nbFailed
+            }
+
+        Failed { duration } ->
+            { totalDuration = totalDuration + duration
+            , nbPassed = nbPassed
+            , nbFailed = nbFailed + 1
+            }
 
 
 
