@@ -19,7 +19,7 @@ FLAGS:
     --fuzz integer               # Precise number of iterations of fuzz tests
     --workers integer            # Precise number of worker threads
     --report console|json|junit  # Print results to stdout in given format (default to console)
-    --watch                      # Run tests on file changes
+    (--watch)                    # (Not supported yet) Run tests on file changes
 
 SUBCOMMANDS:
     init               # Initialize tests dependencies and directory
