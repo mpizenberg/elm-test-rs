@@ -20,7 +20,7 @@ app.ports.stdout.subscribe((str) => process.stdout.write(str));
 
 // Export function to set the callback function when reports are finished
 let finishCallback = () => console.error("finishCallback not defined yet");
-app.ports.signalFinished.subscribe((_) => finishCallback());
+app.ports.signalFinished.subscribe((code) => finishCallback(code));
 exports.setCallback = (callback) => { finishCallback = callback; };
 
 // Export function to restart the Elm reporter

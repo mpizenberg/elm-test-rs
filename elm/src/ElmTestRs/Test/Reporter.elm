@@ -16,7 +16,7 @@ port restart : (Int -> msg) -> Sub msg
 port incomingResult : (Value -> msg) -> Sub msg
 
 
-port signalFinished : String -> Cmd msg
+port signalFinished : Int -> Cmd msg
 
 
 port stdout : String -> Cmd msg
@@ -118,7 +118,20 @@ update msg model =
             ( model, summarize model.reporter.onEnd model.testResults )
 
         Finished ->
-            ( model, signalFinished "Finished!" )
+            ( model, signalFinished (errorCode model.testResults) )
+
+
+errorCode : Array TestResult -> Int
+errorCode testResults =
+    let
+        { nbFailed } =
+            TestResult.summary testResults
+    in
+    if nbFailed > 0 then
+        2
+
+    else
+        0
 
 
 reportAndThenSummarize : (TestResult -> Maybe String) -> TestResult -> Cmd Msg

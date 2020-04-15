@@ -16,10 +16,11 @@ const supervisorEvent = new EventEmitter();
 reporter = require("{{ node_reporter }}");
 
 // When the reporter has finished clean runners
-reporter.setCallback(() => {
+reporter.setCallback((code) => {
   runners.forEach((runner) => runner.terminate());
   working = false;
   supervisorEvent.emit("finishedWork");
+  process.exit(code);
 });
 
 // When receiving a CLI message, start test workers

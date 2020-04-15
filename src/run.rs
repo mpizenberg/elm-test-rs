@@ -290,14 +290,24 @@ pub fn main(options: Options) {
     let node_runner_path_string = node_runner_path.to_str().unwrap().to_string();
     writeln(&node_runner_path_string.as_bytes());
 
-    // Wait for supervisor child process to end and graciously exit
-    match supervisor.try_wait() {
-        Ok(Some(status)) => eprintln!("Supervisor exited with: {:?}", status),
-        Ok(None) => {
-            let status = supervisor.wait();
-            eprintln!("Supervisor exited with: {:?}", status);
+    // Wait for supervisor child process to end and terminate with same exit code
+    let exit_code = wait_child(&mut supervisor);
+    eprintln!("Exited with code {:?}", exit_code);
+    std::process::exit(exit_code.unwrap_or(1));
+}
+
+/// Wait for child process to end
+fn wait_child(child: &mut std::process::Child) -> Option<i32> {
+    match child.try_wait() {
+        Ok(Some(status)) => status.code(),
+        Ok(None) => match child.wait() {
+            Ok(status) => status.code(),
+            _ => None,
+        },
+        Err(e) => {
+            eprintln!("Error attempting to wait for child: {}", e);
+            None
         }
-        Err(e) => eprintln!("Error attempting to wait for supervisor: {}", e),
     }
 }
 
