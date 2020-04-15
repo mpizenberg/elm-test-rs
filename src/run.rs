@@ -220,7 +220,7 @@ pub fn main(options: Options) {
         elm_test_rs_root.join("templates/runner.js"), // template
         node_runner_path.clone(),                     // output
         vec![
-            ("polyfills".to_string(), polyfills),
+            ("polyfills".to_string(), polyfills.clone()),
             ("compiled_elm".to_string(), compiled_elm),
             ("initialSeed".to_string(), initial_seed.to_string()),
             ("fuzzRuns".to_string(), fuzz_runs.to_string()),
@@ -245,6 +245,7 @@ pub fn main(options: Options) {
         elm_test_rs_root.join("templates/reporter.js"), // template
         node_reporter_path.clone(),                     // output
         vec![
+            ("polyfills".to_string(), polyfills),
             ("compiled_elm".to_string(), compiled_elm),
             ("initialSeed".to_string(), initial_seed.to_string()),
             ("fuzzRuns".to_string(), fuzz_runs.to_string()),
@@ -277,16 +278,9 @@ pub fn main(options: Options) {
         stdin.write_all(b"\n").expect("writeln");
     };
 
-    // Prepare start message for the supervisor
-    let node_runner_path_string = node_runner_path.to_str().unwrap().to_string();
-    let start_msg = format!(
-        r#"{{ "nbTests": {}, "runner": "{}" }}"#,
-        runner_tests.len(),
-        &node_runner_path_string,
-    );
-
     // Send multiple rounds of tests (simulate --watch)
-    writeln(&start_msg.as_bytes());
+    let node_runner_path_string = node_runner_path.to_str().unwrap().to_string();
+    writeln(&node_runner_path_string.as_bytes());
     // thread::sleep(time::Duration::from_secs(3));
     // writeln(b"{\"nbTests\": 6, \"runner\": \"./runner.js\"}");
 

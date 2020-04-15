@@ -21,53 +21,58 @@ reporter.setCallback(() => {
 });
 
 // When receiving a CLI message, start test workers
-// The message is a one line JSON of the shape:
-// { "nbTests": nbTests, "runner": "/path/to/node_runner.js" }
+// The message is a string containing "/path/to/node_runner.js"
 const rl = readline.createInterface({ input: process.stdin });
-rl.on("line", (stringConfig) => {
-  const config = JSON.parse(stringConfig);
-  working ? registerWork(config) : startWork(config);
+rl.on("line", (runnerFile) => {
+  working ? registerWork(runnerFile) : startWork(runnerFile);
 });
 
-console.log("Supervisor ready!");
-
-function registerWork(config) {
-  console.log("Register work for", config.nbTests, "tests");
+function registerWork(runnerFile) {
   supervisorEvent.removeAllListeners(["finishedWork"]);
-  supervisorEvent.once("finishedWork", () => startWork(config));
+  supervisorEvent.once("finishedWork", () => startWork(runnerFile));
 }
 
-function startWork(config) {
-  console.log("Start work for", config.nbTests, "tests");
+function startWork(runnerFile) {
   working = true;
-
-  // Retrieve test configuration
-  nbTests = config.nbTests;
-  doneTests = Array(nbTests).fill(false);
-  todoTests = Array(nbTests)
-    .fill(0)
-    .map((_, id) => id);
-
-  // Reset reporter with config
-  reporter.restart(nbTests);
-
   // Start runner worker and prevent piped stdout and sdterr
-  console.error("config.runner:", config.runner);
-  runner = new Worker(config.runner); //, { stdout: true, stderr: true });
-  runner.on("message", handleRunnerResult);
-  runner.on("online", () => {
-    console.error("runner online");
-    runner.postMessage(todoTests.pop());
-  });
+  runner = new Worker(runnerFile); //, { stdout: true, stderr: true });
+  runner.on("message", handleRunnerMsg);
+  runner.on("online", () => runner.postMessage({ type_: "askNbTests" }));
 }
 
 // Handle a test result
-function handleRunnerResult(msg) {
-  console.error("supervisor: received result", msg.id);
-  doneTests[msg.id] = true;
+function handleRunnerMsg(msg) {
+  if (msg.type_ == "nbTests") {
+    setupWithNbTests(msg.nbTests);
+  } else if (msg.type_ == "result") {
+    handleResult(msg.id, msg.result);
+  } else {
+    console.error("Invalid runner msg.type_:", msg.type_);
+  }
+}
+
+// Reset supervisor tests count and reporter
+// Start work on runner
+function setupWithNbTests(nb) {
+  // Reset supervisor tests
+  nbTests = nb;
+  doneTests = Array(nb).fill(false);
+  todoTests = Array(nb)
+    .fill(0)
+    .map((_, id) => id)
+    .reverse();
+  // Reset reporter
+  reporter.restart(nb);
+  // Send first runner job
+  runner.postMessage({ type_: "runTest", id: todoTests.pop() });
+}
+
+// Update supervisor tests, transfer result to reporter and ask to run another test
+function handleResult(id, result) {
+  doneTests[id] = true;
   const nextTest = todoTests.pop();
   if (nextTest != undefined) {
-    runner.postMessage(nextTest);
+    runner.postMessage({ type_: "runTest", id: nextTest });
   }
-  reporter.sendResult(msg.result);
+  reporter.sendResult(result);
 }

@@ -13,6 +13,12 @@ import Test.Runner exposing (Runner)
 -- Ports
 
 
+port askNbTests : (Value -> msg) -> Sub msg
+
+
+port sendNbTests : { type_ : String, nbTests : Int } -> Cmd msg
+
+
 port receiveRunTest : (Int -> msg) -> Sub msg
 
 
@@ -45,7 +51,8 @@ type Runners
 
 
 type Msg {- ReceiveRunTest: order from the supervisor via port -}
-    = ReceiveRunTest Int
+    = AskNbTests
+    | ReceiveRunTest Int
 
 
 
@@ -57,7 +64,7 @@ start masterTest =
     Platform.worker
         { init = init masterTest
         , update = update
-        , subscriptions = \_ -> receiveRunTest ReceiveRunTest
+        , subscriptions = \_ -> Sub.batch [ askNbTests (always AskNbTests), receiveRunTest ReceiveRunTest ]
         }
 
 
@@ -86,7 +93,21 @@ init masterTest { initialSeed, fuzzRuns } =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case ( Debug.log "Runner.elm msg" msg, model.testRunners ) of
+    case ( msg, model.testRunners ) of
+        -- AskNbTests
+        ( AskNbTests, Plain runners ) ->
+            ( model, sendTypedNbTests (Array.length runners) )
+
+        ( AskNbTests, Only runners ) ->
+            ( model, sendTypedNbTests (Array.length runners) )
+
+        ( AskNbTests, Skipping runners ) ->
+            ( model, sendTypedNbTests (Array.length runners) )
+
+        ( AskNbTests, Invalid error ) ->
+            ( model, sendTypedNbTests 1 )
+
+        -- ReceiveRunTest
         ( ReceiveRunTest id, Plain runners ) ->
             ( model, runPlain id runners )
 
@@ -100,26 +121,30 @@ update msg model =
             ( model, runInvalid id error )
 
 
+sendTypedNbTests : Int -> Cmd msg
+sendTypedNbTests nbTests =
+    sendNbTests { type_ = "nbTests", nbTests = nbTests }
+
+
 runPlain : Int -> Array Runner -> Cmd Msg
 runPlain id runners =
-    case Debug.log "Runner.elm Array.get id" (Array.get id runners) of
+    case Array.get id runners of
         Nothing ->
             Cmd.none
 
         Just runner ->
             runner.run ()
-                |> Debug.log "Runner.elm: finished run"
                 |> ElmTestRs.Test.Result.fromExpectations runner.labels
                 |> ElmTestRs.Test.Result.encode
                 |> sendResultWithId id
-                |> Debug.log "Runner.elm: command ready"
 
 
 sendResultWithId : Int -> Value -> Cmd msg
 sendResultWithId id result =
     sendResult <|
         Json.Encode.object
-            [ ( "id", Json.Encode.int id )
+            [ ( "type_", Json.Encode.string "result" )
+            , ( "id", Json.Encode.int id )
             , ( "result", result )
             ]
 

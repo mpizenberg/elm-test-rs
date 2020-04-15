@@ -84,7 +84,7 @@ init { initialSeed, fuzzRuns, mode } =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "update msg" msg of
+    case msg of
         Restart nbTests ->
             ( Model model.reporter nbTests Array.empty, report model.reporter.onBegin () )
 

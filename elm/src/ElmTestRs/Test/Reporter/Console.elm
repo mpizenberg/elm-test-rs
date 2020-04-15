@@ -16,7 +16,7 @@ onResult : TestResult -> Maybe String
 onResult result =
     case result of
         Passed { labels } ->
-            Just ("PASSED:" ++ String.join " / " labels ++ "\n")
+            Just ("PASSED: " ++ String.join " / " labels ++ "\n")
 
         Failed { labels, todos, failures } ->
-            Just ("FAILED:" ++ String.join " / " labels ++ "\n")
+            Just ("FAILED: " ++ String.join " / " labels ++ "\n")
