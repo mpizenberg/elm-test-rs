@@ -1,10 +1,10 @@
 port module ElmTestRs.Test.Reporter exposing (main)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Reporter.Console
+import ElmTestRs.Test.Reporter.Console as ReporterConsole
 import ElmTestRs.Test.Reporter.Interface exposing (Interface)
-import ElmTestRs.Test.Reporter.Json
-import ElmTestRs.Test.Reporter.Junit
+import ElmTestRs.Test.Reporter.Json as ReporterJson
+import ElmTestRs.Test.Reporter.Junit as ReporterJunit
 import ElmTestRs.Test.Result as TestResult exposing (TestResult)
 import Json.Decode exposing (Value, decodeValue)
 import Task
@@ -60,24 +60,24 @@ type Msg
 -- Functions
 
 
-chooseReporter : String -> Interface
-chooseReporter str =
-    case str of
+chooseReporter : Flags -> Interface
+chooseReporter { initialSeed, fuzzRuns, mode } =
+    case mode of
         "json" ->
-            ElmTestRs.Test.Reporter.Json.implementation
+            ReporterJson.implementation
 
         "junit" ->
-            ElmTestRs.Test.Reporter.Junit.implementation
+            ReporterJunit.implementation
 
         _ ->
-            ElmTestRs.Test.Reporter.Console.implementation
+            ReporterConsole.implementation { seed = initialSeed, fuzzRuns = fuzzRuns }
 
 
 init : Flags -> ( Model, Cmd Msg )
-init { initialSeed, fuzzRuns, mode } =
+init flags =
     let
         reporter =
-            chooseReporter mode
+            chooseReporter flags
     in
     ( Model reporter 0 Array.empty, Cmd.none )
 
@@ -86,7 +86,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Restart nbTests ->
-            ( Model model.reporter nbTests Array.empty, report model.reporter.onBegin () )
+            ( Model model.reporter nbTests Array.empty, report model.reporter.onBegin nbTests )
 
         IncomingResult value ->
             let

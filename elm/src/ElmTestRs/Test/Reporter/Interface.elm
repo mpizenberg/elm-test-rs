@@ -5,7 +5,7 @@ import ElmTestRs.Test.Result exposing (TestResult)
 
 
 type alias Interface =
-    { onBegin : () -> Maybe String
+    { onBegin : Int -> Maybe String
     , onResult : TestResult -> Maybe String
     , onEnd : Array TestResult -> Maybe String
     }
