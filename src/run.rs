@@ -278,11 +278,9 @@ pub fn main(options: Options) {
         stdin.write_all(b"\n").expect("writeln");
     };
 
-    // Send multiple rounds of tests (simulate --watch)
+    // Send runner module path to supervisor to start the work
     let node_runner_path_string = node_runner_path.to_str().unwrap().to_string();
     writeln(&node_runner_path_string.as_bytes());
-    // thread::sleep(time::Duration::from_secs(3));
-    // writeln(b"{\"nbTests\": 6, \"runner\": \"./runner.js\"}");
 
     // Wait for supervisor child process to end and graciously exit
     match supervisor.try_wait() {
