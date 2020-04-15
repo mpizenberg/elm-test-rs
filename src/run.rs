@@ -42,7 +42,7 @@ pub fn main(options: Options) {
     // Default seed and fuzz are random if not provided
     let mut rng = rand::thread_rng();
     let initial_seed: u32 = options.seed.unwrap_or(rng.gen());
-    let fuzz_runs: u32 = options.fuzz.unwrap_or(rng.gen());
+    let fuzz_runs: u32 = options.fuzz.unwrap_or(100);
 
     // Default reporter is console if not provided
     let reporter = match options.report.as_deref() {
