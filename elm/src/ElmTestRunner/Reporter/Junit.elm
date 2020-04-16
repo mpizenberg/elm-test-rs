@@ -1,9 +1,9 @@
-module ElmTestRs.Test.Reporter.Junit exposing (implementation)
+module ElmTestRunner.Reporter.Junit exposing (implementation)
 
 import Array exposing (Array)
 import Dict
-import ElmTestRs.Test.Reporter.Interface exposing (Interface)
-import ElmTestRs.Test.Result as TestResult exposing (TestResult)
+import ElmTestRunner.Reporter.Interface exposing (Interface)
+import ElmTestRunner.Result as TestResult exposing (TestResult)
 import Xml
 import Xml.Encode as Encode
 

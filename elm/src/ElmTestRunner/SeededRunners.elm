@@ -1,7 +1,7 @@
-module ElmTestRs.Test.SeededRunners exposing (Kind(..), SeededRunners, fromTest, run)
+module ElmTestRunner.SeededRunners exposing (Kind(..), SeededRunners, fromTest, run)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Result as TestResult exposing (TestResult)
+import ElmTestRunner.Result as TestResult exposing (TestResult)
 import Random
 import Test exposing (Test)
 import Test.Runner exposing (Runner)

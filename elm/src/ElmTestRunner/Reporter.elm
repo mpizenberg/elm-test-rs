@@ -1,11 +1,11 @@
-module ElmTestRs.Test.Reporter exposing (Flags, Model, Msg, Ports, worker)
+module ElmTestRunner.Reporter exposing (Flags, Model, Msg, Ports, worker)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Reporter.Console as ReporterConsole
-import ElmTestRs.Test.Reporter.Interface exposing (Interface)
-import ElmTestRs.Test.Reporter.Json as ReporterJson
-import ElmTestRs.Test.Reporter.Junit as ReporterJunit
-import ElmTestRs.Test.Result as TestResult exposing (TestResult)
+import ElmTestRunner.Reporter.Console as ReporterConsole
+import ElmTestRunner.Reporter.Interface exposing (Interface)
+import ElmTestRunner.Reporter.Json as ReporterJson
+import ElmTestRunner.Reporter.Junit as ReporterJunit
+import ElmTestRunner.Result as TestResult exposing (TestResult)
 import Json.Decode exposing (Value, decodeValue)
 import Task
 

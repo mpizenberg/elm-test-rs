@@ -1,7 +1,7 @@
-module ElmTestRs.Test.Result exposing (Summary, TestResult(..), decoder, encode, fromExpectations, summary)
+module ElmTestRunner.Result exposing (Summary, TestResult(..), decoder, encode, fromExpectations, summary)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Failure as Failure exposing (Failure)
+import ElmTestRunner.Failure as Failure exposing (Failure)
 import Expect exposing (Expectation)
 import Json.Decode as Decode
 import Json.Encode as Encode

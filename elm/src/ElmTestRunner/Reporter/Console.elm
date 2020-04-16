@@ -1,8 +1,8 @@
-module ElmTestRs.Test.Reporter.Console exposing (implementation)
+module ElmTestRunner.Reporter.Console exposing (implementation)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Reporter.Interface exposing (Interface)
-import ElmTestRs.Test.Result as TestResult exposing (Summary, TestResult(..))
+import ElmTestRunner.Reporter.Interface exposing (Interface)
+import ElmTestRunner.Result as TestResult exposing (Summary, TestResult(..))
 import String.Format
 
 

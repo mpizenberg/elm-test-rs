@@ -1,4 +1,4 @@
-module ElmTestRs.Test.Failure exposing (Failure, decoder, encode)
+module ElmTestRunner.Failure exposing (Failure, decoder, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode

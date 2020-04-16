@@ -1,7 +1,7 @@
-module ElmTestRs.Test.Reporter.Interface exposing (Interface)
+module ElmTestRunner.Reporter.Interface exposing (Interface)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Result exposing (TestResult)
+import ElmTestRunner.Result exposing (TestResult)
 
 
 type alias Interface =

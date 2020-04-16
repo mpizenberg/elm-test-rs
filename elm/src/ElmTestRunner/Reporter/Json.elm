@@ -1,9 +1,9 @@
-module ElmTestRs.Test.Reporter.Json exposing (implementation)
+module ElmTestRunner.Reporter.Json exposing (implementation)
 
 import Array exposing (Array)
-import ElmTestRs.Test.Failure as Failure
-import ElmTestRs.Test.Reporter.Interface exposing (Interface)
-import ElmTestRs.Test.Result as TestResult exposing (TestResult(..))
+import ElmTestRunner.Failure as Failure
+import ElmTestRunner.Reporter.Interface exposing (Interface)
+import ElmTestRunner.Result as TestResult exposing (TestResult(..))
 import Json.Encode as Encode
 import String.Format
 
