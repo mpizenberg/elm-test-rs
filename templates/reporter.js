@@ -13,7 +13,7 @@ const flags = {
   fuzzRuns: {{ fuzzRuns }},
   mode: "{{ reporter }}",
 };
-const app = Elm.{{ elmMain }}.init({ flags: flags });
+const app = Elm.Reporter.init({ flags: flags });
 
 // Pipe the Elm stdout port to stdout
 app.ports.stdout.subscribe((str) => process.stdout.write(str));

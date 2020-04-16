@@ -238,7 +238,7 @@ pub fn main(options: Options) {
         &tests_root,        // current_dir
         &elm_compiler,      // compiler
         &compiled_reporter, // output
-        &[elm_test_rs_root.join("elm/src/ElmTestRs/Test/Reporter.elm")],
+        &[elm_test_rs_root.join("templates/Reporter.elm")],
     );
 
     // Generate the node_reporter.js module embedding the Elm reporter
@@ -254,7 +254,6 @@ pub fn main(options: Options) {
             ("initialSeed".to_string(), initial_seed.to_string()),
             ("fuzzRuns".to_string(), fuzz_runs.to_string()),
             ("reporter".to_string(), reporter.clone()),
-            ("elmMain".to_string(), "ElmTestRs.Test.Reporter".to_string()),
         ],
     );
 
