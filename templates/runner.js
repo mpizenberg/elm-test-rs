@@ -25,6 +25,6 @@ parentPort.on("message", (msg) => {
 });
 
 // Communication from Elm runner to Supervisor via port
-// Subscribe to outgoing Elm ports defined in elm/src/ElmTestRs/Test/Runner.elm
+// Subscribe to outgoing Elm ports defined in templates/Runner.elm
 app.ports.sendResult.subscribe((msg) => parentPort.postMessage(msg));
 app.ports.sendNbTests.subscribe((msg) => parentPort.postMessage(msg));
