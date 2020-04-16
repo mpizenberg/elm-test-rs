@@ -2,7 +2,7 @@ port module Runner exposing (main)
 
 {{ user_imports }}
 import Test
-import ElmTestRunner.Runner exposing (Ports, Msg)
+import ElmTestRunner.Runner exposing (Ports, Flags, Model, Msg)
 import Json.Encode as Encode exposing (Value)
 
 port askNbTests : (Value -> msg) -> Sub msg
@@ -18,7 +18,7 @@ ports =
     , sendResult = \id res -> sendResult { type_ = "result", id = id, result = res }
     }
 
-main : ElmTestRunner.Runner.Program Msg
+main : Program Flags Model Msg
 main =
     [ {{ tests }} ]
         |> Test.concat
