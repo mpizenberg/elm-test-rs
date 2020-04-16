@@ -1,6 +1,6 @@
 port module Reporter exposing (main)
 
-import Internal.Reporter exposing (Flags, Model, Msg)
+import ElmTestRs.Test.Reporter exposing (Flags, Model, Msg)
 import Json.Decode exposing (Value)
 
 port restart : (Int -> msg) -> Sub msg
@@ -10,7 +10,7 @@ port stdout : String -> Cmd msg
 
 main : Program Flags Model Msg
 main =
-    Internal.Reporter.worker
+    ElmTestRs.Test.Reporter.worker
         { restart = restart
         , incomingResult = incomingResult
         , stdout = stdout

@@ -2,7 +2,7 @@ module ElmTestRs.Test.Runner exposing (Msg, Ports, Program, worker)
 
 import Array
 import ElmTestRs.Test.Result as TestResult exposing (TestResult)
-import Internal.SeededRunners as SeededRunners exposing (SeededRunners)
+import ElmTestRs.Test.SeededRunners as SeededRunners exposing (SeededRunners)
 import Json.Encode exposing (Value)
 import Platform
 import Test exposing (Test)

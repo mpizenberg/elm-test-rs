@@ -1,4 +1,4 @@
-module Internal.SeededRunners exposing (Kind(..), SeededRunners, fromTest, run)
+module ElmTestRs.Test.SeededRunners exposing (Kind(..), SeededRunners, fromTest, run)
 
 import Array exposing (Array)
 import ElmTestRs.Test.Result as TestResult exposing (TestResult)

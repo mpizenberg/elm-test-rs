@@ -1,4 +1,4 @@
-module Internal.Reporter exposing (Flags, Model, Msg, Ports, worker)
+module ElmTestRs.Test.Reporter exposing (Flags, Model, Msg, Ports, worker)
 
 import Array exposing (Array)
 import ElmTestRs.Test.Reporter.Console as ReporterConsole
