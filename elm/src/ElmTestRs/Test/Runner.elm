@@ -1,4 +1,4 @@
-port module ElmTestRs.Test.Runner exposing (Program, start)
+module ElmTestRs.Test.Runner exposing (Msg, Ports, Program, worker)
 
 import Array
 import ElmTestRs.Test.Result as TestResult exposing (TestResult)
@@ -12,24 +12,20 @@ import Test exposing (Test)
 -- Ports
 
 
-port askNbTests : (Value -> msg) -> Sub msg
-
-
-port sendNbTests : { type_ : String, nbTests : Int } -> Cmd msg
-
-
-port receiveRunTest : (Int -> msg) -> Sub msg
-
-
-port sendResult : Value -> Cmd msg
+type alias Ports msg =
+    { askNbTests : (Value -> msg) -> Sub msg
+    , sendNbTests : { type_ : String, nbTests : Int } -> Cmd msg
+    , receiveRunTest : (Int -> msg) -> Sub msg
+    , sendResult : Value -> Cmd msg
+    }
 
 
 
 -- Types
 
 
-type alias Program =
-    Platform.Program Flags Model Msg
+type alias Program msg =
+    Platform.Program Flags (Model msg) Msg
 
 
 type alias Flags =
@@ -38,8 +34,10 @@ type alias Flags =
     }
 
 
-type alias Model =
-    { testRunners : SeededRunners }
+type alias Model msg =
+    { ports : Ports msg
+    , testRunners : SeededRunners
+    }
 
 
 type Msg {- ReceiveRunTest: order from the supervisor via port -}
@@ -51,51 +49,51 @@ type Msg {- ReceiveRunTest: order from the supervisor via port -}
 -- Functions
 
 
-start : Test -> Program
-start masterTest =
+worker : Ports Msg -> Test -> Program Msg
+worker ({ askNbTests, receiveRunTest } as ports) masterTest =
     Platform.worker
-        { init = init masterTest
+        { init = init masterTest ports
         , update = update
         , subscriptions = \_ -> Sub.batch [ askNbTests (always AskNbTests), receiveRunTest ReceiveRunTest ]
         }
 
 
-init : Test -> Flags -> ( Model, Cmd Msg )
-init masterTest flags =
-    ( Model (SeededRunners.fromTest masterTest flags), Cmd.none )
+init : Test -> Ports Msg -> Flags -> ( Model Msg, Cmd Msg )
+init masterTest ports flags =
+    ( Model ports (SeededRunners.fromTest masterTest flags), Cmd.none )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model Msg -> ( Model Msg, Cmd Msg )
 update msg model =
     case ( msg, model.testRunners ) of
         -- AskNbTests
         ( AskNbTests, Ok { runners } ) ->
-            ( model, sendTypedNbTests (Array.length runners) )
+            ( model, sendTypedNbTests model.ports (Array.length runners) )
 
         ( AskNbTests, Err _ ) ->
             ( model, Debug.todo "Deal with invalid runners" )
 
         -- ReceiveRunTest
         ( ReceiveRunTest id, Ok { runners } ) ->
-            ( model, sendTestResult id (SeededRunners.run id runners) )
+            ( model, sendTestResult model.ports id (SeededRunners.run id runners) )
 
         ( ReceiveRunTest _, Err _ ) ->
             ( model, Debug.todo "Deal with invalid runners" )
 
 
-sendTypedNbTests : Int -> Cmd msg
-sendTypedNbTests nbTests =
-    sendNbTests { type_ = "nbTests", nbTests = nbTests }
+sendTypedNbTests : Ports msg -> Int -> Cmd msg
+sendTypedNbTests ports nbTests =
+    ports.sendNbTests { type_ = "nbTests", nbTests = nbTests }
 
 
-sendTestResult : Int -> Maybe TestResult -> Cmd msg
-sendTestResult id maybeResult =
+sendTestResult : Ports msg -> Int -> Maybe TestResult -> Cmd msg
+sendTestResult ports id maybeResult =
     case maybeResult of
         Nothing ->
             Cmd.none
 
         Just result ->
-            sendResult <|
+            ports.sendResult <|
                 Json.Encode.object
                     [ ( "type_", Json.Encode.string "result" )
                     , ( "id", Json.Encode.int id )
