@@ -1,12 +1,11 @@
 port module ElmTestRs.Test.Runner exposing (Program, start)
 
-import Array exposing (Array)
-import ElmTestRs.Test.Result
+import Array
+import ElmTestRs.Test.Result as TestResult exposing (TestResult)
+import Internal.SeededRunners as SeededRunners exposing (SeededRunners)
 import Json.Encode exposing (Value)
 import Platform
-import Random
 import Test exposing (Test)
-import Test.Runner exposing (Runner)
 
 
 
@@ -40,14 +39,7 @@ type alias Flags =
 
 
 type alias Model =
-    { testRunners : Runners }
-
-
-type Runners
-    = Plain (Array Runner)
-    | Only (Array Runner)
-    | Skipping (Array Runner)
-    | Invalid String
+    { testRunners : SeededRunners }
 
 
 type Msg {- ReceiveRunTest: order from the supervisor via port -}
@@ -69,56 +61,26 @@ start masterTest =
 
 
 init : Test -> Flags -> ( Model, Cmd Msg )
-init masterTest { initialSeed, fuzzRuns } =
-    let
-        seededRunners =
-            Test.Runner.fromTest fuzzRuns (Random.initialSeed initialSeed) masterTest
-
-        testRunners =
-            case seededRunners of
-                Test.Runner.Plain runnerList ->
-                    Plain (Array.fromList runnerList)
-
-                Test.Runner.Only runnerList ->
-                    Only (Array.fromList runnerList)
-
-                Test.Runner.Skipping runnerList ->
-                    Skipping (Array.fromList runnerList)
-
-                Test.Runner.Invalid error ->
-                    Invalid error
-    in
-    ( Model testRunners, Cmd.none )
+init masterTest flags =
+    ( Model (SeededRunners.fromTest masterTest flags), Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model.testRunners ) of
         -- AskNbTests
-        ( AskNbTests, Plain runners ) ->
+        ( AskNbTests, Ok { runners } ) ->
             ( model, sendTypedNbTests (Array.length runners) )
 
-        ( AskNbTests, Only runners ) ->
-            ( model, sendTypedNbTests (Array.length runners) )
-
-        ( AskNbTests, Skipping runners ) ->
-            ( model, sendTypedNbTests (Array.length runners) )
-
-        ( AskNbTests, Invalid error ) ->
-            ( model, sendTypedNbTests 1 )
+        ( AskNbTests, Err _ ) ->
+            ( model, Debug.todo "Deal with invalid runners" )
 
         -- ReceiveRunTest
-        ( ReceiveRunTest id, Plain runners ) ->
-            ( model, runPlain id runners )
+        ( ReceiveRunTest id, Ok { runners } ) ->
+            ( model, sendTestResult id (SeededRunners.run id runners) )
 
-        ( ReceiveRunTest id, Only runners ) ->
-            ( model, runOnly id runners )
-
-        ( ReceiveRunTest id, Skipping runners ) ->
-            ( model, runSkipping id runners )
-
-        ( ReceiveRunTest id, Invalid error ) ->
-            ( model, runInvalid id error )
+        ( ReceiveRunTest _, Err _ ) ->
+            ( model, Debug.todo "Deal with invalid runners" )
 
 
 sendTypedNbTests : Int -> Cmd msg
@@ -126,43 +88,16 @@ sendTypedNbTests nbTests =
     sendNbTests { type_ = "nbTests", nbTests = nbTests }
 
 
-runPlain : Int -> Array Runner -> Cmd Msg
-runPlain id runners =
-    case Array.get id runners of
+sendTestResult : Int -> Maybe TestResult -> Cmd msg
+sendTestResult id maybeResult =
+    case maybeResult of
         Nothing ->
             Cmd.none
 
-        Just runner ->
-            runner.run ()
-                |> ElmTestRs.Test.Result.fromExpectations runner.labels
-                |> ElmTestRs.Test.Result.encode
-                |> sendResultWithId id
-
-
-sendResultWithId : Int -> Value -> Cmd msg
-sendResultWithId id result =
-    sendResult <|
-        Json.Encode.object
-            [ ( "type_", Json.Encode.string "result" )
-            , ( "id", Json.Encode.int id )
-            , ( "result", result )
-            ]
-
-
-
--- TODO: figure out what happens when there is an Only or Skipping case
-
-
-runOnly : Int -> Array Runner -> Cmd Msg
-runOnly id runners =
-    Debug.todo ("runOnly " ++ String.fromInt id)
-
-
-runSkipping : Int -> Array Runner -> Cmd Msg
-runSkipping id runners =
-    Debug.todo ("runSkipping " ++ String.fromInt id)
-
-
-runInvalid : Int -> String -> Cmd Msg
-runInvalid id error =
-    Debug.todo ("runInvalid " ++ String.fromInt id)
+        Just result ->
+            sendResult <|
+                Json.Encode.object
+                    [ ( "type_", Json.Encode.string "result" )
+                    , ( "id", Json.Encode.int id )
+                    , ( "result", TestResult.encode result )
+                    ]
