@@ -14,9 +14,9 @@ import Test exposing (Test)
 
 type alias Ports msg =
     { askNbTests : (Value -> msg) -> Sub msg
-    , sendNbTests : { type_ : String, nbTests : Int } -> Cmd msg
+    , sendNbTests : Int -> Cmd msg
     , receiveRunTest : (Int -> msg) -> Sub msg
-    , sendResult : Value -> Cmd msg
+    , sendResult : Int -> Value -> Cmd msg
     }
 
 
@@ -68,7 +68,7 @@ update msg model =
     case ( msg, model.testRunners ) of
         -- AskNbTests
         ( AskNbTests, Ok { runners } ) ->
-            ( model, sendTypedNbTests model.ports (Array.length runners) )
+            ( model, model.ports.sendNbTests (Array.length runners) )
 
         ( AskNbTests, Err _ ) ->
             ( model, Debug.todo "Deal with invalid runners" )
@@ -81,21 +81,8 @@ update msg model =
             ( model, Debug.todo "Deal with invalid runners" )
 
 
-sendTypedNbTests : Ports msg -> Int -> Cmd msg
-sendTypedNbTests ports nbTests =
-    ports.sendNbTests { type_ = "nbTests", nbTests = nbTests }
-
-
 sendTestResult : Ports msg -> Int -> Maybe TestResult -> Cmd msg
 sendTestResult ports id maybeResult =
-    case maybeResult of
-        Nothing ->
-            Cmd.none
-
-        Just result ->
-            ports.sendResult <|
-                Json.Encode.object
-                    [ ( "type_", Json.Encode.string "result" )
-                    , ( "id", Json.Encode.int id )
-                    , ( "result", TestResult.encode result )
-                    ]
+    Maybe.map TestResult.encode maybeResult
+        |> Maybe.map (ports.sendResult id)
+        |> Maybe.withDefault Cmd.none
