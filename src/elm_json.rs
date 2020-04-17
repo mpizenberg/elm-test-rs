@@ -62,10 +62,10 @@ impl TryFrom<&str> for Config {
             json::from_str(value).map_err(|_| "Field type is missing".to_string())?;
         match project_type.type_.as_ref() {
             "package" => json::from_str(value)
-                .map(Config::Package)
+                .map(|package| Config::Package(package))
                 .map_err(|_| "Invalid elm.json for a package".into()),
             "application" => json::from_str(value)
-                .map(Config::Application)
+                .map(|app| Config::Application(app))
                 .map_err(|_| "Invalid elm.json for an application".into()),
             type_ => Err(format!("Invalid type: {}", type_)),
         }

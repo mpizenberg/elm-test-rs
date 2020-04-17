@@ -2,6 +2,8 @@
 
 use crate::elm_json::{Config, Dependencies};
 use glob::glob;
+use miniserde;
+use pathdiff;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
@@ -75,15 +77,14 @@ pub fn main(options: Options) {
         .iter()
         // join expanded globs for each pattern
         .flat_map(|pattern| {
-            glob(pattern)
-                .unwrap_or_else(|_| panic!(format!("Failed to read glob pattern {}", pattern)))
+            glob(pattern).expect(&format!("Failed to read glob pattern {}", pattern))
         })
         // filter out errors
         .filter_map(|x| x.ok())
         // canonical form of paths
         .map(|path| {
             path.canonicalize()
-                .unwrap_or_else(|_| panic!(format!("Error in canonicalize of {:?}", path)))
+                .expect(&format!("Error in canonicalize of {:?}", path))
         })
         // collect into a set of unique values
         .collect();
@@ -246,7 +247,7 @@ pub fn main(options: Options) {
             ("nb_workers".to_string(), options.workers.to_string()),
             ("initialSeed".to_string(), options.seed.to_string()),
             ("fuzzRuns".to_string(), options.fuzz.to_string()),
-            ("reporter".to_string(), reporter),
+            ("reporter".to_string(), reporter.clone()),
         ],
     );
 
