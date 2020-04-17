@@ -91,6 +91,9 @@ The CLI program, if asked to run the tests, performs the following actions.
  7. Compile `Reporter.elm` into a Node module.
  8. Generate and start the Node supervisor program.
 
+![architecture diagram][diagram]
+
+[diagram]: https://mpizenberg.github.io/resources/elm-test-rs/elm-test-rs.png
 
 ## Shortcuts and improvements
 
