@@ -1,3 +1,5 @@
+//! Module dealing with actually running all the tests.
+
 use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use miniserde;
@@ -12,6 +14,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 #[derive(Debug)]
+/// Options passed as arguments.
 pub struct Options {
     pub help: bool,
     pub version: bool,
@@ -23,7 +26,18 @@ pub struct Options {
     pub files: Vec<String>,
 }
 
-// pub fn main(help: bool, version: bool, compiler: Option<String>, files: Vec<String>) {
+/// Main function, preparing and running the tests.
+/// It has multiple steps that can be summarized as:
+///
+///  1. Generate the list of test modules and their file paths.
+///  2. Generate a correct `elm.json` for the to-be-generated new `Main.elm`.
+///  3. Compile all test files with `elm make --output=/dev/null <all/test/files>`
+///     such that we know they are correct elm files.
+///  4. Find all tests.
+///  5. Generate the `Runner.elm` with one master test concatenating all found exposed tests.
+///  6. Compile this main into a JS file wrapped into a Node worker module.
+///  7. Generate, compile and wrap `Reporter.elm` into a Node module.
+///  8. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
     // The help option is prioritary over the other options
     if options.help {
@@ -126,7 +140,6 @@ pub fn main(options: Options) {
 
     // Write the elm.json file to disk
     let elm_json_tests_path = tests_root.join("elm.json");
-    std::fs::create_dir_all(&tests_root).expect("Could not create tests dir");
     std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
     std::fs::File::create(&elm_json_tests_path)
         .expect("Unable to create generated elm.json")
