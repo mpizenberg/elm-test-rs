@@ -21,19 +21,19 @@ However, this doesn't intend to support Elm prior to 0.19.1.
 
 Missing features for parity with elm-test:
 
- - [] `--watch` mode
- - [] colors and pretty-printing of diffs
- - [] timing of runs
+ - [ ] `--watch` mode
+ - [ ] colors and pretty-printing of diffs
+ - [ ] timing of runs
 
 Additional features:
 
  - [x] `--workers` option to choose the number of runner workers
- - [] capturing `Debug.log` calls
+ - [ ] capturing `Debug.log` calls
 
 
 ## Code architecture
 
-The code of this project is split in three parts:
+The code of this project is split in three parts.
 
  1. The CLI, a rust application that generates all the needed JS and Elm files to run tests.
  2. The supervisor, a small Node JS script
@@ -56,17 +56,17 @@ for systemish CLI programs and enables consise, fast and robust programs.
 But any other language could replace this since it is completely independent
 from the supervisor, runner and reporter code.
 Communication between the CLI and supervisor is assumed to go through STDIN and STDOUT
-so no need to lose your hair on weird platform named pipe issues.
+so no need to lose your hair on weird platform-dependent issues
+with inter-process-communication (IPC) going through named pipes.
 The CLI program, if asked to run the tests, performs the following actions.
 
  1. Generate the list of test modules and their file paths.
- 2. Generate a correct `elm.json` for the to-be-generated new `Main.elm`.
- 3. Compile all test files with `elm make --output=/dev/null <all/test/files>`
-    such that we know they are correct elm files.
+ 2. Generate a correct `elm.json` for the to-be-generated `Runner.elm`.
+ 3. Compile all test files such that we know they are correct.
  4. Find all tests.
- 5. Generate the `Runner.elm` with one master test concatenating all found exposed tests.
+ 5. Generate `Runner.elm` with a master test concatenating all found exposed tests.
  6. Compile it into a JS file wrapped into a Node worker module.
- 7. Generate and compile `Reporter.elm` into a Node module.
+ 7. Compile `Reporter.elm` into a Node module.
  8. Generate and start the Node supervisor program.
 
 
