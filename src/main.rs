@@ -6,8 +6,6 @@ mod install;
 mod run;
 mod utils;
 
-use num_cpus;
-use pico_args;
 use rand::Rng;
 
 #[derive(Debug)]
@@ -57,15 +55,17 @@ fn no_subcommand_args(
         version: args.contains("--version"),
         compiler: args
             .opt_value_from_str("--compiler")?
-            .unwrap_or("elm".to_string()),
-        seed: args.opt_value_from_str("--seed")?.unwrap_or(rng.gen()),
+            .unwrap_or_else(|| "elm".to_string()),
+        seed: args
+            .opt_value_from_str("--seed")?
+            .unwrap_or_else(|| rng.gen()),
         fuzz: args.opt_value_from_str("--fuzz")?.unwrap_or(100),
         workers: args
             .opt_value_from_str("--workers")?
             .unwrap_or(num_cpus::get() as u32),
         report: args
             .opt_value_from_str("--report")?
-            .unwrap_or("console".to_string()),
+            .unwrap_or_else(|| "console".to_string()),
         files: {
             let mut files = args.free()?;
             if let Some(file) = first_arg {

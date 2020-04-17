@@ -6,7 +6,7 @@ pub fn main() {
     println!("{}", USAGE);
 }
 
-const USAGE: &'static str = r#"
+const USAGE: &str = r#"
 elm-test-rs
 An alternative Elm test runner to node-test-runner
 
