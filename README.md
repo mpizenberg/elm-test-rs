@@ -91,6 +91,18 @@ by its author, Natalie Weizenbaum.
 [pubgrub]: https://medium.com/@nex3/pubgrub-2fb6470504f
 
 
+## LOC
+
+Total lines of code for elm-test-rs (including elm-test-runner Elm package)
+as of commit aa360eed:
+
+| Language    |  Files   |  Lines   |  Code   |  Comments  |
+| ----------- | --------:| --------:| -------:| ----------:|
+| Elm         |     12   |   1268   |   713   |       220  |
+| JavaScript  |      3   |    199   |   151   |        23  |
+| Rust        |      8   |    712   |   542   |       108  |
+
+
 ## Embedding template files in the executable?
 
 Currently, the Rust CLI program uses `std::env::current_exe()`
