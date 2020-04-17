@@ -1,11 +1,8 @@
 // From templates/polyfills.js
 {{ polyfills }}
 
-const Elm = (function(module) {
-  // Compiled by elm-test-rs from templates/Reporter.elm
-  {{ compiled_elm }}
-  return this.Elm;
-})({});
+// Compiled by elm-test-rs from templates/Reporter.elm
+const { Elm } = require("./Reporter.elm.js");
 
 // Start the Elm app
 const flags = {

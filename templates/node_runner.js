@@ -3,11 +3,8 @@ const { parentPort } = require("worker_threads");
 // From templates/polyfills.js
 {{ polyfills }}
 
-const Elm = (function (module) {
-  // Compiled by elm-test-rs from templates/Runner.elm
-  {{ compiled_elm }}
-  return this.Elm;
-})({});
+// Compiled by elm-test-rs from templates/Runner.elm
+const { Elm } = require("./Runner.elm.js");
 
 // Start the Elm app
 const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }} };

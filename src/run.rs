@@ -215,17 +215,14 @@ pub fn main(options: Options) {
     );
 
     // Generate the node_runner.js node module embedding the Elm runner
-    let polyfills = std::fs::read_to_string(&elm_test_rs_root.join("templates/polyfills.js"))
+    let polyfills = std::fs::read_to_string(&elm_test_rs_root.join("templates/node_polyfills.js"))
         .expect("polyfills.js template missing");
-    let compiled_elm =
-        std::fs::read_to_string(&compiled_elm_file).expect("Compiled Elm runner file missing");
     let node_runner_path = tests_root.join("node_runner.js");
     create_templated(
-        elm_test_rs_root.join("templates/runner.js"), // template
-        node_runner_path.clone(),                     // output
+        elm_test_rs_root.join("templates/node_runner.js"), // template
+        node_runner_path.clone(),                          // output
         vec![
             ("polyfills".to_string(), polyfills.clone()),
-            ("compiled_elm".to_string(), compiled_elm),
             ("initialSeed".to_string(), initial_seed.to_string()),
             ("fuzzRuns".to_string(), fuzz_runs.to_string()),
         ],
@@ -242,15 +239,12 @@ pub fn main(options: Options) {
     );
 
     // Generate the node_reporter.js module embedding the Elm reporter
-    let compiled_elm =
-        std::fs::read_to_string(&compiled_reporter).expect("Compiled Elm reporter file missing");
     let node_reporter_path = tests_root.join("node_reporter.js");
     create_templated(
-        elm_test_rs_root.join("templates/reporter.js"), // template
-        node_reporter_path.clone(),                     // output
+        elm_test_rs_root.join("templates/node_reporter.js"), // template
+        node_reporter_path.clone(),                          // output
         vec![
             ("polyfills".to_string(), polyfills),
-            ("compiled_elm".to_string(), compiled_elm),
             ("initialSeed".to_string(), initial_seed.to_string()),
             ("fuzzRuns".to_string(), fuzz_runs.to_string()),
             ("reporter".to_string(), reporter.clone()),
@@ -260,8 +254,8 @@ pub fn main(options: Options) {
     // Generate the supervisor Node module
     let node_reporter_path_string = node_reporter_path.to_str().unwrap().to_string();
     create_templated(
-        elm_test_rs_root.join("templates/supervisor.js"), // template
-        tests_root.join("node_supervisor.js"),            // output
+        elm_test_rs_root.join("templates/node_supervisor.js"), // template
+        tests_root.join("node_supervisor.js"),                 // output
         vec![
             ("nb_workers".to_string(), workers.to_string()),
             ("node_reporter".to_string(), node_reporter_path_string),
