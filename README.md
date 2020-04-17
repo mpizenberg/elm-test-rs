@@ -37,7 +37,7 @@ The code of this project is split in three parts.
 
  1. The CLI, a rust application that generates all the needed JS and Elm files to run tests.
  2. The supervisor, a small Node JS script
-    (less than 100 lines, no dependency other than Node itself)
+    (roughly 100 lines, no dependency other than Node itself)
     tasked to spawn runners (Elm), start a reporter (Elm)
     and transfer tests results from the runners to the reporter.
  3. An Elm package (pure, no debug logging) [mpizenberg/elm-test-runner][elm-test-runner]
