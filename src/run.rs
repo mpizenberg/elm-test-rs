@@ -206,7 +206,7 @@ pub fn main(options: Options) {
 
     // Compile the src/Runner.elm file into Runner.elm.js
     eprintln!("Compiling the generated templated src/Runner.elm ...");
-    let compiled_elm_file = tests_root.join("Runner.elm.js");
+    let compiled_elm_file = tests_root.join("js/Runner.elm.js");
     compile(
         &tests_root,         // current_dir
         &elm_compiler,       // compiler
@@ -217,7 +217,7 @@ pub fn main(options: Options) {
     // Generate the node_runner.js node module embedding the Elm runner
     let polyfills = std::fs::read_to_string(&elm_test_rs_root.join("templates/node_polyfills.js"))
         .expect("polyfills.js template missing");
-    let node_runner_path = tests_root.join("node_runner.js");
+    let node_runner_path = tests_root.join("js/node_runner.js");
     create_templated(
         elm_test_rs_root.join("templates/node_runner.js"), // template
         node_runner_path.clone(),                          // output
@@ -230,7 +230,7 @@ pub fn main(options: Options) {
 
     // Compile the Reporter.elm into Reporter.elm.js
     eprintln!("Compiling Reporter.elm.js ...");
-    let compiled_reporter = tests_root.join("Reporter.elm.js");
+    let compiled_reporter = tests_root.join("js/Reporter.elm.js");
     compile(
         &tests_root,        // current_dir
         &elm_compiler,      // compiler
@@ -239,7 +239,7 @@ pub fn main(options: Options) {
     );
 
     // Generate the node_reporter.js module embedding the Elm reporter
-    let node_reporter_path = tests_root.join("node_reporter.js");
+    let node_reporter_path = tests_root.join("js/node_reporter.js");
     create_templated(
         elm_test_rs_root.join("templates/node_reporter.js"), // template
         node_reporter_path.clone(),                          // output
@@ -255,7 +255,7 @@ pub fn main(options: Options) {
     let node_reporter_path_string = node_reporter_path.to_str().unwrap().to_string();
     create_templated(
         elm_test_rs_root.join("templates/node_supervisor.js"), // template
-        tests_root.join("node_supervisor.js"),                 // output
+        tests_root.join("js/node_supervisor.js"),              // output
         vec![
             ("nb_workers".to_string(), workers.to_string()),
             ("node_reporter".to_string(), node_reporter_path_string),
@@ -265,7 +265,7 @@ pub fn main(options: Options) {
     // Start the tests supervisor
     eprintln!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
-        .arg("node_supervisor.js")
+        .arg("js/node_supervisor.js")
         .current_dir(&tests_root)
         .stdin(Stdio::piped())
         .spawn()
