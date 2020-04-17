@@ -1,112 +1,102 @@
 # elm-test-rs
 
-Attempt at a simpler, faster alternative to the current node test runner for elm-test, but in Rust.
+Attempt at a simpler alternative to node-test-runner for elm tests.
 
-## Expected features
 
-- Same interface as elm-test
-- Ability to change the number of processes
-- Fix logging issues for machine reports
+## Design goals
 
-## Already implemented
+The objective is to get an easy to maintain and extend test runner.
+For these reasons, the core design goals are for the code to be
 
-- [x] elm-test-rs --help
-- [x] elm-test-rs --version
-- [x] elm-test-rs init
-- [x] elm-test-rs install
-- [ ] elm-test-rs
-- [ ] elm-test-rs TESTFILES
-- [ ] elm-test-rs --compiler /path/to/compiler
-- [ ] elm-test-rs --seed integer
-- [ ] elm-test-rs --fuzz integer
-- [ ] elm-test-rs --report json
-- [ ] elm-test-rs --report junit
-- [ ] elm-test-rs --watch
-- [ ] (new) elm-test-rs --processes integer
+- as simple and lightweight as reasonably possible,
+- modular,
+- well documented.
 
-## Workflow of a test runner
 
-1. Generate the list of test modules and their file paths.
-2. Generate a correct `elm.json` for the to-be-generated new `Main.elm`.
-    1. Join project and this test runner `source-directories`.
-    2. Generate a correct list of `dependencies` (leverage elm-json).
-3. Compile all test files with `elm make --output=/dev/null <all/test/files>`
-   such that we know they are correct elm files.
-4. Find all tests
-    1. Either parse directly the test files.
-    2. Or parse the .elmi compilation artifacts (contains only exposed values?).
-5. Generate the `Main.elm` with one test concatenating all found exposed tests.
-6. Compile this main into a JS file.
-7. Compose a Node module "test worker" (JS file) encapsulating the main elm js file
-   with the ports and all network communication code to exchange data with the supervisor.
-8. Run the supervisor program.
-    1. Create a server socket that will listen to connections from test workers.
-    2. Spawn node test workers.
-    3. Distribute work to the workers.
-    4. Gather test results.
-    5. Print test results according to the report format.
+## Features
 
-## Proof of concept TODOs
+The aim is to provide at least feature parity with elm-test
+plus few other nice additions.
+However, this doesn't intend to support Elm prior to 0.19.1.
 
-- [x] `examples/glob.rs` List all test module files. We must be able to expand globs passed as arguments.
-- [x] `examples/elm-json-bin.rs` Read and write a correct `elm.json`. Leverage zwilias/elm-json binary for dependencies.
-- [ ] Read and write a correct `elm.json`. Leverage zwilias/elm-json library for dependencies.
-- [ ] Make zwilias/elm-json offline capable by limiting constraints to installed packages.
-- [x] `examples/command.rs` Call the elm compiler binary.
-- [x] `examples/elmi-to-json-bin.rs` Leverage stoeffel/elmi-to-json binary to find all exposed tests.
-- [ ] Parse test files or .elmi files to find all exposed tests.
-- [ ] Parse test files to find unexposed tests.
-      Might be tricky to avoid false positive due to functions like `describe` that can embed tests.
-- [x] `examples/template_elm.rs` Generate a templated `Main.elm` file from a list of tests.
-- [x] `examples/template_js.rs` Generate a templated JS file.
-- [x] `examples/tcp_server.rs` Create a server tcp socket able to exchange data with client tcp socket.
-- [x] `examples/supervisor.rs` Example worker communication between supervisor, runner and reporter.
-- [x] `examples/reporter/` (run `make` inside directory) Convert results into console/json/junit reports.
-- [ ] Remove the report option from the elm test worker,
-      it should only be concerned by one communication format,
-      it's the supervisor work to convert to the appropriate output.
-- [ ] Make cross-platform binaries
+Missing features for parity with elm-test:
 
-## Some thoughts
+ - [] `--watch` mode
+ - [] colors and pretty-printing of diffs
+ - [] timing of runs
 
-- This new alternative for elm-test should be as simple and lightweight as possible.
-- For the CLI, we could use [pico-args][pico-args] (lightweight)
-  or [clap][clap] (heavyheight but most used).
-- Other useful CLI tools may be available (see https://lib.rs/command-line-interface)
-- For the generation of the main elm file, we could use [TinyTemplate][TinyTemplate].
-  I opted for [sonro/varj][varj] which is quite minimalist.
+Additional features:
 
-[pico-args]: https://github.com/RazrFalcon/pico-args
-[clap]: https://github.com/clap-rs/clap
-[TinyTemplate]: https://github.com/bheisler/TinyTemplate
-[varj]: https://github.com/sonro/varj
+ - [x] `--workers` option to choose the number of runner workers
+ - [] capturing `Debug.log` calls
 
-## Communication between the Elm (node) process and Rust supervisor
 
-It seems that this will not be trivial.
-The node module spawned for the Elm code currently uses
-`client = net.createConnection(pipeFilename)`
-(CF `templates/after.js`).
-According to [node documentation][createConnection],
-this initiates an IPC (Inter Process Communication) connection and returns
-the new [`net.Socket`][socket].
+## Code architecture
 
-[createConnection]: https://nodejs.org/api/net.html#net_net_createconnection
-[socket]: https://nodejs.org/api/net.html#net_class_net_socket
+The code of this project is split in three parts:
 
-I've only quickly searched but a platform agnostic IPC socket in Rust
-does not seam to be trivial.
-Maybe a simple TCP socket connection at any available port is sufficient performance-wise.
-CF `examples/tcp-client-server/` where we could replace `server.js`
-by a Rust TCP server.
+ 1. The CLI, a rust application that generates all the needed JS and Elm files to run tests.
+ 2. The supervisor, a small Node JS script
+    (less than 100 lines, no dependency other than Node itself)
+    tasked to spawn runners (Elm), start a reporter (Elm)
+    and transfer tests results from the runners to the reporter.
+ 3. An Elm package (pure, no debug logging) [mpizenberg/elm-test-runner][elm-test-runner]
+    exposing a main program for a runner and one for a reporter.
 
-Random links to related articles:
+The supervisor and the runners communicate through child and parent worker messages.
+The reporter is just loaded as a Node module by the supervisor.
+Communication between the Elm and JS parts are done through ports, as usual.
+More details about the supervisor, runner and reporter parts are available
+in [mpizenberg/elm-test-runner][elm-test-runner].
 
-- Norbert de Langen, 2017, [Communicating between NodeJS processes][norbert2017]
+[elm-test-runner]: https://github.com/mpizenberg/elm-test-runner
 
-[norbert2017]: https://medium.com/@NorbertdeLangen/communicating-between-nodejs-processes-4e68be42b917
+Rust was chosen for the first part since it is a very well fitted language
+for systemish CLI programs and enables consise, fast and robust programs.
+But any other language could replace this since it is completely independent
+from the supervisor, runner and reporter code.
+Communication between the CLI and supervisor is assumed to go through STDIN and STDOUT
+so no need to lose your hair on weird platform named pipe issues.
+The CLI program, if asked to run the tests, performs the following actions.
 
-## Cross compilation for OSX and Windows
+ 1. Generate the list of test modules and their file paths.
+ 2. Generate a correct `elm.json` for the to-be-generated new `Main.elm`.
+ 3. Compile all test files with `elm make --output=/dev/null <all/test/files>`
+    such that we know they are correct elm files.
+ 4. Find all tests.
+ 5. Generate the `Runner.elm` with one master test concatenating all found exposed tests.
+ 6. Compile it into a JS file wrapped into a Node worker module.
+ 7. Generate and compile `Reporter.elm` into a Node module.
+ 8. Generate and start the Node supervisor program.
+
+
+## Shortcuts and improvements
+
+As this is still a proof of concept, I cut a few corners to get things working.
+For example, the generation of the `elm.json` for the tests uses directly
+zwilias/elm-json as a binary, and the detection of exposed tests is
+done with stoeffel/elmi-to-json as in elm-test.
+
+Eventually, it would be useful to extract the dependency solving algorithm from elm-json
+into a crate of its own and to make it available offline if a suitable solution
+is possible with already installed packages.
+The solver code in elm-json has been extracted from [elba][elba],
+a package manager for the Idris language.
+It is iself a rust implementation of [PubGrub][pubgrub],
+the version solver for the Dart language.
+A very nice introduction to PubGrub is given in a [blog post][pubgrub] of 2018
+by its author, Natalie Weizenbaum.
+
+[elba]: https://github.com/elba/elba
+[pubgrub]: https://medium.com/@nex3/pubgrub-2fb6470504f
+
+
+## Embedding template files in the executable?
+
+[rust-embed]: https://github.com/pyros2097/rust-embed
+
+
+## Cross compilation for OSX and Windows (TODO)
 
 - Look at configuration of [BurntSushi/ripgrep][ripgrep]
 - Look at configuration of [zwilias/elm-json][elm-json]
@@ -118,24 +108,3 @@ Random links to related articles:
 [elm-json]: https://github.com/zwilias/elm-json
 [forum-cross]: https://users.rust-lang.org/t/cross-compile-macos-and-ms-windows/38323
 [medium-github-action]: https://medium.com/@jondot/building-rust-on-multiple-platforms-using-github-6f3e6f8b8458
-
-## Embedding another executable?
-
-Would it be possible to embed another binary at build time inside ours (such as elmi-to-json)
-and execute it at runtime?
-I don't think it is possible to embed another executable and run it from our binary,
-especially with cross-platform support, it seems very unlikely.
-
-- [pyros2097/rust-embed][rust-embed]: Rust Macro which loads files into the rust Binary at compile time
-
-[rust-embed]: https://github.com/pyros2097/rust-embed
-
-## Executing another command
-
-An alternative, if we do not rewrite elmi-to-json,
-is to assume a user of elm-test-rs has it installed already on their system.
-Therefore, we can execute it as a command.
-
-- `std::process::Command` [documentation][command]
-
-[command]: https://doc.rust-lang.org/std/process/struct.Command.html
