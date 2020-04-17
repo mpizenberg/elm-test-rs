@@ -239,27 +239,16 @@ pub fn main(options: Options) {
         &[elm_test_rs_root.join("templates/Reporter.elm")],
     );
 
-    // Generate the node_reporter.js module embedding the Elm reporter
-    let node_reporter_path = tests_root.join("js/node_reporter.js");
-    create_templated(
-        elm_test_rs_root.join("templates/node_reporter.js"), // template
-        node_reporter_path.clone(),                          // output
-        vec![
-            ("polyfills".to_string(), polyfills),
-            ("initialSeed".to_string(), options.seed.to_string()),
-            ("fuzzRuns".to_string(), options.fuzz.to_string()),
-            ("reporter".to_string(), reporter.clone()),
-        ],
-    );
-
     // Generate the supervisor Node module
-    let node_reporter_path_string = node_reporter_path.to_str().unwrap().to_string();
     create_templated(
         elm_test_rs_root.join("templates/node_supervisor.js"), // template
         tests_root.join("js/node_supervisor.js"),              // output
         vec![
+            ("polyfills".to_string(), polyfills),
             ("nb_workers".to_string(), options.workers.to_string()),
-            ("node_reporter".to_string(), node_reporter_path_string),
+            ("initialSeed".to_string(), options.seed.to_string()),
+            ("fuzzRuns".to_string(), options.fuzz.to_string()),
+            ("reporter".to_string(), reporter.clone()),
         ],
     );
 

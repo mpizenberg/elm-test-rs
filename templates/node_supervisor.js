@@ -1,5 +1,8 @@
 process.chdir(__dirname);
 
+// From templates/polyfills.js
+{{ polyfills }}
+
 const { Worker } = require("worker_threads");
 const readline = require("readline");
 const EventEmitter = require("events");
@@ -13,10 +16,19 @@ let nb_workers = {{ nb_workers }};
 const supervisorEvent = new EventEmitter();
 
 // Create a long lived reporter worker
-reporter = require("{{ node_reporter }}");
+const { Elm } = require("./Reporter.elm.js");
+const flags = {
+  initialSeed: {{ initialSeed }},
+  fuzzRuns: {{ fuzzRuns }},
+  mode: "{{ reporter }}",
+};
+reporter = Elm.Reporter.init({ flags: flags });
+
+// Pipe the Elm stdout port to stdout
+reporter.ports.stdout.subscribe((str) => process.stdout.write(str));
 
 // When the reporter has finished clean runners
-reporter.setCallback((code) => {
+reporter.ports.signalFinished.subscribe((code) => {
   runners.forEach((runner) => runner.terminate());
   working = false;
   supervisorEvent.emit("finishedWork");
@@ -69,7 +81,7 @@ function setupWithNbTests(runnerFile, nb) {
     .map((_, id) => id)
     .reverse();
   // Reset reporter
-  reporter.restart(nb);
+  reporter.ports.restart.send(nb);
   // Send first runner job
   runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
 
@@ -93,5 +105,5 @@ function handleResult(runner, id, result) {
   if (nextTest != undefined) {
     runner.postMessage({ type_: "runTest", id: nextTest });
   }
-  reporter.sendResult(result);
+  reporter.ports.incomingResult.send(result);
 }
