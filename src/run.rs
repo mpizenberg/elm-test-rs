@@ -28,13 +28,12 @@ pub struct Options {
 /// It has multiple steps that can be summarized as:
 ///
 ///  1. Generate the list of test modules and their file paths.
-///  2. Generate a correct `elm.json` for the to-be-generated new `Main.elm`.
-///  3. Compile all test files with `elm make --output=/dev/null <all/test/files>`
-///     such that we know they are correct elm files.
+///  2. Generate a correct `elm.json` for the to-be-generated `Runner.elm`.
+///  3. Compile all test files such that we know they are correct.
 ///  4. Find all tests.
-///  5. Generate the `Runner.elm` with one master test concatenating all found exposed tests.
-///  6. Compile this main into a JS file wrapped into a Node worker module.
-///  7. Generate, compile and wrap `Reporter.elm` into a Node module.
+///  5. Generate `Runner.elm` with a master test concatenating all found exposed tests.
+///  6. Compile it into a JS file wrapped into a Node worker module.
+///  7. Compile `Reporter.elm` into a Node module.
 ///  8. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
     // The help option is prioritary over the other options
