@@ -3,6 +3,28 @@
 Attempt at a simpler alternative to node-test-runner for elm tests.
 
 
+## Usage
+
+Just replace `elm-test` by `elm-test-rs`.
+Currently, you need to have elm 0.19.1, [elm-json][elm-json] and [elmi-to-json][elmi-to-json] installed.
+
+[elm-json]: https://github.com/zwilias/elm-json
+[elmi-to-json]: https://github.com/stoeffel/elmi-to-json
+
+
+## Install
+
+There is no installation yet, you need to build the tool
+and add **a link** to it in a directory in your PATH env variable.
+Beware that copying the executable (instead of symlink) will not work
+since currently, it needs to find some template files at runtime.
+
+To build the `elm-test-rs` binary, install Rust and run the command:
+```sh
+cargo build
+```
+
+
 ## Design goals
 
 The objective is to get an easy to maintain and extend test runner.
@@ -74,8 +96,8 @@ The CLI program, if asked to run the tests, performs the following actions.
 
 As this is still a proof of concept, I cut a few corners to get things working.
 For example, the generation of the `elm.json` for the tests uses directly
-zwilias/elm-json as a binary, and the detection of exposed tests is
-done with stoeffel/elmi-to-json as in elm-test.
+[zwilias/elm-json][elm-json] as a binary, and the detection of exposed tests is
+done with [stoeffel/elmi-to-json][elmi-to-json] as in elm-test.
 
 Eventually, it would be useful to extract the dependency solving algorithm from elm-json
 into a crate of its own and to make it available offline if a suitable solution
