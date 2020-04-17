@@ -23,7 +23,7 @@ To build the `elm-test-rs` binary, install Rust and run the command:
 ```sh
 cargo build
 ```
-
+The executable will be located at `target/debug/elm-test-rs`.
 
 ## Design goals
 
