@@ -3,9 +3,7 @@
 use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use miniserde;
-use num_cpus;
 use pathdiff;
-use rand::Rng;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
@@ -18,11 +16,11 @@ use std::process::{Command, Stdio};
 pub struct Options {
     pub help: bool,
     pub version: bool,
-    pub compiler: Option<String>,
-    pub seed: Option<u32>,
-    pub fuzz: Option<u32>,
-    pub workers: Option<u32>,
-    pub report: Option<String>,
+    pub compiler: String,
+    pub seed: u32,
+    pub fuzz: u32,
+    pub workers: u32,
+    pub report: String,
     pub files: Vec<String>,
 }
 
@@ -52,22 +50,12 @@ pub fn main(options: Options) {
     // Verify that we are in an Elm project
     let elm_project_root = crate::utils::elm_project_root().unwrap();
 
-    // Set the compiler
-    let elm_compiler = options.compiler.unwrap_or("elm".to_string());
-
-    // Default seed, fuzz and workers if not provided
-    let mut rng = rand::thread_rng();
-    let initial_seed: u32 = options.seed.unwrap_or(rng.gen());
-    let fuzz_runs: u32 = options.fuzz.unwrap_or(100);
-    let workers = options.workers.unwrap_or(num_cpus::get() as u32);
-
-    // Default reporter is console if not provided
-    let reporter = match options.report.as_deref() {
-        None => "console".to_string(),
-        Some("console") => "console".to_string(),
-        Some("json") => "json".to_string(),
-        Some("junit") => "junit".to_string(),
-        Some(value) => {
+    // Validate reporter
+    let reporter = match options.report.as_ref() {
+        "console" => "console".to_string(),
+        "json" => "json".to_string(),
+        "junit" => "junit".to_string(),
+        value => {
             eprintln!("Wrong --report value: {}", value);
             crate::help::main();
             return;
@@ -179,7 +167,7 @@ pub fn main(options: Options) {
     eprintln!("Compiling all test files ...");
     compile(
         &tests_root,                        // current_dir
-        &elm_compiler,                      // compiler
+        &options.compiler,                  // compiler
         &Path::new("/dev/null").to_owned(), // output
         module_paths.iter(),                // src
     );
@@ -222,7 +210,7 @@ pub fn main(options: Options) {
     let compiled_elm_file = tests_root.join("js/Runner.elm.js");
     compile(
         &tests_root,         // current_dir
-        &elm_compiler,       // compiler
+        &options.compiler,   // compiler
         &compiled_elm_file,  // output
         &["src/Runner.elm"], // src
     );
@@ -236,8 +224,8 @@ pub fn main(options: Options) {
         node_runner_path.clone(),                          // output
         vec![
             ("polyfills".to_string(), polyfills.clone()),
-            ("initialSeed".to_string(), initial_seed.to_string()),
-            ("fuzzRuns".to_string(), fuzz_runs.to_string()),
+            ("initialSeed".to_string(), options.seed.to_string()),
+            ("fuzzRuns".to_string(), options.fuzz.to_string()),
         ],
     );
 
@@ -246,7 +234,7 @@ pub fn main(options: Options) {
     let compiled_reporter = tests_root.join("js/Reporter.elm.js");
     compile(
         &tests_root,        // current_dir
-        &elm_compiler,      // compiler
+        &options.compiler,  // compiler
         &compiled_reporter, // output
         &[elm_test_rs_root.join("templates/Reporter.elm")],
     );
@@ -258,8 +246,8 @@ pub fn main(options: Options) {
         node_reporter_path.clone(),                          // output
         vec![
             ("polyfills".to_string(), polyfills),
-            ("initialSeed".to_string(), initial_seed.to_string()),
-            ("fuzzRuns".to_string(), fuzz_runs.to_string()),
+            ("initialSeed".to_string(), options.seed.to_string()),
+            ("fuzzRuns".to_string(), options.fuzz.to_string()),
             ("reporter".to_string(), reporter.clone()),
         ],
     );
@@ -270,7 +258,7 @@ pub fn main(options: Options) {
         elm_test_rs_root.join("templates/node_supervisor.js"), // template
         tests_root.join("js/node_supervisor.js"),              // output
         vec![
-            ("nb_workers".to_string(), workers.to_string()),
+            ("nb_workers".to_string(), options.workers.to_string()),
             ("node_reporter".to_string(), node_reporter_path_string),
         ],
     );
@@ -317,7 +305,7 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
     }
 }
 
-/// Compile an Elm module into a JS file.
+/// Compile an Elm module into a JS file (without --optimized)
 fn compile<P, I, S>(current_dir: P, compiler: &str, output: P, src: I)
 where
     P: AsRef<Path>,

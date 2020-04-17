@@ -6,7 +6,9 @@ mod install;
 mod run;
 mod utils;
 
+use num_cpus;
 use pico_args;
+use rand::Rng;
 
 #[derive(Debug)]
 /// Type representing command line arguments.
@@ -49,14 +51,21 @@ fn no_subcommand_args(
     args: pico_args::Arguments,
 ) -> Result<Args, Box<dyn std::error::Error>> {
     let mut args = args;
+    let mut rng = rand::thread_rng();
     Ok(Args::Run(run::Options {
         help: args.contains("--help"),
         version: args.contains("--version"),
-        compiler: args.opt_value_from_str("--compiler")?,
-        seed: args.opt_value_from_str("--seed")?,
-        fuzz: args.opt_value_from_str("--fuzz")?,
-        workers: args.opt_value_from_str("--workers")?,
-        report: args.opt_value_from_str("--report")?,
+        compiler: args
+            .opt_value_from_str("--compiler")?
+            .unwrap_or("elm".to_string()),
+        seed: args.opt_value_from_str("--seed")?.unwrap_or(rng.gen()),
+        fuzz: args.opt_value_from_str("--fuzz")?.unwrap_or(100),
+        workers: args
+            .opt_value_from_str("--workers")?
+            .unwrap_or(num_cpus::get() as u32),
+        report: args
+            .opt_value_from_str("--report")?
+            .unwrap_or("console".to_string()),
         files: {
             let mut files = args.free()?;
             if let Some(file) = first_arg {
