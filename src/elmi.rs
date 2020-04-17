@@ -1,8 +1,13 @@
+//! Basically a wrapper module for elmi-to-json for the time being.
+//! It reads the compiled .elmi files and extracts exposed tests.
+
 use miniserde::{json, Deserialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+/// Use elmi-to-json as a binary to extract all exposed tests
+/// from compiled .elmi files.
 pub fn all_tests<P: AsRef<Path>>(
     work_dir: P,
     src_files: &HashSet<PathBuf>,
@@ -41,12 +46,14 @@ pub fn all_tests<P: AsRef<Path>>(
 }
 
 #[derive(Deserialize, Debug)]
+/// Struct mirroring the json result of elmi-to-json --for-elm-test.
 struct ElmiToJsonOutput {
     #[serde(rename = "testModules")]
     test_modules: Vec<TestModule>,
 }
 
 #[derive(Deserialize, Debug)]
+/// Test modules as listed in the json result of elmi-to-json.
 pub struct TestModule {
     #[serde(rename = "moduleName")]
     pub module_name: String,

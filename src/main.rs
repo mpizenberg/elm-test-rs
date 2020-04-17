@@ -9,12 +9,14 @@ mod utils;
 use pico_args;
 
 #[derive(Debug)]
+/// Type representing command line arguments.
 enum Args {
     Init,
     Install { packages: Vec<String> },
     Run(run::Options),
 }
 
+/// Main entry point of elm-test-rs.
 fn main() {
     match main_args() {
         Ok(Args::Init) => init::main(),
@@ -24,6 +26,7 @@ fn main() {
     }
 }
 
+/// Function parsing the command line arguments and returning an Args object or an error.
 fn main_args() -> Result<Args, Box<dyn std::error::Error>> {
     let mut args = pico_args::Arguments::from_env();
     match args.subcommand()?.as_deref() {
@@ -37,9 +40,10 @@ fn main_args() -> Result<Args, Box<dyn std::error::Error>> {
     }
 }
 
+/// Parse all command options and file arguments.
 /// first_arg is here in case it was mistaken for an unknown subcommand
 /// and will be prepended to the rest of free arguments.
-/// This happens for example with `elm-test-rs /path/to/some/Module.elm`.
+/// This happens for example with the command: `elm-test-rs /path/to/some/Module.elm`.
 fn no_subcommand_args(
     first_arg: Option<String>,
     args: pico_args::Arguments,

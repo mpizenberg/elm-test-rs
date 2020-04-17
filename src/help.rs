@@ -1,3 +1,7 @@
+//! Print manually crafted help message.
+//! Automatic help is not handled by the lightweight pico-args.
+
+/// Print help message.
 pub fn main() {
     println!("{}", USAGE);
 }

@@ -1,6 +1,9 @@
+//! Initialize elm tests.
+
 use std::path::Path;
 use std::process::Command;
 
+/// Use the elm-json binary tool to copy the behavior of the command `elm-test init`.
 pub fn main() {
     // Install elm-explorations/test
     let status = Command::new("elm-json")

@@ -1,14 +1,22 @@
+//! Module dealing with the elm.json file.
+//! It handles serialization and deserialization with miniserde
+//! instead of serde to avoid all the dependencies and compile time.
+
 use miniserde::{json, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
 #[derive(Debug)]
+/// Project configuration in an elm.json.
+/// It either is a package or an application.
+/// Both have different sets of fields.
 pub enum Config {
     Package(PackageConfig),
     Application(ApplicationConfig),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+/// Struct representing a package elm.json.
 pub struct PackageConfig {
     #[serde(rename = "type")]
     pub type_: String,
@@ -26,6 +34,7 @@ pub struct PackageConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+/// Struct representing an application elm.json.
 pub struct ApplicationConfig {
     #[serde(rename = "type")]
     pub type_: String,
@@ -39,11 +48,13 @@ pub struct ApplicationConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+/// Application dependencies have both direct and indirect dependencies.
 pub struct Dependencies {
     pub direct: HashMap<String, String>,
     pub indirect: HashMap<String, String>,
 }
 
+/// Convert a string (read from file) into a Config with miniserde.
 impl TryFrom<&str> for Config {
     type Error = String;
     fn try_from(value: &str) -> Result<Self, Self::Error> {
@@ -62,12 +73,18 @@ impl TryFrom<&str> for Config {
 }
 
 #[derive(Deserialize, Debug)]
+/// Temporary struct just to determine if an elm.json
+/// is for a package or an application since miniserde
+/// does not handles enums.
 struct ProjectType {
     #[serde(rename = "type")]
     pub type_: String,
 }
 
-// Convert a package elm.json into an application elm.json
+/// Convert a package elm.json into an application elm.json
+/// This is useful to generate the tests elm.json starting from
+/// the elm.json of the project tested if it is a package.
+/// Basically takes the lower bounds of ranges.
 impl TryFrom<&PackageConfig> for ApplicationConfig {
     type Error = String;
     fn try_from(package: &PackageConfig) -> Result<Self, Self::Error> {
@@ -96,6 +113,7 @@ impl TryFrom<&PackageConfig> for ApplicationConfig {
     }
 }
 
+/// Take the lower bound of a version range.
 fn to_exact_version<T: AsRef<str>>(range: T) -> Result<String, String> {
     let low_bound = range.as_ref().split('<').next();
     low_bound
@@ -103,6 +121,9 @@ fn to_exact_version<T: AsRef<str>>(range: T) -> Result<String, String> {
         .ok_or(format!("Invalid package version range: {}", range.as_ref()))
 }
 
+/// Move test dependencies into normal dependencies.
+/// This is applied to convert the tested project elm.json into the elm.json
+/// used to compile all tests.
 impl ApplicationConfig {
     pub fn promote_test_dependencies(&mut self) {
         let direct_test = self.test_dependencies.direct.clone();
