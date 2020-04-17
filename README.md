@@ -93,6 +93,15 @@ by its author, Natalie Weizenbaum.
 
 ## Embedding template files in the executable?
 
+Currently, the Rust CLI program uses `std::env::current_exe()`
+to find the location of the `elm-test-rs` executable in order do find
+the needed files at runtime such as templates and Elm files to compile.
+Publishing the Elm package in [mpizenberg/elm-test-runner][elm-test-runner],
+would remove the problem of finding the Elm files but we still need the templates.
+An option would be to use [rust-embed][rust-embed] to load those files
+directly into the executable.
+This way, elm-test-rs would be perfectly portable.
+
 [rust-embed]: https://github.com/pyros2097/rust-embed
 
 
