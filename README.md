@@ -95,6 +95,27 @@ The CLI program, if asked to run the tests, performs the following actions.
 
 [diagram]: https://mpizenberg.github.io/resources/elm-test-rs/elm-test-rs.png
 
+## Contributing
+
+Contributions are very welcome.
+This project use [rust format](rustfmt) and [clippy](clippy) (with its default options) to enforce good code style.
+To install these tools run
+
+```bash
+rustup update
+rustup component add clippy rustfmt
+```
+
+And then before committing run
+
+```bash
+cargo fmt
+cargo clippy
+```
+
+[rustfmt]: https://github.com/rust-lang/rustfmt
+[clippy]: https://github.com/rust-lang/rust-clippy
+
 ## Shortcuts and improvements
 
 As this is still a proof of concept, I cut a few corners to get things working.
