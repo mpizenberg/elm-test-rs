@@ -8,6 +8,7 @@ module ElmTestRunner.Reporter.Console exposing (implementation)
 
 import Array exposing (Array)
 import ElmTestRunner.Reporter.Interface exposing (Interface)
+import ElmTestRunner.Reporter.Progress as Progress
 import ElmTestRunner.Result as TestResult exposing (Summary, TestResult(..))
 import String.Format
 
@@ -36,8 +37,13 @@ elm-test-rs --seed {{ seed }} --fuzz {{ fuzzRuns }} {{ files }}
         |> Just
 
 
-onResult : TestResult -> Maybe String
-onResult result =
+onResult : { count : Int, total : Int } -> TestResult -> Maybe String
+onResult { count, total } _ =
+    Just ("\u{000D}" ++ Progress.bar { progress = count, total = total, size = 40 })
+
+
+displayResult : TestResult -> Maybe String
+displayResult result =
     case result of
         Passed _ ->
             Nothing
@@ -76,8 +82,16 @@ formatLabelsHelp formattedLines labels =
 
 onEnd : Array TestResult -> Maybe String
 onEnd testResults =
-    formatSummary (TestResult.summary testResults)
-        |> Just
+    let
+        failedResultsString =
+            Array.toList testResults
+                |> List.filterMap displayResult
+                |> String.join ""
+
+        summary =
+            formatSummary (TestResult.summary testResults)
+    in
+    Just ("\n" ++ failedResultsString ++ summary)
 
 
 formatSummary : Summary -> String

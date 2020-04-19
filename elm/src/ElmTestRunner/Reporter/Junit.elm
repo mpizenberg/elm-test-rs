@@ -19,7 +19,7 @@ import Xml.Encode as Encode
 implementation : Interface
 implementation =
     { onBegin = always Nothing
-    , onResult = always Nothing
+    , onResult = \_ -> always Nothing
     , onEnd = Just << summary
     }
 

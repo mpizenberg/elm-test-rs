@@ -20,7 +20,7 @@ Require the initial random seed and number of fuzz runs.
 implementation : { seed : Int, fuzzRuns : Int } -> Interface
 implementation options =
     { onBegin = onBegin options
-    , onResult = onResult
+    , onResult = \_ -> onResult
     , onEnd = onEnd
     }
 
