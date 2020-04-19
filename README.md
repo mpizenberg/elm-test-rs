@@ -98,7 +98,7 @@ The CLI program, if asked to run the tests, performs the following actions.
 ## Contributing
 
 Contributions are very welcome.
-This project use [rust format][rustfmt] and [clippy][clippy] (with its default options) to enforce good code style.
+This project uses [rust format][rustfmt] and [clippy][clippy] (with its default options) to enforce good code style.
 To install these tools run
 
 ```bash
@@ -112,6 +112,9 @@ And then before committing run
 cargo fmt
 cargo clippy
 ```
+
+PS: clippy is a rapidly evolving tool so if there are lint errors on CI
+don't forget to `rustup update`.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [clippy]: https://github.com/rust-lang/rust-clippy
