@@ -50,9 +50,9 @@ function registerWork(runnerFile) {
 function startWork(runnerFile) {
   working = true;
   // Start first runner worker and prevent piped stdout and sdterr
-  runners[0] = new Worker(runnerFile); //, { stdout: true, stderr: true });
+  runners[0] = new Worker(runnerFile, { stdout: true });//, stderr: true });
   runners[0].on("message", (msg) =>
-    handleRunnerMsg(runners[0], runnerFile, msg)
+    handleRunnerMsg(runners[0], 0, runnerFile, msg)
   );
   runners[0].on("online", () =>
     runners[0].postMessage({ type_: "askNbTests" })
@@ -60,11 +60,13 @@ function startWork(runnerFile) {
 }
 
 // Handle a test result
-function handleRunnerMsg(runner, runnerFile, msg) {
+function handleRunnerMsg(runner, runnerId, runnerFile, msg) {
   if (msg.type_ == "nbTests") {
     setupWithNbTests(runnerFile, msg.nbTests);
   } else if (msg.type_ == "result") {
     handleResult(runner, msg.id, msg.result);
+  } else if (msg.type_ == "logs") {
+    reporter.ports.incomingLogs.send({ runnerId: runnerId, logs: msg.logs });
   } else {
     console.error("Invalid runner msg.type_:", msg.type_);
   }
@@ -88,9 +90,9 @@ function setupWithNbTests(runnerFile, nb) {
   // Create and send work to all other workers.
   let max_workers = Math.min(nb_workers, nbTests);
   for (let i = 1; i < max_workers; i++) {
-    runners[i] = new Worker(runnerFile); //, { stdout: true, stderr: true });
+    runners[i] = new Worker(runnerFile, { stdout: true });//, stderr: true });
     runners[i].on("message", (msg) =>
-      handleRunnerMsg(runners[i], runnerFile, msg)
+      handleRunnerMsg(runners[i], i, runnerFile, msg)
     );
     runners[i].on("online", () =>
       runners[i].postMessage({ type_: "runTest", id: todoTests.pop() })

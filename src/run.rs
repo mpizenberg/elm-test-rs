@@ -145,6 +145,7 @@ pub fn main(options: Options) {
         .arg("elm/random")
         .arg("billstclair/elm-xml-eeue56")
         .arg("jorgengranseth/elm-string-format")
+        .arg("elm/parser")
         .arg("--")
         .arg(&elm_json_tests_path)
         // stdio config

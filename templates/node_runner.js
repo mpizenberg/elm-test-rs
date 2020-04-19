@@ -10,6 +10,11 @@ const { Elm } = require("./Runner.elm.js");
 const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }} };
 const app = Elm.Runner.init({ flags: flags });
 
+// Redirect console.log to parent port instead
+console.log = (str) => {
+  parentPort.postMessage({ type_: "logs", logs: str + "\n" });
+};
+
 // Communication from Supervisor to Elm runner via port
 parentPort.on("message", (msg) => {
   if (msg.type_ == "askNbTests") {
