@@ -98,7 +98,7 @@ The CLI program, if asked to run the tests, performs the following actions.
 ## Contributing
 
 Contributions are very welcome.
-This project use [rust format](rustfmt) and [clippy](clippy) (with its default options) to enforce good code style.
+This project use [rust format][rustfmt] and [clippy][clippy] (with its default options) to enforce good code style.
 To install these tools run
 
 ```bash
