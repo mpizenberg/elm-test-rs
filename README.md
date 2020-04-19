@@ -18,18 +18,14 @@ There is no installation yet, you need to build the tool
 and add **a link** to it in a directory in your PATH env variable.
 Beware that copying the executable (instead of symlink) will not work
 since currently, it needs to find some template files at runtime.
-
-The Elm package managing runner and reporter code is in a git submodule
-so clone with recursive dependencies to get all the code:
-```sh
-git clone --recursive git@github.com:mpizenberg/elm-test-rs.git
-```
-
 To build the `elm-test-rs` binary, install Rust and run the command:
+
 ```sh
 cargo build
 ```
+
 The executable will be located at `target/debug/elm-test-rs`.
+
 
 ## Design goals
 
@@ -101,6 +97,7 @@ The CLI program, if asked to run the tests, performs the following actions.
 
 [diagram]: https://mpizenberg.github.io/resources/elm-test-rs/elm-test-rs.png
 
+
 ## Contributing
 
 Contributions are very welcome.
@@ -124,6 +121,7 @@ don't forget to `rustup update`.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [clippy]: https://github.com/rust-lang/rust-clippy
+
 
 ## Shortcuts and improvements
 
