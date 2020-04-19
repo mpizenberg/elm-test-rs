@@ -1,3 +1,0 @@
-[submodule "elm"]
-	path = elm
-	url = https://github.com/mpizenberg/elm-test-runner.git
