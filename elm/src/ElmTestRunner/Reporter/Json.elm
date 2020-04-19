@@ -21,7 +21,7 @@ implementation : { seed : Int, fuzzRuns : Int } -> Interface
 implementation options =
     { onBegin = onBegin options
     , onResult = onResult
-    , onEnd = onEnd
+    , onEnd = \_ -> onEnd
     }
 
 

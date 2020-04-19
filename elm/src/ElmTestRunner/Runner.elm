@@ -17,12 +17,14 @@ module ElmTestRunner.Runner exposing
 
 -}
 
-import Array
+import Array exposing (Array)
+import ElmTestRunner.Log as Log
 import ElmTestRunner.Result as TestResult exposing (TestResult)
 import ElmTestRunner.SeededRunners as SeededRunners exposing (SeededRunners)
 import Json.Encode exposing (Value)
 import Platform
 import Test exposing (Test)
+import Test.Runner exposing (Runner)
 
 
 
@@ -57,6 +59,7 @@ type alias Flags =
 -}
 type alias Model =
     { ports : Ports Msg
+    , seed : Int
     , testRunners : SeededRunners
     }
 
@@ -130,7 +133,7 @@ worker ({ askNbTests, receiveRunTest } as ports) masterTest =
 
 init : Test -> Ports Msg -> Flags -> ( Model, Cmd Msg )
 init masterTest ports flags =
-    ( Model ports (SeededRunners.fromTest masterTest flags), Cmd.none )
+    ( Model ports flags.initialSeed (SeededRunners.fromTest masterTest flags), Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -145,10 +148,20 @@ update msg model =
 
         -- ReceiveRunTest
         ( ReceiveRunTest id, Ok { runners } ) ->
-            ( model, sendTestResult model.ports id (SeededRunners.run id runners) )
+            ( model
+            , sendTestResult model.ports id (run { seed = model.seed, id = id } runners)
+            )
 
         ( ReceiveRunTest _, Err _ ) ->
             ( model, Debug.todo "Deal with invalid runners" )
+
+
+{-| Run the test and enclose potential Debug logs with a random pattern
+for parsing later
+-}
+run : { seed : Int, id : Int } -> Array Runner -> Maybe TestResult
+run config runners =
+    Log.capture config (SeededRunners.run config.id) runners
 
 
 sendTestResult : Ports msg -> Int -> Maybe TestResult -> Cmd msg

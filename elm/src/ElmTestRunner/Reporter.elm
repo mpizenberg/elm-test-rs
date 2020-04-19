@@ -18,12 +18,15 @@ module ElmTestRunner.Reporter exposing
 -}
 
 import Array exposing (Array)
+import Dict exposing (Dict)
+import ElmTestRunner.Log as Log
 import ElmTestRunner.Reporter.Console as ReporterConsole
 import ElmTestRunner.Reporter.Interface exposing (Interface)
 import ElmTestRunner.Reporter.Json as ReporterJson
 import ElmTestRunner.Reporter.Junit as ReporterJunit
 import ElmTestRunner.Result as TestResult exposing (TestResult)
 import Json.Decode exposing (Value, decodeValue)
+import Parser
 import Task
 
 
@@ -34,6 +37,7 @@ but will basically be wrapped by an actual port in the main Elm caller module.
 type alias Ports msg =
     { restart : (Int -> msg) -> Sub msg
     , incomingResult : (Value -> msg) -> Sub msg
+    , incomingLogs : ({ runnerId : Int, logs : String } -> msg) -> Sub msg
     , stdout : String -> Cmd msg
     , signalFinished : Int -> Cmd msg
     }
@@ -94,11 +98,17 @@ exports.sendResult = app.ports.incomingResult.send;
 
 -}
 worker : Ports Msg -> Program Flags Model Msg
-worker ({ restart, incomingResult } as ports) =
+worker ({ restart, incomingResult, incomingLogs } as ports) =
     Platform.worker
-        { init = init ports
+        { init = \flags -> ( initialModel ports flags, Cmd.none )
         , update = update
-        , subscriptions = \_ -> Sub.batch [ restart Restart, incomingResult IncomingResult ]
+        , subscriptions =
+            \_ ->
+                Sub.batch
+                    [ restart Restart
+                    , incomingResult IncomingResult
+                    , incomingLogs IncomingLogs
+                    ]
         }
 
 
@@ -121,9 +131,11 @@ type alias Flags =
 -}
 type alias Model =
     { ports : Ports Msg
+    , initialSeed : Int
     , reporter : Interface
     , nbTests : Int
     , testResults : Array TestResult
+    , logs : Dict Int String
     }
 
 
@@ -132,6 +144,7 @@ type alias Model =
 type Msg
     = Restart Int
     | IncomingResult Value
+    | IncomingLogs { runnerId : Int, logs : String }
     | Summarize
     | Finished
 
@@ -153,22 +166,32 @@ chooseReporter { initialSeed, fuzzRuns, mode } =
             ReporterConsole.implementation { seed = initialSeed, fuzzRuns = fuzzRuns }
 
 
-init : Ports Msg -> Flags -> ( Model, Cmd Msg )
-init ports flags =
-    let
-        reporter =
-            chooseReporter flags
-    in
-    ( Model ports reporter 0 Array.empty, Cmd.none )
+initialModel : Ports Msg -> Flags -> Model
+initialModel ports flags =
+    resetModel ports flags.initialSeed (chooseReporter flags) 0
+
+
+resetModel : Ports Msg -> Int -> Interface -> Int -> Model
+resetModel ports initialSeed reporter nbTests =
+    { ports = ports
+    , initialSeed = initialSeed
+    , reporter = reporter
+    , nbTests = nbTests
+    , testResults = Array.empty
+    , logs = Dict.empty
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Restart nbTests ->
-            ( Model model.ports model.reporter nbTests Array.empty
+            ( resetModel model.ports model.initialSeed model.reporter nbTests
             , report model.ports.stdout (model.reporter.onBegin nbTests)
             )
+
+        IncomingLogs { runnerId, logs } ->
+            ( { model | logs = Dict.update runnerId (updateLogs logs) model.logs }, Cmd.none )
 
         IncomingResult value ->
             let
@@ -201,10 +224,37 @@ update msg model =
                 )
 
         Summarize ->
-            ( model, summarize model.ports.stdout (model.reporter.onEnd model.testResults) )
+            let
+                allLogs =
+                    Dict.foldl (\_ log logs -> logs ++ log) "" model.logs
+
+                logPattern =
+                    Log.seedPattern model.initialSeed
+
+                parsedLogs =
+                    Parser.run (Log.parser logPattern) allLogs
+                        |> Result.map (List.sortBy .id)
+                        |> Result.map (List.map .logs)
+                        |> Result.map Array.fromList
+                        |> Result.withDefault Array.empty
+
+                maybeReport =
+                    model.reporter.onEnd parsedLogs model.testResults
+            in
+            ( model, summarize model.ports.stdout maybeReport )
 
         Finished ->
             ( model, model.ports.signalFinished (errorCode model.testResults) )
+
+
+updateLogs : String -> Maybe String -> Maybe String
+updateLogs log maybeLogs =
+    case maybeLogs of
+        Just logs ->
+            Just (logs ++ log)
+
+        Nothing ->
+            Just log
 
 
 errorCode : Array TestResult -> Int

@@ -20,7 +20,7 @@ implementation : Interface
 implementation =
     { onBegin = always Nothing
     , onResult = always Nothing
-    , onEnd = Just << summary
+    , onEnd = \_ -> Just << summary
     }
 
 

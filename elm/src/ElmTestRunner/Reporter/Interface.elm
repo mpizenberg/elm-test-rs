@@ -27,5 +27,5 @@ has to be logged by the reporter.
 type alias Interface =
     { onBegin : Int -> Maybe String
     , onResult : TestResult -> Maybe String
-    , onEnd : Array TestResult -> Maybe String
+    , onEnd : Array String -> Array TestResult -> Maybe String
     }
