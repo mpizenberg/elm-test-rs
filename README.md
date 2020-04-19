@@ -19,6 +19,12 @@ and add **a link** to it in a directory in your PATH env variable.
 Beware that copying the executable (instead of symlink) will not work
 since currently, it needs to find some template files at runtime.
 
+The Elm package managing runner and reporter code is in a git submodule
+so clone with recursive dependencies to get all the code:
+```sh
+git clone --recursive git@github.com:mpizenberg/elm-test-rs.git
+```
+
 To build the `elm-test-rs` binary, install Rust and run the command:
 ```sh
 cargo build
