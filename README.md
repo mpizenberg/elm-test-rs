@@ -77,7 +77,7 @@ Communication between the Elm and JS parts are done through ports, as usual.
 More details about the supervisor, runner and reporter parts are available
 in [mpizenberg/elm-test-runner][elm-test-runner].
 
-[elm-test-runner]: https://github.com/mpizenberg/elm-test-runner
+[elm-test-runner]: elm
 
 Rust was chosen for the first part since it is a very well fitted language
 for systemish CLI programs and enables consise, fast and robust programs.
