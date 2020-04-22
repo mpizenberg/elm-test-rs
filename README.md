@@ -45,8 +45,9 @@ However, this doesn't intend to support Elm prior to 0.19.1.
 
 Missing features for parity with elm-test:
 
- - [ ] `--watch` mode
- - [ ] colors and pretty-printing of diffs
+ - [ ] `--watch` mode ([issue #7][watch-mode])
+ - [ ] colors ([issue #5][colors])
+ - [ ] pretty-printing of diffs ([issue #6][pretty-printing])
  - [ ] timing of runs
 
 Additional features:
@@ -55,6 +56,9 @@ Additional features:
  - [ ] capturing `Debug.log` calls ([example implementation][capture-log])
  - [ ] progess bar ([example implementation][progress-bar])
 
+[watch-mode]: https://github.com/mpizenberg/elm-test-rs/issues/7
+[colors]: https://github.com/mpizenberg/elm-test-rs/issues/5
+[pretty-printing]: https://github.com/mpizenberg/elm-test-rs/issues/6
 [capture-log]: https://github.com/mpizenberg/elm-test-rs/pull/4
 [progress-bar]: https://github.com/mpizenberg/elm-test-rs/pull/3
 
