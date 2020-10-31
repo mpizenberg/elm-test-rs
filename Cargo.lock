@@ -27,11 +27,13 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "glob",
+ "lazy_static",
  "miniserde",
  "num_cpus",
  "pathdiff",
  "pico-args",
  "rand",
+ "regex",
  "thiserror",
  "tree-sitter",
  "varj",

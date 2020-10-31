@@ -9,7 +9,6 @@ extern "C" {
 }
 
 #[must_use]
-#[allow(dead_code)]
 pub fn tree_sitter_elm() -> Language {
     unsafe { raw_tree_sitter_elm() }
 }
@@ -29,7 +28,6 @@ pub enum ExplicitExposedValuesError<'a> {
 ///
 /// If the elm file is not valid (it will fail `elm make`).
 ///
-#[allow(dead_code)]
 pub fn get_all_exposed_values<'a>(
     tree: &'a Tree,
     source: &'a str,
@@ -96,7 +94,7 @@ fn get_all_top_level_values<'a>(
         if cursor.node().kind() == "value_declaration" {
             let mut c1 = ChildCursor::new(&mut cursor)?;
             let c2 = ChildCursor::new(c1.child_mut())?;
-            v.push(dbg!(&source[c2.child().node().byte_range()]));
+            v.push(&source[c2.child().node().byte_range()]);
         }
         if next_sibling(&mut cursor).is_err() {
             break Ok(v);
