@@ -396,8 +396,9 @@ fn get_module_name(
 
     // By finding the module name from the file path we can import it even if
     // the file is full of errors. Elm will then report what’s wrong.
-    let module_name_parts = dbg!(test_file.as_ref())
-        .strip_prefix(dbg!(&matching_source_dir.as_ref()))
+    let module_name_parts = test_file
+        .as_ref()
+        .strip_prefix(matching_source_dir)
         .unwrap()
         .components()
         .map(|c| match c {
