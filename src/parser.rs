@@ -184,6 +184,20 @@ module Main.Pain exposing (int, Int,
     test, Test)",
             &Some(vec!["int", "test"]),
         );
+        helper(
+            r#"
+module{--}Main {-
+    {{-}-}-
+-}exposing--{-
+    ({--}one{--}
+    ,
+    -- notExport
+    two{-{-{-{--}-}{--}-}{-{--}-}-},Type{--}({--}..{--}){--}
+    ,    three
+    )--
+"#,
+            &Some(vec!["one", "two", "three"]),
+        );
     }
     #[test]
     fn get_all_top_level_values() {
@@ -230,6 +244,26 @@ withNestedValues a =
 ",
             &vec!["withNestedValues"],
         );
+        helper(
+            r#"
+module Main exposing ( ..)
+
+one="\"{-"
+two="""-}
+notAThing = something
+\"""
+notAThing2 = something
+"""
+three = '"' {- "
+notAThing3 = something
+-}
+four{--}=--{-
+    1
+five = something
+--}
+"#,
+            &vec!["one", "two", "three", "four", "five"],
+        );
     }
 }
 
@@ -243,11 +277,24 @@ fn check_kind<'b>(
         Err(ExplicitExposedValuesError::UnexpectedNode(node))
     }
 }
+
+fn skip_comments<'b>(
+    cursor: &mut tree_sitter::TreeCursor<'b>,
+) -> Result<(), ExplicitExposedValuesError<'b>> {
+    while cursor.node().kind() == "line_comment" {
+        if cursor.goto_next_sibling() {
+        } else {
+            return Err(ExplicitExposedValuesError::ShouldHaveSibling(cursor.node()));
+        }
+    }
+    Ok(())
+}
+
 fn child<'b>(
     cursor: &mut tree_sitter::TreeCursor<'b>,
 ) -> Result<(), ExplicitExposedValuesError<'b>> {
     if cursor.goto_first_child() {
-        Ok(())
+        skip_comments(cursor)
     } else {
         Err(ExplicitExposedValuesError::ShouldHaveChildren(
             cursor.node(),
@@ -258,7 +305,7 @@ fn next_sibling<'b>(
     cursor: &mut tree_sitter::TreeCursor<'b>,
 ) -> Result<(), ExplicitExposedValuesError<'b>> {
     if cursor.goto_next_sibling() {
-        Ok(())
+        skip_comments(cursor)
     } else {
         Err(ExplicitExposedValuesError::ShouldHaveSibling(cursor.node()))
     }
