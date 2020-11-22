@@ -359,9 +359,16 @@ fn add_kernel_test_checking(elm_js: &str) -> String {
         /// variant of the `Test` type. To avoid having to update this regex if a new
         /// variant is added, newer versions of elm-explorations/test have prefixed all
         /// variants with `ElmTestVariant__` so we can match just on that.
-        static ref TEST_VARIANT_DEFINITION: Regex = Regex::new(r#"(?m)^var\s+\$elm_explorations\$test\$Test\$Internal\$(?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)\s*=\s*(?:\w+\(\s*)?function\s*\([\w, ]*\)\s*\{\s*return\s*\{"#).unwrap();
+        static ref TEST_VARIANT_DEFINITION: Regex = Regex::new(r#"(?mx)
+    ^var\s+\$elm_explorations\$test\$Test\$Internal\$
+    (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)
+    \s*=\s*(?:\w+\(\s*)?function\s*\([\w,\s]*\)\s*\{\s*return\s*\{
+"#).unwrap();
 
-        static ref CHECK_DEFINITION: Regex = Regex::new(r#"(?m)^(var\s+\$author\$project\$Runner\$check)\s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$"#).unwrap();
+        static ref CHECK_DEFINITION: Regex = Regex::new(r#"(?mx)
+    ^(var\s+\$author\$project\$Runner\$check)
+    \s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$
+"#).unwrap();
     }
 
     let elm_js =
