@@ -30,7 +30,10 @@ check =
 
 checkHelperReplaceMe___ : a -> b
 checkHelperReplaceMe___ _ =
-    Debug.todo "The regex for replacing this Debug.todo with some real code must have failed since you see this message!\n\nPlease report this bug: https://github.com/rtfeldman/node-test-runner/issues/new\n"
+    Debug.todo """The regex for replacing this Debug.todo with some real code must have failed since you see this message!
+
+Please report this bug: https://github.com/mpizenberg/elm-test-rs/issues/new
+"""
 
 
 testsForModule : List { module_ : String, maybeTests : List (Maybe Test) }
