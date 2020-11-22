@@ -6,10 +6,9 @@ Attempt at a simpler alternative to node-test-runner for elm tests.
 ## Usage
 
 Just replace `elm-test` by `elm-test-rs`.
-Currently, you need to have elm 0.19.1, [elm-json][elm-json] and [elmi-to-json][elmi-to-json] installed.
+Currently, you need to have elm 0.19.1, [elm-json][elm-json] installed.
 
 [elm-json]: https://github.com/zwilias/elm-json
-[elmi-to-json]: https://github.com/stoeffel/elmi-to-json
 
 
 ## Install
@@ -135,8 +134,7 @@ don't forget to `rustup update`.
 
 As this is still a proof of concept, I cut a few corners to get things working.
 For example, the generation of the `elm.json` for the tests uses directly
-[zwilias/elm-json][elm-json] as a binary, and the detection of exposed tests is
-done with [stoeffel/elmi-to-json][elmi-to-json] as in elm-test.
+[zwilias/elm-json][elm-json] as a binary.
 
 Eventually, it would be useful to extract the dependency solving algorithm from elm-json
 into a crate of its own and to make it available offline if a suitable solution
