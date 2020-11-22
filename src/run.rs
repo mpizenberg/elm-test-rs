@@ -359,9 +359,6 @@ fn add_kernel_test_checking(elm_js: &str) -> String {
         /// variant of the `Test` type. To avoid having to update this regex if a new
         /// variant is added, newer versions of elm-explorations/test have prefixed all
         /// variants with `ElmTestVariant__` so we can match just on that.
-        /// TODO(harry): ask Lydell if the \s*\$:\s*(['"])\1\2 bit is important.
-        /// I had to remove this from the end because the regex crate does not
-        /// support them.
         static ref TEST_VARIANT_DEFINITION: Regex = Regex::new(r#"(?m)^var\s+\$elm_explorations\$test\$Test\$Internal\$(?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)\s*=\s*(?:\w+\(\s*)?function\s*\([\w, ]*\)\s*\{\s*return\s*\{"#).unwrap();
 
         static ref CHECK_DEFINITION: Regex = Regex::new(r#"(?m)^(var\s+\$author\$project\$Runner\$check)\s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$"#).unwrap();
