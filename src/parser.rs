@@ -1,17 +1,9 @@
 #![warn(clippy::pedantic)]
 
+use std::{fs, path::Path};
+
 use thiserror::Error;
 use tree_sitter::{Language, Tree};
-
-extern "C" {
-    #[link_name = "tree_sitter_elm"]
-    fn raw_tree_sitter_elm() -> Language;
-}
-
-#[must_use]
-pub fn tree_sitter_elm() -> Language {
-    unsafe { raw_tree_sitter_elm() }
-}
 
 #[derive(Error, Debug)]
 pub enum ExplicitExposedValuesError<'a> {
@@ -102,6 +94,37 @@ fn get_all_top_level_values<'a>(
     }
 }
 
+pub struct TestModule {
+    pub path: String,
+    pub tests: Vec<String>,
+}
+
+/// Find all possible tests (all values) in test_files.
+pub fn all_tests(
+    test_files: impl IntoIterator<Item = impl AsRef<Path>>,
+) -> Result<Vec<TestModule>, String> {
+    test_files
+        .into_iter()
+        .map(|test_file| {
+            let source = fs::read_to_string(&test_file).unwrap();
+
+            let tree = {
+                let mut parser = tree_sitter::Parser::new();
+                let language = tree_sitter_elm::language();
+                parser.set_language(language).unwrap();
+                parser.parse(&source, None).unwrap()
+            };
+
+            crate::parser::get_all_exposed_values(&tree, &source)
+                .map(|tests| TestModule {
+                    path: test_file.as_ref().to_str().unwrap().to_string(),
+                    tests: tests.iter().map(|s| s.to_string()).collect(),
+                })
+                .map_err(|s| s.to_string())
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -109,7 +132,7 @@ mod tests {
 
     fn tree_from_elm(source_code: &str) -> Tree {
         let mut parser = Parser::new();
-        let language = super::tree_sitter_elm();
+        let language = tree_sitter_elm::language();
         parser.set_language(language).unwrap();
         parser.parse(source_code, None).unwrap()
     }

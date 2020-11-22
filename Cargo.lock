@@ -36,6 +36,7 @@ dependencies = [
  "regex",
  "thiserror",
  "tree-sitter",
+ "tree-sitter-elm",
  "varj",
 ]
 
@@ -270,6 +271,16 @@ checksum = "d18dcb776d3affaba6db04d11d645946d34a69b3172e588af96ce9fecd20faac"
 dependencies = [
  "cc",
  "regex",
+]
+
+[[package]]
+name = "tree-sitter-elm"
+version = "4.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd9fe2f45dcc6641bdab57aa3a1aa9cec04633d1b5bccdf1347300a9f72aa2e5"
+dependencies = [
+ "cc",
+ "tree-sitter",
 ]
 
 [[package]]

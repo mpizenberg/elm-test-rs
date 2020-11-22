@@ -1,5 +1,4 @@
 mod elm_json;
-mod elmi;
 mod help;
 mod init;
 mod install;
@@ -47,7 +46,7 @@ fn main_args() -> Result<Args, Box<dyn std::error::Error>> {
 /// This happens for example with the command: `elm-test-rs /path/to/some/Module.elm`.
 fn no_subcommand_args(
     first_arg: Option<String>,
-        mut args: pico_args::Arguments,
+    mut args: pico_args::Arguments,
 ) -> Result<Args, Box<dyn std::error::Error>> {
     let mut rng = rand::thread_rng();
     Ok(Args::Run(run::Options {
