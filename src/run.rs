@@ -179,7 +179,12 @@ pub fn main(options: Options) {
 
     // Find all modules and tests
     eprintln!("Finding all modules and tests ...");
-    let all_modules_and_tests = crate::parser::all_tests(&module_paths).unwrap();
+    let all_modules_and_tests = crate::parser::all_tests(
+        module_paths
+            .iter()
+            .map(|path| (path, fs::read_to_string(path).unwrap())),
+    )
+    .unwrap();
 
     let (runner_imports, maybe_runner_tests): (Vec<String>, Vec<String>) = all_modules_and_tests
         .iter()

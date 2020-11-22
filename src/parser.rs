@@ -1,9 +1,9 @@
 #![warn(clippy::pedantic)]
 
-use std::{fs, path::Path};
+use std::path::{Path, PathBuf};
 
 use thiserror::Error;
-use tree_sitter::{Language, Tree};
+use tree_sitter::Tree;
 
 #[derive(Error, Debug)]
 pub enum ExplicitExposedValuesError<'a> {
@@ -95,30 +95,28 @@ fn get_all_top_level_values<'a>(
 }
 
 pub struct TestModule {
-    pub path: String,
+    pub path: PathBuf,
     pub tests: Vec<String>,
 }
 
-/// Find all possible tests (all values) in test_files.
+/// Find all possible tests (all values) in `test_files`.
 pub fn all_tests(
-    test_files: impl IntoIterator<Item = impl AsRef<Path>>,
+    test_sources: impl IntoIterator<Item = (impl AsRef<Path>, impl AsRef<str>)>,
 ) -> Result<Vec<TestModule>, String> {
-    test_files
+    test_sources
         .into_iter()
-        .map(|test_file| {
-            let source = fs::read_to_string(&test_file).unwrap();
-
+        .map(|(file_path, source)| {
             let tree = {
                 let mut parser = tree_sitter::Parser::new();
                 let language = tree_sitter_elm::language();
                 parser.set_language(language).unwrap();
-                parser.parse(&source, None).unwrap()
+                parser.parse(source.as_ref(), None).unwrap()
             };
 
-            crate::parser::get_all_exposed_values(&tree, &source)
+            crate::parser::get_all_exposed_values(&tree, source.as_ref())
                 .map(|tests| TestModule {
-                    path: test_file.as_ref().to_str().unwrap().to_string(),
-                    tests: tests.iter().map(|s| s.to_string()).collect(),
+                    path: file_path.as_ref().to_owned(),
+                    tests: tests.into_iter().map(ToString::to_string).collect(),
                 })
                 .map_err(|s| s.to_string())
         })
