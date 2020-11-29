@@ -186,7 +186,7 @@ pub fn main(options: Options) {
             let full_module_tests: Vec<String> = module
                 .tests
                 .iter()
-                .map(move |test| module.module_name.clone() + "." + test)
+                .map(|test| format!("{}.{}", &module.module_name, test))
                 .collect();
             format!(
                 r#"Test.describe "{}" [ {} ]"#,
