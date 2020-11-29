@@ -101,8 +101,7 @@ pub fn main(options: Options) {
     };
 
     // Make src dirs relative to the generated tests root
-    let tests_root = elm_project_root.join("elm-stuff/tests-0.19.1");
-    let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();
+    let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
     let test_directories: Vec<PathBuf> = elm_json_tests
         .source_directories
         .iter()
@@ -110,17 +109,15 @@ pub fn main(options: Options) {
         .chain(std::iter::once(&"tests".to_string()))
         // Get canonical form
         .map(|path| elm_project_root.join(path).canonicalize().unwrap())
-        // Get path relative to tests_root
         .collect();
 
+    let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();
     let source_directories_for_runner: Vec<PathBuf> = test_directories
         .iter()
+        // Get path relative to tests_root
         .map(|path| pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path"))
         // Add src/ and elm-test-rs/elm/src/ to the source directories
-        .chain(vec![
-            Path::new("src").into(),
-            elm_test_rs_root.join("elm/src"),
-        ])
+        .chain(vec!["src".into(), elm_test_rs_root.join("elm").join("src")])
         .collect();
 
     elm_json_tests.source_directories = source_directories_for_runner
