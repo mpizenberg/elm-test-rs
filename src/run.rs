@@ -3,12 +3,13 @@
 use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use regex::Regex;
+use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::ffi::OsStr;
+use std::fs;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::{self, Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::{collections::HashSet, fs};
-use std::{convert::TryFrom, path};
 
 #[derive(Debug)]
 /// Options passed as arguments.
