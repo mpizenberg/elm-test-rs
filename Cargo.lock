@@ -9,7 +9,6 @@ dependencies = [
  "num_cpus",
  "pathdiff",
  "pico-args",
- "varj",
 ]
 
 [[package]]
@@ -123,9 +122,3 @@ name = "unicode-xid"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7fe0bb3479651439c9112f72b6c505038574c9fbb575ed1bf3b797fa39dd564"
-
-[[package]]
-name = "varj"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3faa0617fbc4e45d02504b977ba6020897f1dba5cfd9dce84e1b76bf027d64f2"
