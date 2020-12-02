@@ -391,7 +391,7 @@ fn add_kernel_test_checking(elm_js: &str) -> String {
 }
 
 fn get_module_name(
-    source_dirs: impl IntoIterator<Item = impl AsRef<Path>> + Clone,
+    source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
     test_file: impl AsRef<Path>,
 ) -> String {
     let matching_source_dir = {
