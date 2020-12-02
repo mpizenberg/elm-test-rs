@@ -169,15 +169,6 @@ pub fn main(options: Options) {
         .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
         .expect("Unable to write to generated elm.json");
 
-    // Compile all test files
-    eprintln!("Compiling all test files ...");
-    compile(
-        &tests_root,       // current_dir
-        &options.compiler, // compiler
-        "/dev/null",       // output
-        &module_paths,     // src
-    );
-
     // Find all modules and tests
     eprintln!("Finding all modules and tests ...");
     let all_modules_and_tests = crate::parser::all_tests(
