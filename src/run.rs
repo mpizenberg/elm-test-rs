@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::Write;
-use std::path::{self, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 #[derive(Debug)]
@@ -390,44 +390,35 @@ fn add_kernel_test_checking(elm_js: &str) -> String {
     ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n")
 }
 
+// By finding the module name from the file path we can import it even if
+// the file is full of errors. Elm will then report what’s wrong.
 fn get_module_name(
     source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
-    test_file: impl AsRef<Path>,
+    file: impl AsRef<Path>,
 ) -> String {
+    let file = file.as_ref();
     let matching_source_dir = {
-        let mut matching_dir_iter = source_dirs
-            .into_iter()
-            .filter(|dir| test_file.as_ref().starts_with(&dir));
-        if let Some(dir) = matching_dir_iter.next() {
-            let extra: Vec<_> = matching_dir_iter.collect();
-            if !extra.is_empty() {
-                panic!("2+ matching source dirs")
-            }
-            dir
-        } else {
-            panic!(
-                "This file:
+        let mut matching = source_dirs.into_iter().filter(|dir| file.starts_with(dir));
+        match (matching.next(), matching.next()) {
+            (None, None) => {
+                panic!(
+                    "This file:
 {}
 ...matches no source directory! Imports won’t work then.
 ",
-                test_file.as_ref().display()
-            )
+                    file.display()
+                )
+            }
+            (Some(dir), None) => dir,
+            _ => panic!("2+ matching source dirs"),
         }
     };
 
-    // By finding the module name from the file path we can import it even if
-    // the file is full of errors. Elm will then report what’s wrong.
-    let module_name_parts = test_file
-        .as_ref()
+    let trimmed: PathBuf = file
         .strip_prefix(matching_source_dir)
         .unwrap()
-        .components()
-        .map(|c| match c {
-            path::Component::Normal(s) => s.to_str().unwrap().replace(".elm", ""),
-            _ => panic!(),
-        })
-        .collect::<Vec<_>>();
-
+        .with_extension("");
+    let module_name_parts: Vec<_> = trimmed.iter().map(|s| s.to_str().unwrap()).collect();
     assert!(module_name_parts.iter().all(|s| is_upper_name(s)));
     assert!(!module_name_parts.is_empty());
     module_name_parts.join(".")
