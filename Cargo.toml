@@ -8,12 +8,10 @@ description = "Simple and fast rust alternative to node-test-runner for elm-test
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pico-args = "0.3.1"
+pico-args = "0.3.4"
 glob = "0.3.0"
-varj = "0.1.0"
-miniserde = "0.1"
-pathdiff = "0.1"
-rand = { version = "0.7.3", default-features = false, features = ["std"] }
-num_cpus = "1"
+miniserde = "0.1.13"
+pathdiff = "0.2.0"
+num_cpus = "1.13.0"
 
 [dev-dependencies]

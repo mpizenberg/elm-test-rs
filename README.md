@@ -45,14 +45,22 @@ However, this doesn't intend to support Elm prior to 0.19.1.
 
 Missing features for parity with elm-test:
 
- - [ ] `--watch` mode
- - [ ] colors and pretty-printing of diffs
+ - [ ] `--watch` mode ([issue #7][watch-mode])
+ - [ ] colors ([issue #5][colors])
+ - [ ] pretty-printing of diffs ([issue #6][pretty-printing])
  - [ ] timing of runs
 
 Additional features:
 
  - [x] `--workers` option to choose the number of runner workers
- - [ ] capturing `Debug.log` calls
+ - [ ] capturing `Debug.log` calls ([example implementation][capture-log])
+ - [ ] progess bar ([example implementation][progress-bar])
+
+[watch-mode]: https://github.com/mpizenberg/elm-test-rs/issues/7
+[colors]: https://github.com/mpizenberg/elm-test-rs/issues/5
+[pretty-printing]: https://github.com/mpizenberg/elm-test-rs/issues/6
+[capture-log]: https://github.com/mpizenberg/elm-test-rs/pull/4
+[progress-bar]: https://github.com/mpizenberg/elm-test-rs/pull/3
 
 
 ## Code architecture
@@ -73,7 +81,7 @@ Communication between the Elm and JS parts are done through ports, as usual.
 More details about the supervisor, runner and reporter parts are available
 in [mpizenberg/elm-test-runner][elm-test-runner].
 
-[elm-test-runner]: https://github.com/mpizenberg/elm-test-runner
+[elm-test-runner]: elm
 
 Rust was chosen for the first part since it is a very well fitted language
 for systemish CLI programs and enables consise, fast and robust programs.

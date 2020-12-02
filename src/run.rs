@@ -100,23 +100,29 @@ pub fn main(options: Options) {
     };
 
     // Make src dirs relative to the generated tests root
-    let tests_root = elm_project_root.join("elm-stuff/tests-0.19.1");
-    let mut source_directories: Vec<PathBuf> = elm_json_tests
+    let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
+    let test_directories: Vec<PathBuf> = elm_json_tests
         .source_directories
         .iter()
         // Add tests/ to the list of source directories
         .chain(std::iter::once(&"tests".to_string()))
         // Get canonical form
         .map(|path| elm_project_root.join(path).canonicalize().unwrap())
-        // Get path relative to tests_root
-        .map(|path| pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path"))
         .collect();
 
-    // Add src/ and elm-test-rs/elm/src/ to the source directories
+    // TODO: get rid of elm_test_rs_root.
+    // The content of the elm/ directory should be used either as an elm package,
+    // or embedded in the executable.
     let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();
-    source_directories.push(Path::new("src").into());
-    source_directories.push(elm_test_rs_root.join("elm/src"));
-    elm_json_tests.source_directories = source_directories
+    let source_directories_for_runner: Vec<PathBuf> = test_directories
+        .iter()
+        // Get path relative to tests_root
+        .map(|path| pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path"))
+        // Add src/ and elm-test-rs/elm/src/ to the source directories
+        .chain(vec!["src".into(), elm_test_rs_root.join("elm").join("src")])
+        .collect();
+
+    elm_json_tests.source_directories = source_directories_for_runner
         .iter()
         .map(|path| path.to_str().unwrap().to_string())
         .collect();
@@ -164,10 +170,10 @@ pub fn main(options: Options) {
     // Compile all test files
     eprintln!("Compiling all test files ...");
     compile(
-        &tests_root,                        // current_dir
-        &options.compiler,                  // compiler
-        &Path::new("/dev/null").to_owned(), // output
-        module_paths.iter(),                // src
+        &tests_root,       // current_dir
+        &options.compiler, // compiler
+        "/dev/null",       // output
+        &module_paths,     // src
     );
 
     // Find all modules and tests
@@ -183,7 +189,7 @@ pub fn main(options: Options) {
             let full_module_tests: Vec<String> = module
                 .tests
                 .iter()
-                .map(move |test| module.module_name.clone() + "." + test)
+                .map(|test| format!("{}.{}", &module.module_name, test))
                 .collect();
             format!(
                 r#"Test.describe "{}" [ {} ]"#,
@@ -194,59 +200,80 @@ pub fn main(options: Options) {
         .collect();
 
     // Generate templated src/Runner.elm
+    #[cfg(unix)]
+    let runner_template = include_str!("../templates/Runner.elm");
+    #[cfg(windows)]
+    let runner_template = include_str!("..\\templates\\Runner.elm");
     create_templated(
-        elm_test_rs_root.join("templates/Runner.elm"), // template
-        tests_root.join("src/Runner.elm"),             // output
-        vec![
-            ("user_imports".to_string(), runner_imports.join("\n")),
-            ("tests".to_string(), runner_tests.join("\n    , ")),
+        runner_template,                           // template
+        tests_root.join("src").join("Runner.elm"), // output
+        &[
+            ("{{ user_imports }}", &runner_imports.join("\n")),
+            ("{{ tests }}", &runner_tests.join("\n    , ")),
         ],
     );
 
     // Compile the src/Runner.elm file into Runner.elm.js
     eprintln!("Compiling the generated templated src/Runner.elm ...");
-    let compiled_elm_file = tests_root.join("js/Runner.elm.js");
+    let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     compile(
-        &tests_root,         // current_dir
-        &options.compiler,   // compiler
-        &compiled_elm_file,  // output
-        &["src/Runner.elm"], // src
+        &tests_root,       // current_dir
+        &options.compiler, // compiler
+        &compiled_runner,  // output
+        &[Path::new("src").join("Runner.elm")],
     );
 
     // Generate the node_runner.js node module embedding the Elm runner
-    let polyfills = std::fs::read_to_string(&elm_test_rs_root.join("templates/node_polyfills.js"))
-        .expect("polyfills.js template missing");
-    let node_runner_path = tests_root.join("js/node_runner.js");
+    #[cfg(unix)]
+    let polyfills = include_str!("../templates/node_polyfills.js");
+    #[cfg(windows)]
+    let polyfills = include_str!("..\\templates\\node_polyfills.js");
+    #[cfg(unix)]
+    let node_runner_template = include_str!("../templates/node_runner.js");
+    #[cfg(windows)]
+    let node_runner_template = include_str!("..\\templates\\node_runner.js");
+    let node_runner_path = tests_root.join("js").join("node_runner.js");
     create_templated(
-        elm_test_rs_root.join("templates/node_runner.js"), // template
-        node_runner_path.clone(),                          // output
-        vec![
-            ("polyfills".to_string(), polyfills.clone()),
-            ("initialSeed".to_string(), options.seed.to_string()),
-            ("fuzzRuns".to_string(), options.fuzz.to_string()),
+        node_runner_template, // template
+        &node_runner_path,    // output
+        &[
+            ("{{ initialSeed }}", &options.seed.to_string()),
+            ("{{ fuzzRuns }}", &options.fuzz.to_string()),
+            ("{{ polyfills }}", polyfills),
         ],
     );
 
     // Compile the Reporter.elm into Reporter.elm.js
     eprintln!("Compiling Reporter.elm.js ...");
-    let compiled_reporter = tests_root.join("js/Reporter.elm.js");
+    #[cfg(unix)]
+    let reporter_template = include_str!("../templates/Reporter.elm");
+    #[cfg(windows)]
+    let reporter_template = include_str!("..\\templates\\Reporter.elm");
+    let reporter_elm_path = tests_root.join("src").join("Reporter.elm");
+    std::fs::write(&reporter_elm_path, reporter_template)
+        .expect("Error writing Reporter.elm to test folder");
+    let compiled_reporter = tests_root.join("js").join("Reporter.elm.js");
     compile(
         &tests_root,        // current_dir
         &options.compiler,  // compiler
         &compiled_reporter, // output
-        &[elm_test_rs_root.join("templates/Reporter.elm")],
+        &[&reporter_elm_path],
     );
 
     // Generate the supervisor Node module
+    #[cfg(unix)]
+    let node_supervisor_template = include_str!("../templates/node_supervisor.js");
+    #[cfg(windows)]
+    let node_supervisor_template = include_str!("..\\templates\\node_supervisor.js");
     create_templated(
-        elm_test_rs_root.join("templates/node_supervisor.js"), // template
-        tests_root.join("js/node_supervisor.js"),              // output
-        vec![
-            ("polyfills".to_string(), polyfills),
-            ("nb_workers".to_string(), options.workers.to_string()),
-            ("initialSeed".to_string(), options.seed.to_string()),
-            ("fuzzRuns".to_string(), options.fuzz.to_string()),
-            ("reporter".to_string(), reporter),
+        node_supervisor_template,                         // template
+        tests_root.join("js").join("node_supervisor.js"), // output
+        &[
+            ("{{ nb_workers }}", &options.workers.to_string()),
+            ("{{ initialSeed }}", &options.seed.to_string()),
+            ("{{ fuzzRuns }}", &options.fuzz.to_string()),
+            ("{{ reporter }}", &reporter),
+            ("{{ polyfills }}", polyfills),
         ],
     );
 
@@ -293,9 +320,10 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
 }
 
 /// Compile an Elm module into a JS file (without --optimized)
-fn compile<P, I, S>(current_dir: P, compiler: &str, output: P, src: I)
+fn compile<P1, P2, I, S>(current_dir: P1, compiler: &str, output: P2, src: I)
 where
-    P: AsRef<Path>,
+    P1: AsRef<Path>,
+    P2: AsRef<Path>,
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
@@ -316,12 +344,10 @@ where
 }
 
 /// Replace the template keys and write result to output file.
-fn create_templated<P: AsRef<Path>>(template: P, output: P, replacements: Vec<(String, String)>) {
-    let template_content = std::fs::read_to_string(template).expect("template missing");
-    let content = varj::parse(&template_content, &replacements.into_iter().collect())
-        .expect("The template does not match with the replacement keys");
-    std::fs::File::create(output)
-        .expect("Unable to create generated file")
-        .write_all(content.as_bytes())
-        .expect("Unable to write to generated file");
+fn create_templated<P: AsRef<Path>>(template: &str, output: P, replacements: &[(&str, &str)]) {
+    let mut output_str = template.to_string();
+    replacements
+        .iter()
+        .for_each(|(from, to)| output_str = output_str.replacen(from, to, 1));
+    std::fs::write(output, output_str).expect("Unable to write to generated file");
 }

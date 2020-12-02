@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 pub fn elm_project_root() -> Result<PathBuf, Box<dyn Error>> {
     let current_dir = std::env::current_dir()?;
     parent_traversal("elm.json", &current_dir)
-        .or_else(|_| Err("I didn't find any elm.json, are you in an Elm project".into()))
+        .map_err(|_| "I didn't find any elm.json, are you in an Elm project".into())
 }
 
 /// Find where is located elm-test-rs on the system.
