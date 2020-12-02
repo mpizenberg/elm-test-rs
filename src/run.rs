@@ -72,8 +72,8 @@ pub fn main(options: Options) {
         options.files
     };
 
-    // Get file paths of all modules in canonical form
-    let module_paths: HashSet<PathBuf> = module_globs
+    // Get file paths of all modules in canonical form (absolute path)
+    let modules_abs_paths: HashSet<PathBuf> = module_globs
         .iter()
         // join expanded globs for each pattern
         .flat_map(|pattern| {
@@ -172,7 +172,7 @@ pub fn main(options: Options) {
     // Find all modules and tests
     eprintln!("Finding all modules and tests ...");
     let all_modules_and_tests = crate::parser::all_tests(
-        module_paths
+        modules_abs_paths
             .iter()
             .map(|path| (path, fs::read_to_string(path).unwrap())),
     )
