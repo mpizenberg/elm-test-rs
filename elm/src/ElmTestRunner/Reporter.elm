@@ -183,19 +183,22 @@ update msg model =
                         Err _ ->
                             model.testResults
 
+                ( count, total ) =
+                    ( Array.length allTestResults, model.nbTests )
+
                 updatedModel =
                     { model | testResults = allTestResults }
             in
             if Array.length updatedModel.testResults == model.nbTests then
                 ( updatedModel
-                , Result.map model.reporter.onResult testResultResult
+                , Result.map (model.reporter.onResult { count = count, total = total }) testResultResult
                     |> Result.map (reportAndThenSummarize model.ports.stdout)
                     |> Result.withDefault Cmd.none
                 )
 
             else
                 ( updatedModel
-                , Result.map model.reporter.onResult testResultResult
+                , Result.map (model.reporter.onResult { count = count, total = total }) testResultResult
                     |> Result.map (report model.ports.stdout)
                     |> Result.withDefault Cmd.none
                 )
