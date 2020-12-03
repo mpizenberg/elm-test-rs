@@ -26,7 +26,7 @@ pub fn get_all_exposed_values<'a>(
 ) -> Result<Vec<&'a str>, ExplicitExposedValuesError<'a>> {
     get_explicit_exposed_values(tree, source)
         .transpose()
-        .map_or_else(|| get_all_top_level_values(tree, source), |exposed| exposed)
+        .unwrap_or_else(|| get_all_top_level_values(tree, source))
 }
 
 /// `OK(None)` means the file has `exposing(..)` in it and it therefore exposes
@@ -113,7 +113,7 @@ pub fn all_tests(
                 parser.parse(source.as_ref(), None).unwrap()
             };
 
-            crate::parser::get_all_exposed_values(&tree, source.as_ref())
+            get_all_exposed_values(&tree, source.as_ref())
                 .map(|tests| TestModule {
                     path: file_path.as_ref().to_owned(),
                     tests: tests.into_iter().map(ToString::to_string).collect(),
