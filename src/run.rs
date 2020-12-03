@@ -419,14 +419,13 @@ fn get_module_name(
         .unwrap()
         .with_extension("");
     let module_name_parts: Vec<_> = trimmed.iter().map(|s| s.to_str().unwrap()).collect();
-    assert!(module_name_parts.iter().all(|s| is_upper_name(s)));
+    assert!(module_name_parts.iter().all(|s| is_valid_module_name(s)));
     assert!(!module_name_parts.is_empty());
     module_name_parts.join(".")
 }
 
-fn is_upper_name(s: &str) -> bool {
-    lazy_static::lazy_static! {
-        static ref UPPER_NAME: Regex = Regex::new(r"^\p{Lu}[_\d\p{L}]*$").unwrap();
-    }
-    UPPER_NAME.is_match(s)
+fn is_valid_module_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.chars().next().unwrap().is_uppercase()
+        && name.chars().all(|c| c == '_' || c.is_alphanumeric())
 }
