@@ -24,50 +24,9 @@ pub fn get_all_exposed_values<'a>(
     tree: &'a Tree,
     source: &'a str,
 ) -> Result<Vec<&'a str>, ExplicitExposedValuesError<'a>> {
-    get_explicit_exposed_values_query(tree, source)
+    get_explicit_exposed_values(tree, source)
         .transpose()
-        .unwrap_or_else(|| get_all_top_level_values_query(tree, source))
-}
-
-fn get_explicit_exposed_values_query<'a>(
-    tree: &'a Tree,
-    source: &'a str,
-) -> Result<Option<Vec<&'a str>>, ExplicitExposedValuesError<'a>> {
-    let language = tree_sitter_elm::language();
-
-    // First retrieve the part of the source file corresponding to the exposing list
-    let exposing_list = "(module_declaration exposing: (exposing_list) @list)";
-    let query = tree_sitter::Query::new(language, exposing_list).unwrap();
-    let mut query_cursor = tree_sitter::QueryCursor::new();
-    let exposing_list = query_cursor
-        .matches(&query, tree.root_node(), |_| &[])
-        .next()
-        .unwrap();
-    let src_range = exposing_list.captures[0].node.byte_range();
-
-    // Restrict the next queries to that exposing list
-    query_cursor.set_byte_range(src_range.start, src_range.end);
-
-    // Check if we have a "exposing (..)"
-    let expose_all = "((left_parenthesis) . (double_dot))";
-    let query = tree_sitter::Query::new(language, expose_all).unwrap();
-    if query_cursor
-        .matches(&query, tree.root_node(), |_| &[])
-        .next()
-        .is_some()
-    {
-        return Ok(None);
-    }
-
-    // Retrieve all exposed values
-    let exposed_values = "(exposed_value) @val";
-    let query = tree_sitter::Query::new(language, exposed_values).unwrap();
-    Ok(Some(
-        query_cursor
-            .matches(&query, tree.root_node(), |_| &[])
-            .map(|m| &source[m.captures[0].node.byte_range()])
-            .collect(),
-    ))
+        .unwrap_or_else(|| get_all_top_level_values(tree, source))
 }
 
 /// `OK(None)` means the file has `exposing(..)` in it and it therefore exposes
@@ -115,19 +74,6 @@ fn get_explicit_exposed_values<'a>(
     Ok(ret)
 }
 
-fn get_all_top_level_values_query<'a>(
-    tree: &'a Tree,
-    source: &'a str,
-) -> Result<Vec<&'a str>, ExplicitExposedValuesError<'a>> {
-    let language = tree_sitter_elm::language();
-    let top_level_value = "(file (value_declaration . (_ . (_) @name)))";
-    let query = tree_sitter::Query::new(language, top_level_value).unwrap();
-    Ok(tree_sitter::QueryCursor::new()
-        .matches(&query, tree.root_node(), |_| &[])
-        .map(|m| &source[m.captures[0].node.byte_range()])
-        .collect())
-}
-
 /// Gets all top level values from an elm file.
 fn get_all_top_level_values<'a>(
     tree: &'a Tree,
@@ -167,12 +113,20 @@ pub fn all_tests(
                 parser.parse(source.as_ref(), None).unwrap()
             };
 
-            get_all_exposed_values(&tree, source.as_ref())
-                .map(|tests| TestModule {
-                    path: file_path.as_ref().to_owned(),
-                    tests: tests.into_iter().map(ToString::to_string).collect(),
-                })
-                .map_err(|s| s.to_string())
+            // get_all_exposed_values(&tree, source.as_ref())
+            //     .map(|tests| TestModule {
+            //         path: file_path.as_ref().to_owned(),
+            //         tests: tests.into_iter().map(ToString::to_string).collect(),
+            //     })
+            //     .map_err(|s| s.to_string())
+            let potential_tests = get_all_exposed_values_query(&tree, source.as_ref());
+            Ok(TestModule {
+                path: file_path.as_ref().to_owned(),
+                tests: potential_tests
+                    .into_iter()
+                    .map(ToString::to_string)
+                    .collect(),
+            })
         })
         .collect()
 }
@@ -385,4 +339,69 @@ impl Drop for ChildCursor<'_, '_> {
     fn drop(&mut self) {
         assert!(self.0.goto_parent());
     }
+}
+
+// Query approach ##############################################################
+
+use tree_sitter::Query;
+
+lazy_static::lazy_static! {
+    static ref EXPOSING_LIST_QUERY: Query = {
+        let query_str = "(module_declaration exposing: (exposing_list) @list)";
+        Query::new(tree_sitter_elm::language(), query_str).unwrap()
+    };
+    static ref DOUBLE_DOT_QUERY: Query = {
+        let query_str = "((left_parenthesis) . (double_dot))";
+        Query::new(tree_sitter_elm::language(), query_str).unwrap()
+    };
+    static ref EXPOSED_VALUE_QUERY: Query = {
+        let query_str = "(exposed_value) @val";
+        Query::new(tree_sitter_elm::language(), query_str).unwrap()
+    };
+    static ref TOP_LEVEL_VALUE_QUERY: Query = {
+        let query_str = "(file (value_declaration . (_ . (_) @name)))";
+        Query::new(tree_sitter_elm::language(), query_str).unwrap()
+    };
+}
+
+fn get_all_exposed_values_query<'a>(tree: &'a Tree, source: &'a str) -> Vec<&'a str> {
+    get_explicit_exposed_values_query(tree, source)
+        .unwrap_or_else(|| get_all_top_level_values_query(tree, source))
+}
+
+fn get_explicit_exposed_values_query<'a>(tree: &'a Tree, source: &'a str) -> Option<Vec<&'a str>> {
+    // First retrieve the part of the source file corresponding to the exposing list
+    let mut query_cursor = tree_sitter::QueryCursor::new();
+    let exposing_list = query_cursor
+        .matches(&EXPOSING_LIST_QUERY, tree.root_node(), |_| &[])
+        .next()
+        .unwrap();
+    let src_range = exposing_list.captures[0].node.byte_range();
+
+    // Restrict the next queries to that exposing list
+    query_cursor.set_byte_range(src_range.start, src_range.end);
+
+    // Check if we have a "exposing (..)"
+    if query_cursor
+        .matches(&DOUBLE_DOT_QUERY, tree.root_node(), |_| &[])
+        .next()
+        .is_some()
+    {
+        return None;
+    }
+
+    // Retrieve all exposed values
+    Some(
+        query_cursor
+            .matches(&EXPOSED_VALUE_QUERY, tree.root_node(), |_| &[])
+            .map(|m| &source[m.captures[0].node.byte_range()])
+            .collect(),
+    )
+}
+
+fn get_all_top_level_values_query<'a>(tree: &'a Tree, source: &'a str) -> Vec<&'a str> {
+    tree_sitter::QueryCursor::new()
+        .matches(&TOP_LEVEL_VALUE_QUERY, tree.root_node(), |_| &[])
+        .map(|m| &source[m.captures[0].node.byte_range()])
+        .collect()
 }
