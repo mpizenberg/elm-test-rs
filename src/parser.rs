@@ -26,7 +26,7 @@ pub fn get_all_exposed_values<'a>(
 ) -> Result<Vec<&'a str>, ExplicitExposedValuesError<'a>> {
     get_explicit_exposed_values_query(tree, source)
         .transpose()
-        .unwrap_or_else(|| get_all_top_level_values(tree, source))
+        .unwrap_or_else(|| get_all_top_level_values_query(tree, source))
 }
 
 fn get_explicit_exposed_values_query<'a>(
@@ -113,6 +113,19 @@ fn get_explicit_exposed_values<'a>(
 
     check_kind(cursor.node(), "right_parenthesis")?;
     Ok(ret)
+}
+
+fn get_all_top_level_values_query<'a>(
+    tree: &'a Tree,
+    source: &'a str,
+) -> Result<Vec<&'a str>, ExplicitExposedValuesError<'a>> {
+    let language = tree_sitter_elm::language();
+    let top_level_value = "(file (value_declaration . (_ . (_) @name)))";
+    let query = tree_sitter::Query::new(language, top_level_value).unwrap();
+    Ok(tree_sitter::QueryCursor::new()
+        .matches(&query, tree.root_node(), |_| &[])
+        .map(|m| &source[m.captures[0].node.byte_range()])
+        .collect())
 }
 
 /// Gets all top level values from an elm file.
