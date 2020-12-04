@@ -24,9 +24,50 @@ pub fn get_all_exposed_values<'a>(
     tree: &'a Tree,
     source: &'a str,
 ) -> Result<Vec<&'a str>, ExplicitExposedValuesError<'a>> {
-    get_explicit_exposed_values(tree, source)
+    get_explicit_exposed_values_query(tree, source)
         .transpose()
         .unwrap_or_else(|| get_all_top_level_values(tree, source))
+}
+
+fn get_explicit_exposed_values_query<'a>(
+    tree: &'a Tree,
+    source: &'a str,
+) -> Result<Option<Vec<&'a str>>, ExplicitExposedValuesError<'a>> {
+    let language = tree_sitter_elm::language();
+
+    // First retrieve the part of the source file corresponding to the exposing list
+    let exposing_list = "(module_declaration exposing: (exposing_list) @list)";
+    let query = tree_sitter::Query::new(language, exposing_list).unwrap();
+    let mut query_cursor = tree_sitter::QueryCursor::new();
+    let exposing_list = query_cursor
+        .matches(&query, tree.root_node(), |_| &[])
+        .next()
+        .unwrap();
+    let src_range = exposing_list.captures[0].node.byte_range();
+
+    // Restrict the next queries to that exposing list
+    query_cursor.set_byte_range(src_range.start, src_range.end);
+
+    // Check if we have a "exposing (..)"
+    let expose_all = "((left_parenthesis) . (double_dot))";
+    let query = tree_sitter::Query::new(language, expose_all).unwrap();
+    if query_cursor
+        .matches(&query, tree.root_node(), |_| &[])
+        .next()
+        .is_some()
+    {
+        return Ok(None);
+    }
+
+    // Retrieve all exposed values
+    let exposed_values = "(exposed_value) @val";
+    let query = tree_sitter::Query::new(language, exposed_values).unwrap();
+    Ok(Some(
+        query_cursor
+            .matches(&query, tree.root_node(), |_| &[])
+            .map(|m| &source[m.captures[0].node.byte_range()])
+            .collect(),
+    ))
 }
 
 /// `OK(None)` means the file has `exposing(..)` in it and it therefore exposes
