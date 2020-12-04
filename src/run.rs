@@ -175,8 +175,7 @@ pub fn main(options: Options) {
         modules_abs_paths
             .iter()
             .map(|path| (path, fs::read_to_string(path).unwrap())),
-    )
-    .unwrap();
+    );
 
     let (runner_imports, maybe_runner_tests): (Vec<String>, Vec<String>) = all_modules_and_tests
         .iter()
