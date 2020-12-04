@@ -1,6 +1,9 @@
 #![warn(clippy::pedantic)]
 
-use std::path::{Path, PathBuf};
+use std::{
+    ops::Range,
+    path::{Path, PathBuf},
+};
 
 use thiserror::Error;
 use tree_sitter::Tree;
@@ -365,21 +368,28 @@ lazy_static::lazy_static! {
 }
 
 fn get_all_exposed_values_query<'a>(tree: &'a Tree, source: &'a str) -> Vec<&'a str> {
-    get_explicit_exposed_values_query(tree, source)
-        .unwrap_or_else(|| get_all_top_level_values_query(tree, source))
+    match get_exposing_src_range(tree) {
+        None => Vec::new(),
+        Some(range) => get_explicit_exposed_values_query(tree, source, range)
+            .unwrap_or_else(|| get_all_top_level_values_query(tree, source)),
+    }
 }
 
-fn get_explicit_exposed_values_query<'a>(tree: &'a Tree, source: &'a str) -> Option<Vec<&'a str>> {
-    // First retrieve the part of the source file corresponding to the exposing list
-    let mut query_cursor = tree_sitter::QueryCursor::new();
-    let exposing_list = query_cursor
+fn get_exposing_src_range<'a>(tree: &'a Tree) -> Option<Range<usize>> {
+    tree_sitter::QueryCursor::new()
         .matches(&EXPOSING_LIST_QUERY, tree.root_node(), |_| &[])
         .next()
-        .unwrap();
-    let src_range = exposing_list.captures[0].node.byte_range();
+        .map(|m| m.captures[0].node.byte_range())
+}
 
-    // Restrict the next queries to that exposing list
-    query_cursor.set_byte_range(src_range.start, src_range.end);
+fn get_explicit_exposed_values_query<'a>(
+    tree: &'a Tree,
+    source: &'a str,
+    range: Range<usize>,
+) -> Option<Vec<&'a str>> {
+    // Restrict the query cursor search to the exposing list
+    let mut query_cursor = tree_sitter::QueryCursor::new();
+    query_cursor.set_byte_range(range.start, range.end);
 
     // Check if we have a "exposing (..)"
     if query_cursor
