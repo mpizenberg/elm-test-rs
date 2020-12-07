@@ -15,3 +15,6 @@ pathdiff = "0.2.0"
 num_cpus = "1.13.0"
 
 [dev-dependencies]
+
+[build-dependencies]
+fs_extra = "1.2.0"

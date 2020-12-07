@@ -110,16 +110,12 @@ pub fn main(options: Options) {
         .map(|path| elm_project_root.join(path).canonicalize().unwrap())
         .collect();
 
-    // TODO: get rid of elm_test_rs_root.
-    // The content of the elm/ directory should be used either as an elm package,
-    // or embedded in the executable.
-    let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();
     let source_directories_for_runner: Vec<PathBuf> = test_directories
         .iter()
         // Get path relative to tests_root
         .map(|path| pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path"))
-        // Add src/ and elm-test-rs/elm/src/ to the source directories
-        .chain(vec!["src".into(), elm_test_rs_root.join("elm").join("src")])
+        // Add src/ to the source directories
+        .chain(vec!["src".into()])
         .collect();
 
     elm_json_tests.source_directories = source_directories_for_runner
@@ -162,6 +158,12 @@ pub fn main(options: Options) {
         miniserde::json::from_str(std::str::from_utf8(&output.stdout).unwrap())
             .expect("Wrongly formed dependencies");
     elm_json_tests.dependencies = solved_dependencies;
+    // Add a placeholder package to the dependencies.
+    // The build.rs step of compilation has replaced it by our package in elm/
+    elm_json_tests.dependencies.direct.insert(
+        "mpizenberg/elm-placeholder-pkg".to_string(),
+        "1.0.0".to_string(),
+    );
     std::fs::File::create(&elm_json_tests_path)
         .expect("Unable to create generated elm.json")
         .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
