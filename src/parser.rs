@@ -1,37 +1,17 @@
 #![warn(clippy::pedantic)]
 
 use std::ops::Range;
-use std::path::{Path, PathBuf};
 use tree_sitter::{Query, Tree};
 
-pub struct TestModule {
-    pub path: PathBuf,
-    pub tests: Vec<String>,
-}
-
-/// Find all possible tests (all values) in `test_files`.
-pub fn all_tests(
-    test_sources: impl IntoIterator<Item = (impl AsRef<Path>, impl AsRef<str>)>,
-) -> Vec<TestModule> {
-    test_sources
+/// Returns potential tests in the module.
+pub fn potential_tests(src: &str) -> Vec<String> {
+    let mut parser = tree_sitter::Parser::new();
+    let language = tree_sitter_elm::language();
+    parser.set_language(language).unwrap();
+    let tree = parser.parse(src, None).unwrap();
+    get_all_exposed_values_query(&tree, src)
         .into_iter()
-        .map(|(file_path, source)| {
-            let tree = {
-                let mut parser = tree_sitter::Parser::new();
-                let language = tree_sitter_elm::language();
-                parser.set_language(language).unwrap();
-                parser.parse(source.as_ref(), None).unwrap()
-            };
-
-            let potential_tests = get_all_exposed_values_query(&tree, source.as_ref());
-            TestModule {
-                path: file_path.as_ref().to_owned(),
-                tests: potential_tests
-                    .into_iter()
-                    .map(ToString::to_string)
-                    .collect(),
-            }
-        })
+        .map(ToString::to_string)
         .collect()
 }
 

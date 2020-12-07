@@ -36,24 +36,10 @@ Please report this bug: https://github.com/mpizenberg/elm-test-rs/issues/new
 """
 
 
-testsForModule : List { module_ : String, maybeTests : List (Maybe Test) }
-testsForModule =
-    [ {{ tests }}
-    ]
-
-
 main : Program Flags Model Msg
 main =
-    testsForModule
-        |> List.filterMap
-            (\{ module_, maybeTests } ->
-                case maybeTests |> List.filterMap (\x -> x) of
-                    [] ->
-                        Nothing
-
-                    tests ->
-                        Just (Test.describe module_ tests)
-            )
+    [ {{ tests }} ]
+        |> List.filterMap identity
         |> Test.concat
         |> ElmTestRunner.Runner.worker
             { askNbTests = askNbTests

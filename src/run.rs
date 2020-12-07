@@ -169,38 +169,31 @@ pub fn main(options: Options) {
         .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
         .expect("Unable to write to generated elm.json");
 
-    // Find all modules and tests
-    eprintln!("Finding all modules and tests ...");
-    let all_modules_and_tests = crate::parser::all_tests(
-        modules_abs_paths
-            .iter()
-            .map(|path| (path, fs::read_to_string(path).unwrap())),
-    );
-
-    let (runner_imports, maybe_runner_tests): (Vec<String>, Vec<String>) = all_modules_and_tests
+    // Find module names
+    let module_names: Vec<String> = modules_abs_paths
         .iter()
-        .map(|module| {
-            let module_name = get_module_name(&test_directories, &module.path);
-            let full_module_tests: Vec<String> = module
-                .tests
-                .iter()
-                .map(|test| format!("check {}.{}", &module_name, test))
-                .collect();
-            let maybe_test = format!(
-                r#"
-      {{ module_ = "{}"
-      , maybeTests =
-            [ {}
-            ]
-      }}"#,
-                &module_name,
-                full_module_tests.join("\n            , ")
-            )
-            .trim()
-            .to_string();
-            ("import ".to_string() + &module_name, maybe_test)
+        .map(|p| get_module_name(&test_directories, p))
+        .collect();
+
+    // Runner.elm imports of tests modules
+    let runner_imports: Vec<String> = module_names
+        .iter()
+        .map(|m| format!("import {}", m))
+        .collect();
+
+    // Find all potential tests
+    eprintln!("Finding all potential tests ...");
+    let runner_potential_tests: Vec<String> = module_names
+        .iter()
+        .zip(modules_abs_paths)
+        .map(|(module_name, path)| {
+            let source = fs::read_to_string(path).unwrap();
+            crate::parser::potential_tests(&source)
+                .into_iter()
+                .map(move |potential_test| format!("check {}.{}", module_name, potential_test))
         })
-        .unzip();
+        .flatten()
+        .collect();
 
     // Generate templated src/Runner.elm
     #[cfg(unix)]
@@ -212,7 +205,7 @@ pub fn main(options: Options) {
         tests_root.join("src").join("Runner.elm"), // output
         &[
             ("{{ user_imports }}", &runner_imports.join("\n")),
-            ("{{ tests }}", &maybe_runner_tests.join("\n    , ")),
+            ("{{ tests }}", &runner_potential_tests.join("\n    , ")),
         ],
     );
 
