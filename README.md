@@ -62,6 +62,29 @@ Additional features:
 [progress-bar]: https://github.com/mpizenberg/elm-test-rs/pull/3
 
 
+## Behavior Differences
+
+The node-test-runner (elm-test) automatically adds a
+`describe "ModuleName" [ yourTests ]` around your tests in a tests module.
+With elm-test-rs no such wrapping is done.
+You have to add an explicit `describe` if you want or need one.
+This may be the case if you have the same tests in different tests modules,
+resulting in a "duplicate test name" error.
+In such cases, simply change
+
+```elm
+TestModule exposing (a, b, c)
+```
+
+into
+
+```elm
+TestModule exposing (tests)
+
+tests = describe "TestModule" [ a, b, c ]
+```
+
+
 ## Code architecture
 
 The code of this project is split in three parts.
