@@ -1,6 +1,6 @@
 port module Runner exposing (main)
 
-{{ user_imports }}
+{{ imports }}
 
 import ElmTestRunner.Runner exposing (Flags, Model, Msg)
 import Json.Encode exposing (Value)
@@ -38,8 +38,8 @@ Please report this bug: https://github.com/mpizenberg/elm-test-rs/issues/new
 
 main : Program Flags Model Msg
 main =
-    [ {{ tests }} ]
-        |> List.filterMap identity
+    [ {{ potential_tests }} ]
+        |> List.filterMap check
         |> Test.concat
         |> ElmTestRunner.Runner.worker
             { askNbTests = askNbTests

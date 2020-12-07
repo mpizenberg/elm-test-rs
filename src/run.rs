@@ -176,21 +176,21 @@ pub fn main(options: Options) {
         .collect();
 
     // Runner.elm imports of tests modules
-    let runner_imports: Vec<String> = module_names
+    let imports: Vec<String> = module_names
         .iter()
         .map(|m| format!("import {}", m))
         .collect();
 
     // Find all potential tests
     eprintln!("Finding all potential tests ...");
-    let runner_potential_tests: Vec<String> = module_names
+    let potential_tests: Vec<String> = module_names
         .iter()
         .zip(modules_abs_paths)
         .map(|(module_name, path)| {
             let source = fs::read_to_string(path).unwrap();
             crate::parser::potential_tests(&source)
                 .into_iter()
-                .map(move |potential_test| format!("check {}.{}", module_name, potential_test))
+                .map(move |potential_test| format!("{}.{}", module_name, potential_test))
         })
         .flatten()
         .collect();
@@ -204,8 +204,8 @@ pub fn main(options: Options) {
         runner_template,                           // template
         tests_root.join("src").join("Runner.elm"), // output
         &[
-            ("{{ user_imports }}", &runner_imports.join("\n")),
-            ("{{ tests }}", &runner_potential_tests.join("\n    , ")),
+            ("{{ imports }}", &imports.join("\n")),
+            ("{{ potential_tests }}", &potential_tests.join("\n    , ")),
         ],
     );
 
