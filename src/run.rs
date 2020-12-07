@@ -219,13 +219,12 @@ pub fn main(options: Options) {
         &[Path::new("src").join("Runner.elm")],
     );
 
-    fs::write(
-        &compiled_runner,
-        &add_kernel_test_checking(
-            &fs::read_to_string(&compiled_runner).expect("Cannot read newly created elm.js file"),
-        ),
-    )
-    .expect("Cannot write updated elm.js file");
+    // Add a kernel patch to the generated code in order to be able to recognize
+    // values of type Test at runtime with the `check: a -> Maybe Test` function.
+    let compiled_runner_src =
+        fs::read_to_string(&compiled_runner).expect("Cannot read newly created elm.js file");
+    fs::write(&compiled_runner, &kernel_patch_tests(&compiled_runner_src))
+        .expect("Cannot write updated elm.js file");
 
     // Generate the node_runner.js node module embedding the Elm runner
     #[cfg(unix)]
@@ -356,32 +355,6 @@ fn create_templated<P: AsRef<Path>>(template: &str, output: P, replacements: &[(
     std::fs::write(output, output_str).expect("Unable to write to generated file");
 }
 
-fn add_kernel_test_checking(elm_js: &str) -> String {
-    lazy_static::lazy_static! {
-
-        /// For older versions of elm-explorations/test we need to list every single
-        /// variant of the `Test` type. To avoid having to update this regex if a new
-        /// variant is added, newer versions of elm-explorations/test have prefixed all
-        /// variants with `ElmTestVariant__` so we can match just on that.
-        static ref TEST_VARIANT_DEFINITION: Regex = Regex::new(r#"(?mx)
-    ^var\s+\$elm_explorations\$test\$Test\$Internal\$
-    (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)
-    \s*=\s*(?:\w+\(\s*)?function\s*\([\w,\s]*\)\s*\{\s*return\s*\{
-"#).unwrap();
-
-        static ref CHECK_DEFINITION: Regex = Regex::new(r#"(?mx)
-    ^(var\s+\$author\$project\$Runner\$check)
-    \s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$
-"#).unwrap();
-    }
-
-    let elm_js =
-        TEST_VARIANT_DEFINITION.replace_all(&elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
-    let elm_js = CHECK_DEFINITION.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
-
-    ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n")
-}
-
 // By finding the module name from the file path we can import it even if
 // the file is full of errors. Elm will then report what’s wrong.
 fn get_module_name(
@@ -420,4 +393,31 @@ fn is_valid_module_name(name: &str) -> bool {
     !name.is_empty()
         && name.chars().next().unwrap().is_uppercase()
         && name.chars().all(|c| c == '_' || c.is_alphanumeric())
+}
+
+/// Add a kernel patch to the generated code in order to be able to recognize
+/// values of type Test at runtime with the `check: a -> Maybe Test` function.
+fn kernel_patch_tests(elm_js: &str) -> String {
+    let elm_js =
+        TEST_VARIANT_DEFINITION.replace_all(&elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
+    let elm_js = CHECK_DEFINITION.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
+
+    ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n")
+}
+
+lazy_static::lazy_static! {
+    /// For older versions of elm-explorations/test we need to list every single
+    /// variant of the `Test` type. To avoid having to update this regex if a new
+    /// variant is added, newer versions of elm-explorations/test have prefixed all
+    /// variants with `ElmTestVariant__` so we can match just on that.
+    static ref TEST_VARIANT_DEFINITION: Regex = Regex::new(r#"(?mx)
+    ^var\s+\$elm_explorations\$test\$Test\$Internal\$
+    (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)
+    \s*=\s*(?:\w+\(\s*)?function\s*\([\w,\s]*\)\s*\{\s*return\s*\{
+"#).unwrap();
+
+    static ref CHECK_DEFINITION: Regex = Regex::new(r#"(?mx)
+    ^(var\s+\$author\$project\$Runner\$check)
+    \s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$
+"#).unwrap();
 }
