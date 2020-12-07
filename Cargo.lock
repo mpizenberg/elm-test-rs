@@ -19,7 +19,6 @@ checksum = "95752358c8f7552394baf48cd82695b345628ad3f170d607de3ca03b8dacca15"
 name = "elm-test-rs"
 version = "0.1.0"
 dependencies = [
- "cc",
  "glob",
  "lazy_static",
  "miniserde",

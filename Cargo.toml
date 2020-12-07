@@ -20,7 +20,3 @@ lazy_static = "1.4.0"
 tree-sitter-elm = "4.3.4"
 
 [dev-dependencies]
-
-[build-dependencies]
-cc="1"
-
