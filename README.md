@@ -6,10 +6,9 @@ Attempt at a simpler alternative to node-test-runner for elm tests.
 ## Usage
 
 Just replace `elm-test` by `elm-test-rs`.
-Currently, you need to have elm 0.19.1, [elm-json][elm-json] and [elmi-to-json][elmi-to-json] installed.
+Currently, you need to have elm 0.19.1, [elm-json][elm-json] installed.
 
 [elm-json]: https://github.com/zwilias/elm-json
-[elmi-to-json]: https://github.com/stoeffel/elmi-to-json
 
 
 ## Install
@@ -63,6 +62,29 @@ Additional features:
 [progress-bar]: https://github.com/mpizenberg/elm-test-rs/pull/3
 
 
+## Behavior Differences
+
+The node-test-runner (elm-test) automatically adds a
+`describe "ModuleName" [ yourTests ]` around your tests in a tests module.
+With elm-test-rs no such wrapping is done.
+You have to add an explicit `describe` if you want or need one.
+This may be the case if you have the same tests in different tests modules,
+resulting in a "duplicate test name" error.
+In such cases, simply change
+
+```elm
+TestModule exposing (a, b, c)
+```
+
+into
+
+```elm
+TestModule exposing (tests)
+
+tests = describe "TestModule" [ a, b, c ]
+```
+
+
 ## Code architecture
 
 The code of this project is split in three parts.
@@ -75,14 +97,6 @@ The code of this project is split in three parts.
  3. An Elm package (pure, no debug logging) [mpizenberg/elm-test-runner][elm-test-runner]
     exposing a main program for a runner and one for a reporter.
 
-The supervisor and the runners communicate through child and parent worker messages.
-The reporter is just loaded as a Node module by the supervisor.
-Communication between the Elm and JS parts are done through ports, as usual.
-More details about the supervisor, runner and reporter parts are available
-in [mpizenberg/elm-test-runner][elm-test-runner].
-
-[elm-test-runner]: elm
-
 Rust was chosen for the first part since it is a very well fitted language
 for systemish CLI programs and enables consise, fast and robust programs.
 But any other language could replace this since it is completely independent
@@ -93,17 +107,48 @@ with inter-process-communication (IPC) going through named pipes.
 The CLI program, if asked to run the tests, performs the following actions.
 
  1. Generate the list of test modules and their file paths.
- 2. Generate a correct `elm.json` for the to-be-generated `Runner.elm`.
- 3. Compile all test files such that we know they are correct.
- 4. Find all tests.
- 5. Generate `Runner.elm` with a master test concatenating all found exposed tests.
- 6. Compile it into a JS file wrapped into a Node worker module.
- 7. Compile `Reporter.elm` into a Node module.
- 8. Generate and start the Node supervisor program.
+ 1. Generate a correct `elm.json` for the to-be-generated `Runner.elm`.
+ 1. Find all tests.
+ 1. Generate `Runner.elm` with a master test concatenating all found exposed tests.
+ 1. Compile it into a JS file wrapped into a Node worker module.
+ 1. Compile `Reporter.elm` into a Node module.
+ 1. Generate and start the Node supervisor program.
+
+To find all tests, we perform a small trick, depending on kernel code (compiled elm code to JS).
+First we parse all the tests modules to extract all potential `Test` exposed values.
+This is done thanks to [tree-sitter-elm][tree-sitter-elm].
+Then in the template file `Runner.elm` we embed code shaped like this.
+
+```elm
+check : a -> Maybe Test
+check = ...
+
+main : Program Flags Model Msg
+main =
+    [ {{ potential_tests }} ]
+        |> List.filterMap check
+        |> Test.concat
+        |> ...
+```
+
+This template file gets compiled into a JavaScript file `Runner.elm.js`,
+on which we perform the aforementioned kernel patch.
+The patch consists in modifying all variants constructors of the `Test` type
+to embed a marker, and modifying the `check` function to look for that marker.
+
+Once all the JavaScript code has been generated, it is time to start
+the supervisor Node file, which will organize tests runners.
+The supervisor and the runners communicate through child and parent worker messages.
+The reporter is just loaded as a Node module by the supervisor.
+Communication between the Elm and JS parts are done through ports, as usual.
+More details about the supervisor, runner and reporter parts are available
+in [mpizenberg/elm-test-runner][elm-test-runner].
 
 ![architecture diagram][diagram]
 
+[tree-sitter-elm]: https://github.com/Razzeee/tree-sitter-elm
 [diagram]: https://mpizenberg.github.io/resources/elm-test-rs/elm-test-rs.png
+[elm-test-runner]: elm
 
 
 ## Contributing
@@ -135,8 +180,7 @@ don't forget to `rustup update`.
 
 As this is still a proof of concept, I cut a few corners to get things working.
 For example, the generation of the `elm.json` for the tests uses directly
-[zwilias/elm-json][elm-json] as a binary, and the detection of exposed tests is
-done with [stoeffel/elmi-to-json][elmi-to-json] as in elm-test.
+[zwilias/elm-json][elm-json] as a binary.
 
 Eventually, it would be useful to extract the dependency solving algorithm from elm-json
 into a crate of its own and to make it available offline if a suitable solution

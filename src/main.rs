@@ -1,8 +1,8 @@
 mod elm_json;
-mod elmi;
 mod help;
 mod init;
 mod install;
+mod parser;
 mod run;
 mod utils;
 

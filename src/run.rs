@@ -2,9 +2,11 @@
 
 use crate::elm_json::{Config, Dependencies};
 use glob::glob;
+use regex::Regex;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
+use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -70,8 +72,8 @@ pub fn main(options: Options) {
         options.files
     };
 
-    // Get file paths of all modules in canonical form
-    let module_paths: HashSet<PathBuf> = module_globs
+    // Get file paths of all modules in canonical form (absolute path)
+    let modules_abs_paths: HashSet<PathBuf> = module_globs
         .iter()
         // join expanded globs for each pattern
         .flat_map(|pattern| {
@@ -169,36 +171,30 @@ pub fn main(options: Options) {
         .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
         .expect("Unable to write to generated elm.json");
 
-    // Compile all test files
-    eprintln!("Compiling all test files ...");
-    compile(
-        &tests_root,       // current_dir
-        &options.compiler, // compiler
-        "/dev/null",       // output
-        &module_paths,     // src
-    );
-
-    // Find all modules and tests
-    eprintln!("Finding all modules and tests ...");
-    let all_modules_and_tests = crate::elmi::all_tests(&tests_root, &module_paths).unwrap();
-    let runner_imports: Vec<String> = all_modules_and_tests
+    // Find module names
+    let module_names: Vec<String> = modules_abs_paths
         .iter()
-        .map(|m| "import ".to_string() + &m.module_name)
+        .map(|p| get_module_name(&test_directories, p))
         .collect();
-    let runner_tests: Vec<String> = all_modules_and_tests
+
+    // Runner.elm imports of tests modules
+    let imports: Vec<String> = module_names
         .iter()
-        .map(|module| {
-            let full_module_tests: Vec<String> = module
-                .tests
-                .iter()
-                .map(|test| format!("{}.{}", &module.module_name, test))
-                .collect();
-            format!(
-                r#"Test.describe "{}" [ {} ]"#,
-                &module.module_name,
-                full_module_tests.join(", ")
-            )
+        .map(|m| format!("import {}", m))
+        .collect();
+
+    // Find all potential tests
+    eprintln!("Finding all potential tests ...");
+    let potential_tests: Vec<String> = module_names
+        .iter()
+        .zip(modules_abs_paths)
+        .map(|(module_name, path)| {
+            let source = fs::read_to_string(path).unwrap();
+            crate::parser::potential_tests(&source)
+                .into_iter()
+                .map(move |potential_test| format!("{}.{}", module_name, potential_test))
         })
+        .flatten()
         .collect();
 
     // Generate templated src/Runner.elm
@@ -210,8 +206,8 @@ pub fn main(options: Options) {
         runner_template,                           // template
         tests_root.join("src").join("Runner.elm"), // output
         &[
-            ("{{ user_imports }}", &runner_imports.join("\n")),
-            ("{{ tests }}", &runner_tests.join("\n    , ")),
+            ("{{ imports }}", &imports.join("\n")),
+            ("{{ potential_tests }}", &potential_tests.join("\n    , ")),
         ],
     );
 
@@ -224,6 +220,13 @@ pub fn main(options: Options) {
         &compiled_runner,  // output
         &[Path::new("src").join("Runner.elm")],
     );
+
+    // Add a kernel patch to the generated code in order to be able to recognize
+    // values of type Test at runtime with the `check: a -> Maybe Test` function.
+    let compiled_runner_src =
+        fs::read_to_string(&compiled_runner).expect("Cannot read newly created elm.js file");
+    fs::write(&compiled_runner, &kernel_patch_tests(&compiled_runner_src))
+        .expect("Cannot write updated elm.js file");
 
     // Generate the node_runner.js node module embedding the Elm runner
     #[cfg(unix)]
@@ -352,4 +355,71 @@ fn create_templated<P: AsRef<Path>>(template: &str, output: P, replacements: &[(
         .iter()
         .for_each(|(from, to)| output_str = output_str.replacen(from, to, 1));
     std::fs::write(output, output_str).expect("Unable to write to generated file");
+}
+
+// By finding the module name from the file path we can import it even if
+// the file is full of errors. Elm will then report what’s wrong.
+fn get_module_name(
+    source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
+    file: impl AsRef<Path>,
+) -> String {
+    let file = file.as_ref();
+    let matching_source_dir = {
+        let mut matching = source_dirs.into_iter().filter(|dir| file.starts_with(dir));
+        match (matching.next(), matching.next()) {
+            (None, None) => {
+                panic!(
+                    "This file:
+{}
+...matches no source directory! Imports won’t work then.
+",
+                    file.display()
+                )
+            }
+            (Some(dir), None) => dir,
+            _ => panic!("2+ matching source dirs"),
+        }
+    };
+
+    let trimmed: PathBuf = file
+        .strip_prefix(matching_source_dir)
+        .unwrap()
+        .with_extension("");
+    let module_name_parts: Vec<_> = trimmed.iter().map(|s| s.to_str().unwrap()).collect();
+    assert!(module_name_parts.iter().all(|s| is_valid_module_name(s)));
+    assert!(!module_name_parts.is_empty());
+    module_name_parts.join(".")
+}
+
+fn is_valid_module_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.chars().next().unwrap().is_uppercase()
+        && name.chars().all(|c| c == '_' || c.is_alphanumeric())
+}
+
+/// Add a kernel patch to the generated code in order to be able to recognize
+/// values of type Test at runtime with the `check: a -> Maybe Test` function.
+fn kernel_patch_tests(elm_js: &str) -> String {
+    let elm_js =
+        TEST_VARIANT_DEFINITION.replace_all(&elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
+    let elm_js = CHECK_DEFINITION.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
+
+    ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n")
+}
+
+lazy_static::lazy_static! {
+    /// For older versions of elm-explorations/test we need to list every single
+    /// variant of the `Test` type. To avoid having to update this regex if a new
+    /// variant is added, newer versions of elm-explorations/test have prefixed all
+    /// variants with `ElmTestVariant__` so we can match just on that.
+    static ref TEST_VARIANT_DEFINITION: Regex = Regex::new(r#"(?mx)
+    ^var\s+\$elm_explorations\$test\$Test\$Internal\$
+    (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)
+    \s*=\s*(?:\w+\(\s*)?function\s*\([\w,\s]*\)\s*\{\s*return\s*\{
+"#).unwrap();
+
+    static ref CHECK_DEFINITION: Regex = Regex::new(r#"(?mx)
+    ^(var\s+\$author\$project\$Runner\$check)
+    \s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$
+"#).unwrap();
 }
