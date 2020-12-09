@@ -30,7 +30,8 @@ pub fn solve<P: AsRef<Path>>(
             direct_deps.insert("mpizenberg/elm-placeholder-pkg".to_string(), SemVer::one());
             let deps: Map<String, Range<SemVer>> = direct_deps
                 .iter()
-                .map(|(p, v)| (p.clone(), Range::exact(v.clone())))
+                // Convert exact versions to sem-ver compatible ranges
+                .map(|(p, v)| (p.clone(), Range::between(v.clone(), v.bump_major())))
                 .collect();
 
             // Initialize a dependency provider.
