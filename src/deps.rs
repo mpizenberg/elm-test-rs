@@ -22,21 +22,19 @@ pub fn solve<P: AsRef<Path>>(
 ) -> Result<ApplicationConfig, Box<dyn Error>> {
     match config {
         ProjectConfig::Application(app_config) => {
-            // Extract direct dependencies.
-            let mut direct_deps = app_config.dependencies.direct.clone();
-            direct_deps.extend(app_config.test_dependencies.direct.clone());
-            let deps: Map<String, Range<SemVer>> = direct_deps
-                .iter()
+            let normal_deps = app_config.dependencies.direct.iter();
+            let deps: Map<String, Range<SemVer>> = normal_deps
+                .chain(app_config.test_dependencies.direct.iter())
                 .map(|(p, v)| (p.clone(), Range::exact(v.clone())))
                 .collect();
             solve_helper(src_dirs, &"root".to_string(), deps)
         }
         ProjectConfig::Package(pkg_config) => {
-            // Extract dependencies.
-            let mut normal_deps = pkg_config.dependencies.clone();
-            normal_deps.extend(pkg_config.test_dependencies.clone());
-            let deps: Map<String, Range<SemVer>> =
-                normal_deps.into_iter().map(|(p, c)| (p, c.0)).collect();
+            let normal_deps = pkg_config.dependencies.iter();
+            let deps: Map<String, Range<SemVer>> = normal_deps
+                .chain(pkg_config.test_dependencies.iter())
+                .map(|(p, c)| (p.clone(), c.0.clone()))
+                .collect();
             solve_helper(src_dirs, &pkg_config.name, deps)
         }
     }
