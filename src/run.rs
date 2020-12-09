@@ -184,6 +184,7 @@ pub fn main(options: Options) {
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
+    eprintln!("Kernel-patching Runner.elm.js ...");
     let compiled_runner_src =
         fs::read_to_string(&compiled_runner).expect("Cannot read newly created elm.js file");
     fs::write(&compiled_runner, &kernel_patch_tests(&compiled_runner_src))
