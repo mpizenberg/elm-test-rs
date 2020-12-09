@@ -1,8 +1,8 @@
 //! Module dealing with actually running all the tests.
 
-use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use regex::Regex;
+use serde_json;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
@@ -10,6 +10,8 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+
+use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 
 #[derive(Debug)]
 /// Options passed as arguments.
@@ -93,25 +95,22 @@ pub fn main(options: Options) {
     // Read project elm.json
     let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
         .expect("Unable to read elm.json");
-    let info = Config::try_from(elm_json_str.as_ref()).unwrap();
-
-    // Convert package elm.json to an application elm.json if needed
-    let mut elm_json_tests = match info {
-        Config::Package(package) => crate::elm_json::ApplicationConfig::try_from(&package).unwrap(),
-        Config::Application(application) => application,
+    // let info = Config::try_from(elm_json_str.as_ref()).unwrap();
+    let info: ProjectConfig = serde_json::from_str(&elm_json_str).unwrap();
+    let source_directories = match &info {
+        ProjectConfig::Application(app_config) => app_config.source_directories.clone(),
+        ProjectConfig::Package(_) => vec!["src".to_string()],
     };
 
     // Make src dirs relative to the generated tests root
     let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
-    let test_directories: Vec<PathBuf> = elm_json_tests
-        .source_directories
+    let test_directories: Vec<PathBuf> = source_directories
         .iter()
         // Add tests/ to the list of source directories
         .chain(std::iter::once(&"tests".to_string()))
-        // Get canonical form
+        // Get canonical paths
         .map(|path| elm_project_root.join(path).canonicalize().unwrap())
         .collect();
-
     let source_directories_for_runner: Vec<PathBuf> = test_directories
         .iter()
         // Get path relative to tests_root
@@ -120,56 +119,18 @@ pub fn main(options: Options) {
         .chain(vec!["src".into()])
         .collect();
 
-    elm_json_tests.source_directories = source_directories_for_runner
-        .iter()
-        .map(|path| path.to_str().unwrap().to_string())
-        .collect();
-
-    // Promote test dependencies to normal ones
-    elm_json_tests.promote_test_dependencies();
-
-    // Write the elm.json file to disk
-    let elm_json_tests_path = tests_root.join("elm.json");
-    std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
-    std::fs::File::create(&elm_json_tests_path)
-        .expect("Unable to create generated elm.json")
-        .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
-        .expect("Unable to write to generated elm.json");
-
-    // Finish preparing the elm.json file by solving any dependency issue (use elm-json)
-    eprintln!("Running elm-json to solve dependency issues ...");
-    let output = Command::new("elm-json")
-        .arg("solve")
-        .arg("--test")
-        .arg("--extra")
-        .arg("elm/core")
-        .arg("elm/json")
-        .arg("elm/time")
-        .arg("elm/random")
-        .arg("billstclair/elm-xml-eeue56")
-        .arg("jorgengranseth/elm-string-format")
-        .arg("--")
-        .arg(&elm_json_tests_path)
-        // stdio config
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .output()
-        .expect("command failed to start");
-    let solved_dependencies: Dependencies =
-        miniserde::json::from_str(std::str::from_utf8(&output.stdout).unwrap())
-            .expect("Wrongly formed dependencies");
-    elm_json_tests.dependencies = solved_dependencies;
-    // Add a placeholder package to the dependencies.
-    // The build.rs step of compilation has replaced it by our package in elm/
-    elm_json_tests.dependencies.direct.insert(
-        "mpizenberg/elm-placeholder-pkg".to_string(),
-        "1.0.0".to_string(),
+    // Generate an elm.json for the to-be-generated Runner.elm.
+    eprintln!("Generating the elm.json for the Runner.elm");
+    let tests_config = ProjectConfig::Application(
+        crate::deps::solve(&info, &source_directories_for_runner).unwrap(),
     );
-    std::fs::File::create(&elm_json_tests_path)
-        .expect("Unable to create generated elm.json")
-        .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
-        .expect("Unable to write to generated elm.json");
+    let tests_config_path = tests_root.join("elm.json");
+    std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
+    std::fs::write(
+        tests_config_path,
+        serde_json::to_string(&tests_config).unwrap(),
+    )
+    .expect("Unable to write to generated elm.json");
 
     // Find module names
     let module_names: Vec<String> = modules_abs_paths

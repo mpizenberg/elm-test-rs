@@ -1,4 +1,4 @@
-mod elm_json;
+mod deps;
 mod help;
 mod init;
 mod install;
