@@ -28,3 +28,32 @@ pub fn parent_traversal(file_to_find: &str, current_dir: &Path) -> Result<PathBu
         Err("File not found".into())
     }
 }
+
+pub fn elm_home() -> PathBuf {
+    match std::env::var_os("ELM_HOME") {
+        None => default_elm_home(),
+        Some(os_string) => os_string.into(),
+    }
+}
+
+#[cfg(target_family = "unix")]
+fn default_elm_home() -> PathBuf {
+    dirs::home_dir()
+        .expect("Unknown home directory")
+        .join(".elm")
+}
+
+#[cfg(target_family = "windows")]
+fn default_elm_home() -> PathBuf {
+    dirs::data_dir()
+        .expect("Unknown data directory")
+        .join("elm")
+}
+
+pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
+    ureq::get(url)
+        .timeout_connect(10_000)
+        .call()
+        .into_string()
+        .map_err(|e| e.into())
+}

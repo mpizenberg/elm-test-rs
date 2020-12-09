@@ -1,13 +1,11 @@
-use dirs;
 use pubgrub::error::PubGrubError;
 use pubgrub::range::Range;
 use pubgrub::report::{DefaultStringReporter, Reporter};
 use pubgrub::solver::resolve;
 use pubgrub::type_aliases::Map;
 use pubgrub::version::SemanticVersion as SemVer;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::{collections::BTreeMap, error::Error};
-use ureq;
 
 use pubgrub_dependency_provider_elm::dependency_provider::{
     ElmPackageProviderOffline, ProjectAdapter,
@@ -52,7 +50,7 @@ fn solve_helper<P: AsRef<Path>>(
         Range::exact(SemVer::one()),
     );
     let version = SemVer::new(0, 0, 0);
-    let offline_provider = ElmPackageProviderOffline::new(elm_home(), "0.19.1");
+    let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
     let deps_provider =
         ProjectAdapter::new(pkg_id.clone(), version.clone(), deps, &offline_provider);
 
@@ -86,33 +84,4 @@ fn solve_helper<P: AsRef<Path>>(
         dependencies,
         test_dependencies,
     })
-}
-
-fn elm_home() -> PathBuf {
-    match std::env::var_os("ELM_HOME") {
-        None => default_elm_home(),
-        Some(os_string) => os_string.into(),
-    }
-}
-
-#[cfg(target_family = "unix")]
-fn default_elm_home() -> PathBuf {
-    dirs::home_dir()
-        .expect("Unknown home directory")
-        .join(".elm")
-}
-
-#[cfg(target_family = "windows")]
-fn default_elm_home() -> PathBuf {
-    dirs::data_dir()
-        .expect("Unknown data directory")
-        .join("elm")
-}
-
-fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
-    ureq::get(url)
-        .timeout_connect(10_000)
-        .call()
-        .into_string()
-        .map_err(|e| e.into())
 }
