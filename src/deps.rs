@@ -27,9 +27,7 @@ pub fn solve<P: AsRef<Path>>(
             direct_deps.extend(app_config.test_dependencies.direct.clone());
             let mut deps: Map<String, Range<SemVer>> = direct_deps
                 .iter()
-                // Convert exact versions to sem-ver compatible ranges
-                // TODO: try to find a solution avoiding doing that
-                .map(|(p, v)| (p.clone(), Range::between(v.clone(), v.bump_major())))
+                .map(|(p, v)| (p.clone(), Range::exact(v.clone())))
                 .collect();
             // TODO: there might be an issue if that was already in the dependencies.
             // TODO: maybe we should vendor all this instead.
