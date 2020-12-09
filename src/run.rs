@@ -4,7 +4,6 @@ use glob::glob;
 use regex::Regex;
 use serde_json;
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::Write;
