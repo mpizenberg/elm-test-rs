@@ -1,7 +1,7 @@
 {
     "type": "package",
     "name": "mpizenberg/elm-test-runner",
-    "summary": "Helper elm package to run elm tests and report results",
+    "summary": "Helper package to run tests and report results",
     "license": "BSD-3-Clause",
     "version": "1.0.0",
     "exposed-modules": [
