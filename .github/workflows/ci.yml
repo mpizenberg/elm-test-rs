@@ -9,43 +9,77 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-        rust:
-          - stable
-          - beta
-          - nightly
-
+  build:
+    name: Build
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - uses: actions-rs/toolchain@v1
+      - name: Install stable Rust
+        uses: actions-rs/toolchain@v1
         with:
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
           profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt, clippy
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
+      - name: Get Cargo version
+        id: cargo_version
+        run: echo "::set-output name=version::$(cargo -V | tr -d ' ')"
+        shell: bash
 
-      - uses: actions-rs/cargo@v1
+      - name: Download cache
+        uses: actions/cache@v2
         with:
-          command: fmt
-          args: --all -- --check
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}-${{ hashFiles('Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all
+      - name: Build
+        run: cargo build --verbose --release
+
+  # test:
+  #   name: Test
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os:
+  #         - ubuntu-latest
+  #         - windows-latest
+  #         - macos-latest
+  #       rust:
+  #         - stable
+  #         - beta
+  #         - nightly
+  #
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: ${{ matrix.rust }}
+  #         override: true
+  #         components: rustfmt, clippy
+  #
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: build
+  #
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: fmt
+  #         args: --all -- --check
+  #
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: clippy
+  #         args: --all
