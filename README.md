@@ -14,16 +14,20 @@ Currently, you need to have elm 0.19.1, [elm-json][elm-json] installed.
 ## Install
 
 There is no installation yet, you need to build the tool
-and add **a link** to it in a directory in your PATH env variable.
-Beware that copying the executable (instead of symlink) will not work
-since currently, it needs to find some template files at runtime.
+and add a link to it in a directory in your PATH env variable.
+This repository holds a submodule so make sure to
+
+```sh
+git clone --recursive ...
+```
+
 To build the `elm-test-rs` binary, install Rust and run the command:
 
 ```sh
-cargo build
+cargo build --release
 ```
 
-The executable will be located at `target/debug/elm-test-rs`.
+The executable will be located at `target/release/elm-test-rs`.
 
 
 ## Design goals
