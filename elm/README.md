@@ -1,13 +1,7 @@
 # elm-test-runner
 
 Helper elm package to run elm tests and report results.
-It is not yet on the package website.
-To view the package documentation, either use [dmy/elm-doc-preview][elm-doc-preview]
-locally, or paste this [docs.json][docs] into the [online previewer][preview].
 
-[elm-doc-preview]: https://github.com/dmy/elm-doc-preview/
-[docs]: https://mpizenberg.github.io/resources/elm-test-rs/docs.json
-[preview]: https://elm-doc-preview.netlify.app
 
 ## Test runner architecture
 
