@@ -17,6 +17,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install musl-tools
+        run: sudo apt install musl-tools
+
       - name: Install stable Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -41,7 +44,7 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}
 
       - name: Build
-        run: cargo build --verbose --release
+        run: cargo build --verbose --release --target x86_64-unknown-linux-musl
 
   # test:
   #   name: Test
