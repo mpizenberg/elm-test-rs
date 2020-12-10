@@ -30,12 +30,11 @@ pub struct Options {
 ///
 ///  1. Generate the list of test modules and their file paths.
 ///  2. Generate a correct `elm.json` for the to-be-generated `Runner.elm`.
-///  3. Compile all test files such that we know they are correct.
-///  4. Find all tests.
-///  5. Generate `Runner.elm` with a master test concatenating all found exposed tests.
-///  6. Compile it into a JS file wrapped into a Node worker module.
-///  7. Compile `Reporter.elm` into a Node module.
-///  8. Generate and start the Node supervisor program.
+///  3. Find all tests.
+///  4. Generate `Runner.elm` with a master test concatenating all found exposed tests.
+///  5. Compile it into a JS file wrapped into a Node worker module.
+///  6. Compile `Reporter.elm` into a Node module.
+///  7. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
     // The help option is prioritary over the other options
     if options.help {
