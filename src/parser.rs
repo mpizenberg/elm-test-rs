@@ -42,7 +42,7 @@ fn get_all_exposed_values_query<'a>(tree: &'a Tree, source: &'a str) -> Vec<&'a 
     }
 }
 
-fn get_exposing_src_range<'a>(tree: &'a Tree) -> Option<Range<usize>> {
+fn get_exposing_src_range(tree: &Tree) -> Option<Range<usize>> {
     tree_sitter::QueryCursor::new()
         .matches(&EXPOSING_LIST_QUERY, tree.root_node(), |_| &[])
         .next()

@@ -2,7 +2,6 @@
 
 use glob::glob;
 use regex::Regex;
-use serde_json;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;

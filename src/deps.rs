@@ -23,7 +23,7 @@ pub fn solve<P: AsRef<Path>>(
             let normal_deps = app_config.dependencies.direct.iter();
             let deps: Map<String, Range<SemVer>> = normal_deps
                 .chain(app_config.test_dependencies.direct.iter())
-                .map(|(p, v)| (p.clone(), Range::exact(v.clone())))
+                .map(|(p, v)| (p.clone(), Range::exact(*v)))
                 .collect();
             solve_helper(src_dirs, &"root".to_string(), SemVer::zero(), deps)
         }
@@ -38,6 +38,7 @@ pub fn solve<P: AsRef<Path>>(
     }
 }
 
+#[allow(clippy::ptr_arg)]
 fn solve_helper<P: AsRef<Path>>(
     src_dirs: &[P],
     pkg_id: &String,
