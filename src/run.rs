@@ -325,6 +325,7 @@ fn get_module_name(
     source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
     file: impl AsRef<Path>,
 ) -> String {
+    eprintln!("get_module_name of: {}", file.as_ref().display());
     let file = file.as_ref();
     let matching_source_dir = {
         let mut matching = source_dirs.into_iter().filter(|dir| file.starts_with(dir));
@@ -348,6 +349,10 @@ fn get_module_name(
         .unwrap()
         .with_extension("");
     let module_name_parts: Vec<_> = trimmed.iter().map(|s| s.to_str().unwrap()).collect();
+    module_name_parts
+        .iter()
+        .filter(|s| !is_valid_module_name(s))
+        .for_each(|s| eprintln!("{}", s));
     assert!(module_name_parts.iter().all(|s| is_valid_module_name(s)));
     assert!(!module_name_parts.is_empty());
     module_name_parts.join(".")
