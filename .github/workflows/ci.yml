@@ -15,7 +15,7 @@ jobs:
     container: rust:alpine
     steps:
       - name: Install git
-        run: apk add git musl-dev g++
+        run: apk add --no-cache git musl-dev g++ tar
 
       - uses: actions/checkout@v2
         with:
