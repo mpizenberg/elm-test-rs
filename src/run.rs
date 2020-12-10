@@ -102,13 +102,15 @@ pub fn main(options: Options) {
 
     // Make src dirs relative to the generated tests root
     let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
-    let test_directories: Vec<PathBuf> = source_directories
+    let mut test_directories: Vec<PathBuf> = source_directories
         .iter()
-        // Add tests/ to the list of source directories
-        .chain(std::iter::once(&"tests".to_string()))
         // Get canonical paths
         .map(|path| elm_project_root.join(path).canonicalize().unwrap())
         .collect();
+    // Add tests/ to the list of source directories
+    if let Ok(path) = elm_project_root.join("tests").canonicalize() {
+        test_directories.push(path);
+    }
     let source_directories_for_runner: Vec<PathBuf> = test_directories
         .iter()
         // Get path relative to tests_root

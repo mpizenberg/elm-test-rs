@@ -8,7 +8,7 @@ use std::path::Path;
 use std::{collections::BTreeMap, error::Error};
 
 use pubgrub_dependency_provider_elm::dependency_provider::{
-    ElmPackageProviderOffline, ProjectAdapter,
+    ElmPackageProviderOffline, ElmPackageProviderOnline, ProjectAdapter, VersionStrategy,
 };
 use pubgrub_dependency_provider_elm::project_config::{
     AppDependencies, ApplicationConfig, ProjectConfig,
@@ -51,11 +51,23 @@ fn solve_helper<P: AsRef<Path>>(
     );
     let version = SemVer::new(0, 0, 0);
     let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
-    let deps_provider =
-        ProjectAdapter::new(pkg_id.clone(), version.clone(), deps, &offline_provider);
+    let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, &deps, &offline_provider);
 
     // Solve dependencies.
-    let mut solution = match resolve(&deps_provider, pkg_id.clone(), version) {
+    let resolution = resolve(&deps_provider, pkg_id.clone(), version).or_else(|_| {
+        eprintln!("Solving offline failed, switching to online");
+        let online_provider = ElmPackageProviderOnline::new(
+            crate::utils::elm_home(),
+            "0.19.1",
+            "https://package.elm-lang.org",
+            crate::utils::http_fetch,
+            VersionStrategy::Newest,
+        )
+        .unwrap();
+        let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, &deps, &online_provider);
+        resolve(&deps_provider, pkg_id.clone(), version)
+    });
+    let mut solution = match resolution {
         Ok(sol) => sol,
         Err(PubGrubError::NoSolution(tree)) => {
             return Err(DefaultStringReporter::report(&tree).into())
