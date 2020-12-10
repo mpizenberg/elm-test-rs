@@ -35,12 +35,12 @@ jobs:
             ${{ runner.os }}
 
       - name: Build
-        run: cargo build --verbose --release
+        run: cargo build --verbose --release --target x86_64-unknown-linux-musl
 
       - uses: actions/upload-artifact@v2
         with:
-          name: elm-test-rs
-          path: target/release/elm-test-rs
+          name: elm-test-rs-musl
+          path: target/x86_64-unknown-linux-musl/release/elm-test-rs
 
   # test:
   #   name: Test
