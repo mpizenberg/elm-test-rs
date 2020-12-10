@@ -12,25 +12,14 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    container: rust:alpine
     steps:
+      - name: Install git
+        run: apk add git musl-dev g++
+
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-
-      - name: Install musl-tools
-        run: sudo apt install musl-tools
-
-      - name: Install stable Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: x86_64-unknown-linux-musl
-          profile: minimal
-
-      - name: Get Cargo version
-        id: cargo_version
-        run: echo "::set-output name=version::$(cargo -V | tr -d ' ')"
-        shell: bash
 
       - name: Download cache
         uses: actions/cache@v2
@@ -40,13 +29,13 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}-${{ hashFiles('Cargo.toml') }}
+          key: ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}
+            ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}
             ${{ runner.os }}
 
       - name: Build
-        run: cargo build --verbose --release --target x86_64-unknown-linux-musl
+        run: cargo build --verbose --release
 
   # test:
   #   name: Test
