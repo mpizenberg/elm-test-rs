@@ -37,6 +37,11 @@ jobs:
       - name: Build
         run: cargo build --verbose --release
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: elm-test-rs
+          path: target/release/elm-test-rs
+
   # test:
   #   name: Test
   #   runs-on: ${{ matrix.os }}
