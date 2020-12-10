@@ -25,7 +25,7 @@ pub fn solve<P: AsRef<Path>>(
                 .chain(app_config.test_dependencies.direct.iter())
                 .map(|(p, v)| (p.clone(), Range::exact(v.clone())))
                 .collect();
-            solve_helper(src_dirs, &"root".to_string(), deps)
+            solve_helper(src_dirs, &"root".to_string(), SemVer::zero(), deps)
         }
         ProjectConfig::Package(pkg_config) => {
             let normal_deps = pkg_config.dependencies.iter();
@@ -33,7 +33,7 @@ pub fn solve<P: AsRef<Path>>(
                 .chain(pkg_config.test_dependencies.iter())
                 .map(|(p, c)| (p.clone(), c.0.clone()))
                 .collect();
-            solve_helper(src_dirs, &pkg_config.name, deps)
+            solve_helper(src_dirs, &pkg_config.name, pkg_config.version, deps)
         }
     }
 }
@@ -41,6 +41,7 @@ pub fn solve<P: AsRef<Path>>(
 fn solve_helper<P: AsRef<Path>>(
     src_dirs: &[P],
     pkg_id: &String,
+    version: SemVer,
     deps: Map<String, Range<SemVer>>,
 ) -> Result<ApplicationConfig, Box<dyn Error>> {
     // TODO: there might be an issue if that was already in the dependencies.
@@ -49,7 +50,6 @@ fn solve_helper<P: AsRef<Path>>(
         "mpizenberg/elm-placeholder-pkg".to_string(),
         Range::exact(SemVer::one()),
     );
-    let version = SemVer::new(0, 0, 0);
     let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
     let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, &deps, &offline_provider);
 
