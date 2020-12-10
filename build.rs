@@ -2,7 +2,7 @@ use fs_extra;
 use std::path::{Path, PathBuf};
 
 /// Copy the content of the elm/ dir into
-/// ~/.elm/0.19.1/packages/mpizenberg/elm-placeholder-pkg/1.0.0/
+/// ~/.elm/0.19.1/packages/mpizenberg/elm-test-runner/1.0.0/
 fn main() {
     // todo!();
     println!("Hello from build.rs");
@@ -12,7 +12,7 @@ fn main() {
         .join("0.19.1")
         .join("packages")
         .join("mpizenberg")
-        .join("elm-placeholder-pkg")
+        .join("elm-test-runner")
         .join("1.0.0");
     let elm_stuff = Path::new("elm").join("elm-stuff");
     std::fs::remove_dir_all(&elm_stuff)

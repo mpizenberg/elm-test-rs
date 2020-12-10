@@ -47,7 +47,7 @@ fn solve_helper<P: AsRef<Path>>(
     // TODO: there might be an issue if that was already in the dependencies.
     let mut deps = deps;
     deps.insert(
-        "mpizenberg/elm-placeholder-pkg".to_string(),
+        "mpizenberg/elm-test-runner".to_string(),
         Range::exact(SemVer::one()),
     );
     let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
