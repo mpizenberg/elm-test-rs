@@ -41,7 +41,9 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}-${{ hashFiles('Cargo.toml') }}
-          restore-keys: ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.cargo_version.outputs.version }}
+            ${{ runner.os }}
 
       - name: Build
         run: cargo build --verbose --release --target x86_64-unknown-linux-musl
