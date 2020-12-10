@@ -117,7 +117,7 @@ The CLI program, if asked to run the tests, performs the following actions.
 To find all tests, we perform a small trick, depending on kernel code (compiled elm code to JS).
 First we parse all the tests modules to extract all potential `Test` exposed values.
 This is done thanks to [tree-sitter-elm][tree-sitter-elm].
-Then in the template file `Runner.elm` we embed code shaped like this.
+Then in the template file `Runner.elm` we embed code shaped like this (but not exactly).
 
 ```elm
 check : a -> Maybe Test

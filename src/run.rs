@@ -153,7 +153,7 @@ pub fn main(options: Options) {
             let source = fs::read_to_string(path).unwrap();
             crate::parser::potential_tests(&source)
                 .into_iter()
-                .map(move |potential_test| format!("{}.{}", module_name, potential_test))
+                .map(move |potential_test| format!("check {}.{}", module_name, potential_test))
         })
         .flatten()
         .collect();
