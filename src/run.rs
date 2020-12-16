@@ -151,8 +151,9 @@ pub fn main(options: Options) {
         .map(|(module_name, path)| {
             let source = fs::read_to_string(path).unwrap();
             crate::parser::potential_tests(&source)
-                .into_iter()
+                .iter()
                 .map(move |potential_test| format!("check {}.{}", module_name, potential_test))
+                .collect::<Vec<_>>()
         })
         .flatten()
         .collect();
