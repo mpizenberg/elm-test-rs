@@ -6,24 +6,25 @@ Attempt at a simpler alternative to node-test-runner for elm tests.
 ## Usage
 
 Just replace `elm-test` by `elm-test-rs`.
-Currently, you need to have elm 0.19.1, [elm-json][elm-json] installed.
-
-[elm-json]: https://github.com/zwilias/elm-json
 
 
 ## Install
 
 There is no installation yet, you need to build the tool
-and add **a link** to it in a directory in your PATH env variable.
-Beware that copying the executable (instead of symlink) will not work
-since currently, it needs to find some template files at runtime.
+and add a link to it in a directory in your PATH env variable.
+This repository holds a submodule so make sure to
+
+```sh
+git clone --recursive ...
+```
+
 To build the `elm-test-rs` binary, install Rust and run the command:
 
 ```sh
-cargo build
+cargo build --release
 ```
 
-The executable will be located at `target/debug/elm-test-rs`.
+The executable will be located at `target/release/elm-test-rs`.
 
 
 ## Design goals
@@ -117,7 +118,7 @@ The CLI program, if asked to run the tests, performs the following actions.
 To find all tests, we perform a small trick, depending on kernel code (compiled elm code to JS).
 First we parse all the tests modules to extract all potential `Test` exposed values.
 This is done thanks to [tree-sitter-elm][tree-sitter-elm].
-Then in the template file `Runner.elm` we embed code shaped like this.
+Then in the template file `Runner.elm` we embed code shaped like this (but not exactly).
 
 ```elm
 check : a -> Maybe Test
@@ -174,52 +175,6 @@ don't forget to `rustup update`.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [clippy]: https://github.com/rust-lang/rust-clippy
-
-
-## Shortcuts and improvements
-
-As this is still a proof of concept, I cut a few corners to get things working.
-For example, the generation of the `elm.json` for the tests uses directly
-[zwilias/elm-json][elm-json] as a binary.
-
-Eventually, it would be useful to extract the dependency solving algorithm from elm-json
-into a crate of its own and to make it available offline if a suitable solution
-is possible with already installed packages.
-The solver code in elm-json has been extracted from [elba][elba],
-a package manager for the Idris language.
-It is iself a rust implementation of [PubGrub][pubgrub],
-the version solver for the Dart language.
-A very nice introduction to PubGrub is given in a [blog post][pubgrub] of 2018
-by its author, Natalie Weizenbaum.
-
-[elba]: https://github.com/elba/elba
-[pubgrub]: https://medium.com/@nex3/pubgrub-2fb6470504f
-
-
-## LOC
-
-Total lines of code for elm-test-rs (including elm-test-runner Elm package)
-as of commit aa360eed:
-
-| Language    |  Files   |  Lines   |  Code   |  Comments  |
-| ----------- | --------:| --------:| -------:| ----------:|
-| Elm         |     12   |   1268   |   713   |       220  |
-| JavaScript  |      3   |    199   |   151   |        23  |
-| Rust        |      8   |    712   |   542   |       108  |
-
-
-## Embedding template files in the executable?
-
-Currently, the Rust CLI program uses `std::env::current_exe()`
-to find the location of the `elm-test-rs` executable in order do find
-the needed files at runtime such as templates and Elm files to compile.
-Publishing the Elm package in [mpizenberg/elm-test-runner][elm-test-runner],
-would remove the problem of finding the Elm files but we still need the templates.
-An option would be to use [rust-embed][rust-embed] to load those files
-directly into the executable.
-This way, elm-test-rs would be perfectly portable.
-
-[rust-embed]: https://github.com/pyros2097/rust-embed
 
 
 ## Cross compilation for OSX and Windows (TODO)

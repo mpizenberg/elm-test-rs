@@ -39,7 +39,7 @@ Please report this bug: https://github.com/mpizenberg/elm-test-rs/issues/new
 main : Program Flags Model Msg
 main =
     [ {{ potential_tests }} ]
-        |> List.filterMap check
+        |> List.filterMap identity
         |> Test.concat
         |> ElmTestRunner.Runner.worker
             { askNbTests = askNbTests

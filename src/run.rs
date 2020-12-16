@@ -1,15 +1,15 @@
 //! Module dealing with actually running all the tests.
 
-use crate::elm_json::{Config, Dependencies};
 use glob::glob;
 use regex::Regex;
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+
+use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 
 #[derive(Debug)]
 /// Options passed as arguments.
@@ -29,12 +29,11 @@ pub struct Options {
 ///
 ///  1. Generate the list of test modules and their file paths.
 ///  2. Generate a correct `elm.json` for the to-be-generated `Runner.elm`.
-///  3. Compile all test files such that we know they are correct.
-///  4. Find all tests.
-///  5. Generate `Runner.elm` with a master test concatenating all found exposed tests.
-///  6. Compile it into a JS file wrapped into a Node worker module.
-///  7. Compile `Reporter.elm` into a Node module.
-///  8. Generate and start the Node supervisor program.
+///  3. Find all tests.
+///  4. Generate `Runner.elm` with a master test concatenating all found exposed tests.
+///  5. Compile it into a JS file wrapped into a Node worker module.
+///  6. Compile `Reporter.elm` into a Node module.
+///  7. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
     // The help option is prioritary over the other options
     if options.help {
@@ -93,81 +92,44 @@ pub fn main(options: Options) {
     // Read project elm.json
     let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
         .expect("Unable to read elm.json");
-    let info = Config::try_from(elm_json_str.as_ref()).unwrap();
-
-    // Convert package elm.json to an application elm.json if needed
-    let mut elm_json_tests = match info {
-        Config::Package(package) => crate::elm_json::ApplicationConfig::try_from(&package).unwrap(),
-        Config::Application(application) => application,
+    // let info = Config::try_from(elm_json_str.as_ref()).unwrap();
+    let info: ProjectConfig = serde_json::from_str(&elm_json_str).unwrap();
+    let source_directories = match &info {
+        ProjectConfig::Application(app_config) => app_config.source_directories.clone(),
+        ProjectConfig::Package(_) => vec!["src".to_string()],
     };
 
     // Make src dirs relative to the generated tests root
     let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
-    let test_directories: Vec<PathBuf> = elm_json_tests
-        .source_directories
+    let mut test_directories: Vec<PathBuf> = source_directories
         .iter()
-        // Add tests/ to the list of source directories
-        .chain(std::iter::once(&"tests".to_string()))
-        // Get canonical form
+        // Get canonical paths
         .map(|path| elm_project_root.join(path).canonicalize().unwrap())
         .collect();
-
-    // TODO: get rid of elm_test_rs_root.
-    // The content of the elm/ directory should be used either as an elm package,
-    // or embedded in the executable.
-    let elm_test_rs_root = crate::utils::elm_test_rs_root().unwrap();
+    // Add tests/ to the list of source directories
+    if let Ok(path) = elm_project_root.join("tests").canonicalize() {
+        test_directories.push(path);
+    }
     let source_directories_for_runner: Vec<PathBuf> = test_directories
         .iter()
         // Get path relative to tests_root
         .map(|path| pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path"))
-        // Add src/ and elm-test-rs/elm/src/ to the source directories
-        .chain(vec!["src".into(), elm_test_rs_root.join("elm").join("src")])
+        // Add src/ to the source directories
+        .chain(vec!["src".into()])
         .collect();
 
-    elm_json_tests.source_directories = source_directories_for_runner
-        .iter()
-        .map(|path| path.to_str().unwrap().to_string())
-        .collect();
-
-    // Promote test dependencies to normal ones
-    elm_json_tests.promote_test_dependencies();
-
-    // Write the elm.json file to disk
-    let elm_json_tests_path = tests_root.join("elm.json");
+    // Generate an elm.json for the to-be-generated Runner.elm.
+    eprintln!("Generating the elm.json for the Runner.elm");
+    let tests_config = ProjectConfig::Application(
+        crate::deps::solve(&info, &source_directories_for_runner).unwrap(),
+    );
+    let tests_config_path = tests_root.join("elm.json");
     std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
-    std::fs::File::create(&elm_json_tests_path)
-        .expect("Unable to create generated elm.json")
-        .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
-        .expect("Unable to write to generated elm.json");
-
-    // Finish preparing the elm.json file by solving any dependency issue (use elm-json)
-    eprintln!("Running elm-json to solve dependency issues ...");
-    let output = Command::new("elm-json")
-        .arg("solve")
-        .arg("--test")
-        .arg("--extra")
-        .arg("elm/core")
-        .arg("elm/json")
-        .arg("elm/time")
-        .arg("elm/random")
-        .arg("billstclair/elm-xml-eeue56")
-        .arg("jorgengranseth/elm-string-format")
-        .arg("--")
-        .arg(&elm_json_tests_path)
-        // stdio config
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .output()
-        .expect("command failed to start");
-    let solved_dependencies: Dependencies =
-        miniserde::json::from_str(std::str::from_utf8(&output.stdout).unwrap())
-            .expect("Wrongly formed dependencies");
-    elm_json_tests.dependencies = solved_dependencies;
-    std::fs::File::create(&elm_json_tests_path)
-        .expect("Unable to create generated elm.json")
-        .write_all(miniserde::json::to_string(&elm_json_tests).as_bytes())
-        .expect("Unable to write to generated elm.json");
+    std::fs::write(
+        tests_config_path,
+        serde_json::to_string(&tests_config).unwrap(),
+    )
+    .expect("Unable to write to generated elm.json");
 
     // Find module names
     let module_names: Vec<String> = modules_abs_paths
@@ -190,7 +152,7 @@ pub fn main(options: Options) {
             let source = fs::read_to_string(path).unwrap();
             crate::parser::potential_tests(&source)
                 .into_iter()
-                .map(move |potential_test| format!("{}.{}", module_name, potential_test))
+                .map(move |potential_test| format!("check {}.{}", module_name, potential_test))
         })
         .flatten()
         .collect();
@@ -221,6 +183,7 @@ pub fn main(options: Options) {
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
+    eprintln!("Kernel-patching Runner.elm.js ...");
     let compiled_runner_src =
         fs::read_to_string(&compiled_runner).expect("Cannot read newly created elm.js file");
     fs::write(&compiled_runner, &kernel_patch_tests(&compiled_runner_src))
@@ -361,6 +324,7 @@ fn get_module_name(
     source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
     file: impl AsRef<Path>,
 ) -> String {
+    eprintln!("get_module_name of: {}", file.as_ref().display());
     let file = file.as_ref();
     let matching_source_dir = {
         let mut matching = source_dirs.into_iter().filter(|dir| file.starts_with(dir));
@@ -384,6 +348,10 @@ fn get_module_name(
         .unwrap()
         .with_extension("");
     let module_name_parts: Vec<_> = trimmed.iter().map(|s| s.to_str().unwrap()).collect();
+    module_name_parts
+        .iter()
+        .filter(|s| !is_valid_module_name(s))
+        .for_each(|s| eprintln!("{}", s));
     assert!(module_name_parts.iter().all(|s| is_valid_module_name(s)));
     assert!(!module_name_parts.is_empty());
     module_name_parts.join(".")
