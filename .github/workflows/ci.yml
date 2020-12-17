@@ -10,15 +10,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
 
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-
-        rust:
-          - stable
-          # - beta
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
 
     steps:
       - uses: actions/checkout@v2
@@ -28,13 +24,14 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           target: ${{ matrix.target }}
           override: true
 
       - uses: actions-rs/cargo@v1
         with:
           command: build
+          args: --target ${{ matrix.target }}
 
       # - name: Download cache
       #   uses: actions/cache@v2
