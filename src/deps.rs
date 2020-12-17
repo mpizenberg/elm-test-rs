@@ -62,7 +62,7 @@ pub fn install(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
             all_deps.insert(test_pkg.clone(), Range::between((1, 0, 0), (2, 0, 0)));
 
             // Solve dependencies
-            let solution = solve_deps(&all_deps)?;
+            let solution = solve_deps(&all_deps, "root".to_string(), SemVer::zero())?;
 
             // Add the selected elm-explorations/test version to direct tests deps
             let test_version = solution.get(&test_pkg).unwrap();
@@ -102,7 +102,7 @@ pub fn install(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
             all_deps.insert(test_pkg.clone(), test_range.clone());
 
             // Solve dependencies to check that elm-explorations/test is compatible
-            solve_deps(&all_deps)?;
+            solve_deps(&all_deps, pkg_config.name.clone(), SemVer::zero())?;
 
             // Add elm-explorations/test to tests deps
             pkg_config
@@ -139,12 +139,14 @@ pub fn solve<P: AsRef<Path>>(
 }
 
 /// Solve project dependencies.
-fn solve_deps(deps: &Map<String, Range<SemVer>>) -> Result<Map<String, SemVer>, Box<dyn Error>> {
-    let pkg_id = "root";
-    let version = SemVer::zero();
+fn solve_deps(
+    deps: &Map<String, Range<SemVer>>,
+    pkg_id: String,
+    version: SemVer,
+) -> Result<Map<String, SemVer>, Box<dyn Error>> {
     let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
-    let deps_provider = ProjectAdapter::new(pkg_id.to_string(), version, deps, &offline_provider);
-    let resolution = resolve(&deps_provider, pkg_id.to_string(), version).or_else(|_| {
+    let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, deps, &offline_provider);
+    let resolution = resolve(&deps_provider, pkg_id.clone(), version).or_else(|_| {
         eprintln!("Checking offline failed, switching to online");
         let online_provider = ElmPackageProviderOnline::new(
             crate::utils::elm_home(),
@@ -154,9 +156,8 @@ fn solve_deps(deps: &Map<String, Range<SemVer>>) -> Result<Map<String, SemVer>, 
             VersionStrategy::Newest,
         )
         .unwrap();
-        let deps_provider =
-            ProjectAdapter::new(pkg_id.to_string(), version, deps, &online_provider);
-        resolve(&deps_provider, pkg_id.to_string(), version)
+        let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, deps, &online_provider);
+        resolve(&deps_provider, pkg_id.clone(), version)
     });
     match resolution {
         Ok(sol) => Ok(sol),
@@ -167,35 +168,13 @@ fn solve_deps(deps: &Map<String, Range<SemVer>>) -> Result<Map<String, SemVer>, 
 
 /// Check that those dependencies are correct.
 fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> Result<(), Box<dyn Error>> {
-    let pkg_id = "root";
+    let pkg_id = "root".to_string();
     let version = SemVer::zero();
-    let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
-    let deps_provider = ProjectAdapter::new(pkg_id.to_string(), version, deps, &offline_provider);
-    let resolution = resolve(&deps_provider, pkg_id.to_string(), version).or_else(|_| {
-        eprintln!("Checking offline failed, switching to online");
-        let online_provider = ElmPackageProviderOnline::new(
-            crate::utils::elm_home(),
-            "0.19.1",
-            "https://package.elm-lang.org",
-            crate::utils::http_fetch,
-            VersionStrategy::Newest,
-        )
-        .unwrap();
-        let deps_provider =
-            ProjectAdapter::new(pkg_id.to_string(), version, deps, &online_provider);
-        resolve(&deps_provider, pkg_id.to_string(), version)
-    });
-    let mut solution: Map<String, SemVer> = match resolution {
-        Ok(sol) => sol,
-        Err(PubGrubError::NoSolution(tree)) => {
-            return Err(DefaultStringReporter::report(&tree).into())
-        }
-        Err(err) => return Err(err.into()),
-    };
+    let mut solution = solve_deps(deps, pkg_id.clone(), version)?;
     // Check that indirect deps are correct if this is for an application.
     // All packages in the solution must exist in the original dependencies.
     if is_app {
-        solution.remove(pkg_id);
+        solution.remove(&pkg_id);
         for p in solution.keys() {
             if !deps.contains_key(p) {
                 return Err(format!("{} is missing in the indirect dependencies", p).into());
@@ -218,30 +197,7 @@ fn solve_helper<P: AsRef<Path>>(
         "mpizenberg/elm-test-runner".to_string(),
         Range::exact(SemVer::one()),
     );
-    let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
-    let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, &deps, &offline_provider);
-
-    // Solve dependencies.
-    let resolution = resolve(&deps_provider, pkg_id.clone(), version).or_else(|_| {
-        eprintln!("Solving offline failed, switching to online");
-        let online_provider = ElmPackageProviderOnline::new(
-            crate::utils::elm_home(),
-            "0.19.1",
-            "https://package.elm-lang.org",
-            crate::utils::http_fetch,
-            VersionStrategy::Newest,
-        )
-        .unwrap();
-        let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, &deps, &online_provider);
-        resolve(&deps_provider, pkg_id.clone(), version)
-    });
-    let mut solution = match resolution {
-        Ok(sol) => sol,
-        Err(PubGrubError::NoSolution(tree)) => {
-            return Err(DefaultStringReporter::report(&tree).into())
-        }
-        Err(err) => return Err(err.into()),
-    };
+    let mut solution = solve_deps(&deps, pkg_id.clone(), version)?;
     solution.remove(pkg_id);
 
     // TODO: Split solution into direct and indirect deps.
