@@ -28,11 +28,14 @@ reporter = Elm.Reporter.init({ flags: flags });
 reporter.ports.stdout.subscribe((str) => process.stdout.write(str));
 
 // When the reporter has finished clean runners
-reporter.ports.signalFinished.subscribe((code) => {
+reporter.ports.signalFinished.subscribe(({ exitCode, testsCount }) => {
+  if (testsCount == 0) {
+    process.stdout.write("There isn't any test, start with: elm-test-rs init\n");
+  }
   runners.forEach((runner) => runner.terminate());
   working = false;
   supervisorEvent.emit("finishedWork");
-  process.exit(code);
+  process.exit(exitCode);
 });
 
 // When receiving a CLI message, start test workers
@@ -82,6 +85,12 @@ function setupWithNbTests(runnerFile, nb) {
     .reverse();
   // Reset reporter
   reporter.ports.restart.send(nb);
+
+  // Custom handling in the case of no test
+  if (nbTests == 0) {
+    return;
+  }
+
   // Send first runner job
   runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
 

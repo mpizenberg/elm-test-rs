@@ -10,7 +10,7 @@ port restart : (Int -> msg) -> Sub msg
 port incomingResult : (Value -> msg) -> Sub msg
 
 
-port signalFinished : Int -> Cmd msg
+port signalFinished : { exitCode : Int, testsCount : Int } -> Cmd msg
 
 
 port stdout : String -> Cmd msg

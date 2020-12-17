@@ -48,10 +48,10 @@ main =
         concatenatedTest =
             case tests of
                 [] ->
-                    Test.todo "There isn't any test yet, let's start with: elm-test-rs init"
+                    Nothing
 
                 _ ->
-                    Test.concat tests
+                    Just (Test.concat tests)
     in
     concatenatedTest
         |> ElmTestRunner.Runner.worker
