@@ -12,105 +12,109 @@ use pubgrub_dependency_provider_elm::dependency_provider::{
     ElmPackageProviderOffline, ElmPackageProviderOnline, ProjectAdapter, VersionStrategy,
 };
 use pubgrub_dependency_provider_elm::project_config::{
-    AppDependencies, ApplicationConfig, ProjectConfig,
+    AppDependencies, ApplicationConfig, PackageConfig, ProjectConfig,
 };
 
 /// Install elm-explorations/test to the tests dependencies.
 pub fn install(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
     match config {
-        ProjectConfig::Application(mut app_config) => {
-            // Retrieve all direct and indirect dependencies
-            let indirect_test_deps = app_config.test_dependencies.indirect.iter();
-            let mut all_deps: Map<String, Range<SemVer>> = indirect_test_deps
-                .chain(app_config.dependencies.indirect.iter())
-                .chain(app_config.test_dependencies.direct.iter())
-                .chain(app_config.dependencies.direct.iter())
-                .map(|(p, v)| (p.clone(), Range::exact(*v)))
-                .collect();
+        ProjectConfig::Application(app_config) => {
+            Ok(ProjectConfig::Application(install_app(app_config)?))
+        }
+        ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(install_pkg(pkg_config)?)),
+    }
+}
 
-            // Check that those dependencies are correct
-            solve_check(&all_deps, true)?;
+fn install_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<dyn Error>> {
+    // Retrieve all direct and indirect dependencies
+    let indirect_test_deps = app_config.test_dependencies.indirect.iter();
+    let mut all_deps: Map<String, Range<SemVer>> = indirect_test_deps
+        .chain(app_config.dependencies.indirect.iter())
+        .chain(app_config.test_dependencies.direct.iter())
+        .chain(app_config.dependencies.direct.iter())
+        .map(|(p, v)| (p.clone(), Range::exact(*v)))
+        .collect();
 
-            // Check if elm-explorations/test is already in the dependencies.
-            let test_pkg = "elm-explorations/test".to_string();
-            if all_deps.contains_key(&test_pkg) {
-                if app_config
-                    .test_dependencies
-                    .indirect
-                    .contains_key(&test_pkg)
-                {
-                    eprintln!(
-                        "elm-explorations/test is already in your indirect test dependencies,"
-                    );
-                    eprintln!("so we just upgrade it to a direct test dependency.");
-                    let v = app_config
-                        .test_dependencies
-                        .indirect
-                        .remove(&test_pkg)
-                        .unwrap();
-                    app_config
-                        .test_dependencies
-                        .direct
-                        .insert(test_pkg.clone(), v);
-                } else {
-                    eprintln!("elm-explorations/test is already in your dependencies.");
-                }
-                return Ok(ProjectConfig::Application(app_config));
-            }
+    // Check that those dependencies are correct
+    solve_check(&all_deps, true)?;
 
-            // Add elm-explorations/test to the dependencies
-            all_deps.insert(test_pkg.clone(), Range::between((1, 0, 0), (2, 0, 0)));
-
-            // Solve dependencies
-            let solution = solve_deps(&all_deps, "root".to_string(), SemVer::zero())?;
-
-            // Add the selected elm-explorations/test version to direct tests deps
-            let test_version = solution.get(&test_pkg).unwrap();
+    // Check if elm-explorations/test is already in the dependencies.
+    let test_pkg = "elm-explorations/test".to_string();
+    if all_deps.contains_key(&test_pkg) {
+        if app_config
+            .test_dependencies
+            .indirect
+            .contains_key(&test_pkg)
+        {
+            eprintln!("elm-explorations/test is already in your indirect test dependencies,");
+            eprintln!("so we just upgrade it to a direct test dependency.");
+            let v = app_config
+                .test_dependencies
+                .indirect
+                .remove(&test_pkg)
+                .unwrap();
             app_config
                 .test_dependencies
                 .direct
-                .insert(test_pkg, *test_version);
-
-            // Add all other new deps to indirect tests deps
-            for (p, v) in solution.into_iter() {
-                if !all_deps.contains_key(&p) && &p != "root" {
-                    app_config.test_dependencies.indirect.insert(p, v);
-                }
-            }
-            Ok(ProjectConfig::Application(app_config))
+                .insert(test_pkg.clone(), v);
+        } else {
+            eprintln!("elm-explorations/test is already in your dependencies.");
         }
-        ProjectConfig::Package(mut pkg_config) => {
-            // Retrieve all dependencies
-            let test_deps = pkg_config.test_dependencies.iter();
-            let mut all_deps: Map<String, Range<SemVer>> = test_deps
-                .chain(pkg_config.dependencies.iter())
-                .map(|(p, c)| (p.clone(), c.0.clone()))
-                .collect();
+        return Ok(app_config);
+    }
 
-            // Check that those dependencies are correct
-            solve_check(&all_deps, false)?;
+    // Add elm-explorations/test to the dependencies
+    all_deps.insert(test_pkg.clone(), Range::between((1, 0, 0), (2, 0, 0)));
 
-            // Check if elm-explorations/test is already in the dependencies.
-            let test_pkg = "elm-explorations/test".to_string();
-            if all_deps.contains_key(&test_pkg) {
-                eprintln!("elm-explorations/test is already in your dependencies.");
-                return Ok(ProjectConfig::Package(pkg_config));
-            }
+    // Solve dependencies
+    let solution = solve_deps(&all_deps, "root".to_string(), SemVer::zero())?;
 
-            // Add elm-explorations/test to the dependencies
-            let test_range = Range::between((1, 0, 0), (2, 0, 0));
-            all_deps.insert(test_pkg.clone(), test_range.clone());
+    // Add the selected elm-explorations/test version to direct tests deps
+    let test_version = solution.get(&test_pkg).unwrap();
+    app_config
+        .test_dependencies
+        .direct
+        .insert(test_pkg, *test_version);
 
-            // Solve dependencies to check that elm-explorations/test is compatible
-            solve_deps(&all_deps, pkg_config.name.clone(), SemVer::zero())?;
-
-            // Add elm-explorations/test to tests deps
-            pkg_config
-                .test_dependencies
-                .insert(test_pkg, Constraint(test_range));
-            Ok(ProjectConfig::Package(pkg_config))
+    // Add all other new deps to indirect tests deps
+    for (p, v) in solution.into_iter() {
+        if !all_deps.contains_key(&p) && &p != "root" {
+            app_config.test_dependencies.indirect.insert(p, v);
         }
     }
+    Ok(app_config)
+}
+
+fn install_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Error>> {
+    // Retrieve all dependencies
+    let test_deps = pkg_config.test_dependencies.iter();
+    let mut all_deps: Map<String, Range<SemVer>> = test_deps
+        .chain(pkg_config.dependencies.iter())
+        .map(|(p, c)| (p.clone(), c.0.clone()))
+        .collect();
+
+    // Check that those dependencies are correct
+    solve_check(&all_deps, false)?;
+
+    // Check if elm-explorations/test is already in the dependencies.
+    let test_pkg = "elm-explorations/test".to_string();
+    if all_deps.contains_key(&test_pkg) {
+        eprintln!("elm-explorations/test is already in your dependencies.");
+        return Ok(pkg_config);
+    }
+
+    // Add elm-explorations/test to the dependencies
+    let test_range = Range::between((1, 0, 0), (2, 0, 0));
+    all_deps.insert(test_pkg.clone(), test_range.clone());
+
+    // Solve dependencies to check that elm-explorations/test is compatible
+    solve_deps(&all_deps, pkg_config.name.clone(), SemVer::zero())?;
+
+    // Add elm-explorations/test to tests deps
+    pkg_config
+        .test_dependencies
+        .insert(test_pkg, Constraint(test_range));
+    Ok(pkg_config)
 }
 
 /// Solve dependencies needed to run the tests.
