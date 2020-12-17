@@ -150,7 +150,7 @@ fn solve_helper<P: AsRef<Path>>(
     let mut deps = deps;
     deps.insert(
         "mpizenberg/elm-test-runner".to_string(),
-        Range::exact(SemVer::one()),
+        Range::exact((2, 0, 0)),
     );
     let mut solution = solve_deps(&deps, pkg_id.clone(), version)?;
     solution.remove(pkg_id);
