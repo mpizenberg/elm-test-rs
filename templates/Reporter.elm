@@ -7,7 +7,7 @@ import Json.Decode exposing (Value)
 port restart : (Int -> msg) -> Sub msg
 
 
-port incomingResult : (Value -> msg) -> Sub msg
+port incomingResult : ({ duration : Float, result : Value } -> msg) -> Sub msg
 
 
 port signalFinished : { exitCode : Int, testsCount : Int } -> Cmd msg

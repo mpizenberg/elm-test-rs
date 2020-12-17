@@ -92,8 +92,8 @@ fn parse_content(input: &str) -> IResult<&str, Vec<&str>> {
     let parse_declaration = alt((
         map(parse_type, |_| None),
         map(parse_port, |_| None),
-        map(preceded(parse_header, parse_definition), |x| Some(x)),
-        map(parse_definition, |x| Some(x)),
+        map(preceded(parse_header, parse_definition), Some),
+        map(parse_definition, Some),
     ));
     fold_many0(
         terminated(parse_declaration, ignore_not_code),
@@ -259,7 +259,7 @@ fn multiline_string_literal(input: &str) -> IResult<&str, &str> {
 fn take_till_escape_or_string_end(input: &str) -> IResult<&str, &str> {
     let mut rest = input;
     let mut count = 0;
-    while !rest.is_empty() && !rest.starts_with("\\") && !rest.starts_with("\"\"\"") {
+    while !rest.is_empty() && !rest.starts_with('\\') && !rest.starts_with("\"\"\"") {
         rest = &rest[1..];
         count += 1;
     }
