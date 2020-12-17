@@ -7,6 +7,7 @@ use pubgrub::version::SemanticVersion as SemVer;
 use std::path::Path;
 use std::{collections::BTreeMap, error::Error};
 
+use pubgrub_dependency_provider_elm::constraint::Constraint;
 use pubgrub_dependency_provider_elm::dependency_provider::{
     ElmPackageProviderOffline, ElmPackageProviderOnline, ProjectAdapter, VersionStrategy,
 };
@@ -78,8 +79,35 @@ pub fn install(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
             }
             Ok(ProjectConfig::Application(app_config))
         }
-        ProjectConfig::Package(pkg_config) => {
-            // TODO
+        ProjectConfig::Package(mut pkg_config) => {
+            // Retrieve all dependencies
+            let test_deps = pkg_config.test_dependencies.iter();
+            let mut all_deps: Map<String, Range<SemVer>> = test_deps
+                .chain(pkg_config.dependencies.iter())
+                .map(|(p, c)| (p.clone(), c.0.clone()))
+                .collect();
+
+            // Check that those dependencies are correct
+            solve_check(&all_deps, false)?;
+
+            // Check if elm-explorations/test is already in the dependencies.
+            let test_pkg = "elm-explorations/test".to_string();
+            if all_deps.contains_key(&test_pkg) {
+                eprintln!("elm-explorations/test is already in your dependencies.");
+                return Ok(ProjectConfig::Package(pkg_config));
+            }
+
+            // Add elm-explorations/test to the dependencies
+            let test_range = Range::between((1, 0, 0), (2, 0, 0));
+            all_deps.insert(test_pkg.clone(), test_range.clone());
+
+            // Solve dependencies to check that elm-explorations/test is compatible
+            solve_deps(&all_deps)?;
+
+            // Add elm-explorations/test to tests deps
+            pkg_config
+                .test_dependencies
+                .insert(test_pkg, Constraint(test_range));
             Ok(ProjectConfig::Package(pkg_config))
         }
     }
