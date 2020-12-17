@@ -4,7 +4,7 @@ on: [pull_request]
 
 jobs:
   test:
-    name: Test
+    name: Build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -58,10 +58,10 @@ jobs:
           command: build
           args: --release --target ${{ matrix.target }}
 
-      # - uses: actions/upload-artifact@v2
-      #   with:
-      #     name: elm-test-rs
-      #     path: target/${{ matrix.target }}/release/elm-test-rs
+      - uses: actions/upload-artifact@v2
+        with:
+          name: elm-test-rs
+          path: target/${{ matrix.target }}/release/elm-test-rs
 
   # test:
   #   name: Test
