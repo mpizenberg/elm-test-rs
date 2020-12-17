@@ -35,23 +35,25 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
+      - name: Download cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-${{ matrix.target }}
+            ${{ runner.os }}
+
       - uses: actions-rs/cargo@v1
         with:
           command: build
           args: --target ${{ matrix.target }}
 
-      # - name: Download cache
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: |
-      #       ~/.cargo/registry/index/
-      #       ~/.cargo/registry/cache/
-      #       ~/.cargo/git/db/
-      #       target/
-      #     key: ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}
-      #       ${{ runner.os }}
       #
       #
       # - uses: actions/upload-artifact@v2
