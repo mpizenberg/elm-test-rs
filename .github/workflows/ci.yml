@@ -1,25 +1,43 @@
 name: CI
 
-on:
-  push:
-    branches:
-      - staging
-      - trying
-
-  pull_request:
+on: [pull_request]
 
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
-    container: rust:alpine
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            # target: aarch64-unknown-linux-gnu
+
     steps:
-      - name: Install git
-        run: apk add --no-cache git musl-dev g++ tar
+      - name: install musl-tools if musl target
+        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+        run: sudo apt install musl-tools
 
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
 
       - name: Download cache
         uses: actions/cache@v2
@@ -29,56 +47,111 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ runner.os }}-${{ matrix.target }}-build-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-${{ matrix.target }}-build-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-${{ matrix.target }}-build
+            ${{ runner.os }}-${{ matrix.target }}
             ${{ runner.os }}
 
-      - name: Build
-        run: cargo build --verbose --release --target x86_64-unknown-linux-musl
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
 
       - uses: actions/upload-artifact@v2
+        if: ${{ !startsWith(matrix.os, 'windows') }}
         with:
-          name: elm-test-rs-musl
-          path: target/x86_64-unknown-linux-musl/release/elm-test-rs
+          name: ${{ matrix.target }}_elm-test-rs
+          path: target/${{ matrix.target }}/release/elm-test-rs
 
-  # test:
-  #   name: Test
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os:
-  #         - ubuntu-latest
-  #         - windows-latest
-  #         - macos-latest
-  #       rust:
-  #         - stable
-  #         - beta
-  #         - nightly
-  #
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         submodules: recursive
-  #
-  #     - uses: actions-rs/toolchain@v1
-  #       with:
-  #         profile: minimal
-  #         toolchain: ${{ matrix.rust }}
-  #         override: true
-  #         components: rustfmt, clippy
-  #
-  #     - uses: actions-rs/cargo@v1
-  #       with:
-  #         command: build
-  #
-  #     - uses: actions-rs/cargo@v1
-  #       with:
-  #         command: fmt
-  #         args: --all -- --check
-  #
-  #     - uses: actions-rs/cargo@v1
-  #       with:
-  #         command: clippy
-  #         args: --all
+      - uses: actions/upload-artifact@v2
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        with:
+          name: ${{ matrix.target }}_elm-test-rs
+          path: target/${{ matrix.target }}/release/elm-test-rs.exe
+
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        toolchain:
+          - stable
+          - beta
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+
+      - name: Download cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.toolchain }}-test-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.toolchain }}-test-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-${{ matrix.toolchain }}-test
+            ${{ runner.os }}-${{ matrix.toolchain }}
+            ${{ runner.os }}
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  check_formatting:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt
+          override: true
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    name: Check clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+          override: true
+
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -D warnings
+        with:
+          command: clippy
