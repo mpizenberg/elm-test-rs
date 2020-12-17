@@ -2,7 +2,8 @@
 
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 
-/// Use the elm-json binary tool to copy the behavior of the command `elm-test init`.
+/// Add elm-explorations/test to test dependencies
+/// and initialize a template tests/Tests.elm file.
 pub fn main() {
     // Install elm-explorations/test in the tests dependencies
     let elm_json_str = std::fs::read_to_string("elm.json").expect("Unable to read elm.json");
