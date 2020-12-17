@@ -126,6 +126,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: stable
           components: rustfmt
           override: true
 
@@ -145,6 +146,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: stable
           components: clippy
           override: true
 
