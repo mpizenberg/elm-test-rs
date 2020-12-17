@@ -36,11 +36,24 @@ Please report this bug: https://github.com/mpizenberg/elm-test-rs/issues/new
 """
 
 
-main : Program Flags Model Msg
-main =
+tests : List Test
+tests =
     [ {{ potential_tests }} ]
         |> List.filterMap identity
-        |> Test.concat
+
+
+main : Program Flags Model Msg
+main =
+    let
+        concatenatedTest =
+            case tests of
+                [] ->
+                    Test.todo "There isn't any test yet, let's start with: elm-test-rs init"
+
+                _ ->
+                    Test.concat tests
+    in
+    concatenatedTest
         |> ElmTestRunner.Runner.worker
             { askNbTests = askNbTests
             , sendNbTests = \nb -> sendNbTests { type_ = "nbTests", nbTests = nb }
