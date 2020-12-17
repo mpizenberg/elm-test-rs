@@ -10,13 +10,6 @@ pub fn elm_project_root() -> Result<PathBuf, Box<dyn Error>> {
         .map_err(|_| "I didn't find any elm.json, are you in an Elm project".into())
 }
 
-/// Find where is located elm-test-rs on the system.
-pub fn elm_test_rs_root() -> Result<PathBuf, Box<dyn Error>> {
-    let current_exe = std::env::current_exe()?;
-    let exe_dir = current_exe.parent().expect("Executable has no parent dir");
-    parent_traversal("Cargo.toml", &exe_dir)
-}
-
 /// Recursively (moving up) look for the file to find.
 /// Return the path of the directory containing the file or an error if not found.
 pub fn parent_traversal(file_to_find: &str, current_dir: &Path) -> Result<PathBuf, Box<dyn Error>> {

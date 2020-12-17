@@ -1,5 +1,3 @@
-#![warn(clippy::pedantic)]
-
 use nom::{
     branch::*, bytes::complete::*, character::complete::*, combinator::*, multi::*, sequence::*, *,
 };

@@ -53,10 +53,7 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
                 .indirect
                 .remove(&test_pkg)
                 .unwrap();
-            app_config
-                .test_dependencies
-                .direct
-                .insert(test_pkg.clone(), v);
+            app_config.test_dependencies.direct.insert(test_pkg, v);
         } else {
             eprintln!("elm-explorations/test is already in your dependencies.");
         }
