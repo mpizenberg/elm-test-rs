@@ -60,9 +60,16 @@ jobs:
           args: --release --target ${{ matrix.target }}
 
       - uses: actions/upload-artifact@v2
+        if: ${{ !startsWith(matrix.os, 'windows') }}
         with:
           name: ${{ matrix.target }}_elm-test-rs
           path: target/${{ matrix.target }}/release/elm-test-rs
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        with:
+          name: ${{ matrix.target }}_elm-test-rs
+          path: target/${{ matrix.target }}/release/elm-test-rs.exe
 
   # test:
   #   name: Test
