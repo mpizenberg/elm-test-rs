@@ -151,5 +151,7 @@ jobs:
           override: true
 
       - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -D warnings
         with:
           command: clippy
