@@ -7,7 +7,7 @@ pub fn main() {
     // Install elm-explorations/test in the tests dependencies
     let elm_json_str = std::fs::read_to_string("elm.json").expect("Unable to read elm.json");
     let project_config: ProjectConfig = serde_json::from_str(&elm_json_str).unwrap();
-    let updated_config = crate::deps::install(project_config)
+    let updated_config = crate::deps::init(project_config)
         .expect("Something went wrong when installing elm-explorations/test");
     std::fs::write(
         "elm.json",

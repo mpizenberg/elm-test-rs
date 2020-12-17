@@ -16,16 +16,16 @@ use pubgrub_dependency_provider_elm::project_config::{
 };
 
 /// Install elm-explorations/test to the tests dependencies.
-pub fn install(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
+pub fn init(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
     match config {
         ProjectConfig::Application(app_config) => {
-            Ok(ProjectConfig::Application(install_app(app_config)?))
+            Ok(ProjectConfig::Application(init_app(app_config)?))
         }
-        ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(install_pkg(pkg_config)?)),
+        ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(init_pkg(pkg_config)?)),
     }
 }
 
-fn install_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<dyn Error>> {
+fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<dyn Error>> {
     // Retrieve all direct and indirect dependencies
     let indirect_test_deps = app_config.test_dependencies.indirect.iter();
     let mut all_deps: Map<String, Range<SemVer>> = indirect_test_deps
@@ -85,7 +85,7 @@ fn install_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, B
     Ok(app_config)
 }
 
-fn install_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Error>> {
+fn init_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Error>> {
     // Retrieve all dependencies
     let test_deps = pkg_config.test_dependencies.iter();
     let mut all_deps: Map<String, Range<SemVer>> = test_deps
