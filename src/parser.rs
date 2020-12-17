@@ -412,3 +412,64 @@ five = something
         );
     }
 }
+
+#[cfg(test)]
+mod nom_tests {
+    #[test]
+    fn char_literal() {
+        let asrt_eq = |input: &str, res| assert_eq!(super::char_literal(input), res);
+        assert!(super::char_literal("'").is_err());
+        assert!(super::char_literal("''").is_err());
+        asrt_eq(r#"'c'a"#, Ok(("a", "c")));
+        asrt_eq(r#"'\\'a"#, Ok(("a", "\\\\")));
+        asrt_eq(r#"'\''a"#, Ok(("a", "\\'")));
+        asrt_eq(r#"'\n'a"#, Ok(("a", "\\n")));
+        asrt_eq(r#"'\r'a"#, Ok(("a", "\\r")));
+    }
+    #[test]
+    fn string_literal() {
+        let asrt_eq = |input: &str, res| assert_eq!(super::string_literal(input), res);
+        assert!(super::string_literal(r#"""#).is_err());
+        asrt_eq(r#""toto"a"#, Ok(("a", "toto")));
+        asrt_eq(r#""to\"to"a"#, Ok(("a", "to\\\"to")));
+        asrt_eq(r#""\"toto"a"#, Ok(("a", "\\\"toto")));
+        asrt_eq(r#""\""a"#, Ok(("a", "\\\"")));
+        asrt_eq(r#"""a"#, Ok(("a", "")));
+        asrt_eq("\"to\nto\"a", Ok(("a", "to\nto")));
+        asrt_eq(r#""to\nto"a"#, Ok(("a", "to\\nto")));
+        asrt_eq(r#""\""a"#, Ok(("a", "\\\"")));
+    }
+    #[test]
+    fn multiline_string_literal() {
+        let asrt_eq = |input: &str, res| assert_eq!(super::multiline_string_literal(input), res);
+        assert!(super::multiline_string_literal(r#"""" "#).is_err());
+        asrt_eq(r#"""""""a"#, Ok(("a", "")));
+        asrt_eq(r#""""toto"""a"#, Ok(("a", "toto")));
+        asrt_eq(r#""""to"to"""a"#, Ok(("a", "to\"to")));
+        asrt_eq(r#""""to""to"""a"#, Ok(("a", "to\"\"to")));
+        asrt_eq(r#""""" """a"#, Ok(("a", "\" ")));
+        asrt_eq(r#""""to\"""to"""a"#, Ok(("a", "to\\\"\"\"to")));
+        asrt_eq(r#""""to\"""\"to"""a"#, Ok(("a", "to\\\"\"\"\\\"to")));
+    }
+    #[test]
+    fn line_comment() {
+        assert!(super::line_comment("a").is_err());
+        assert!(super::line_comment("-").is_err());
+        assert_eq!(super::line_comment("-- hoho \n"), Ok(("\n", " hoho ")));
+        assert_eq!(super::line_comment("-- hoho"), Ok(("", " hoho")));
+    }
+    #[test]
+    fn block_comment() {
+        let asrt_eq = |input: &str, res| assert_eq!(super::block_comment(input), res);
+        assert!(super::block_comment("").is_err());
+        assert!(super::block_comment("a").is_err());
+        assert!(super::block_comment("{-").is_err());
+        asrt_eq("{- hoho -}", Ok(("", " hoho ")));
+        asrt_eq("{- before {- hoho -}-}", Ok(("", " before {- hoho -}")));
+        asrt_eq("{-{- hoho -} after -}", Ok(("", "{- hoho -} after ")));
+        asrt_eq(
+            "{-{- first -} between {- second -}-}",
+            Ok(("", "{- first -} between {- second -}")),
+        );
+    }
+}
