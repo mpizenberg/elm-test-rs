@@ -397,7 +397,7 @@ dependencies = [
 [[package]]
 name = "pubgrub-dependency-provider-elm"
 version = "0.1.0"
-source = "git+https://github.com/mpizenberg/pubgrub-dependency-provider-elm?branch=master#2ac0e915541f08e03a5c33359b050b72fc7610f1"
+source = "git+https://github.com/mpizenberg/pubgrub-dependency-provider-elm?branch=master#121b7b36e314daae88bbe94f580d366402d2bb67"
 dependencies = [
  "pubgrub",
  "rustc-hash",
