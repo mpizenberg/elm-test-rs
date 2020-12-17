@@ -1,4 +1,3 @@
-use fs_extra;
 use std::path::{Path, PathBuf};
 
 /// Copy the content of the elm/ dir into
