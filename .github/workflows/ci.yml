@@ -10,13 +10,9 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build musl
     runs-on: ubuntu-latest
-    container: rust:alpine
     steps:
-      - name: Install git
-        run: apk add --no-cache git musl-dev g++ tar
-
       - uses: actions/checkout@v2
         with:
           submodules: recursive
@@ -39,7 +35,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: elm-test-rs-musl
+          name: elm-test-rs
           path: target/x86_64-unknown-linux-musl/release/elm-test-rs
 
   # test:
