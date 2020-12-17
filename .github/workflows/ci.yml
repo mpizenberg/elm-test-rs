@@ -47,9 +47,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ runner.os }}-${{ matrix.target }}-release-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-${{ matrix.target }}-release-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-${{ matrix.target }}-release
             ${{ runner.os }}-${{ matrix.target }}
             ${{ runner.os }}
 
@@ -60,7 +61,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: elm-test-rs
+          name: ${{ matrix.target }}_elm-test-rs
           path: target/${{ matrix.target }}/release/elm-test-rs
 
   # test:
