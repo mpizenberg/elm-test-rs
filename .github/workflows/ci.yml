@@ -3,34 +3,54 @@ name: CI
 on: [pull_request]
 
 jobs:
-  build:
-    name: Build musl
-    runs-on: ubuntu-latest
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+
+        rust:
+          - stable
+          # - beta
+
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - name: Download cache
-        uses: actions/cache@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}
-            ${{ runner.os }}
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
 
-      - name: Build
-        run: cargo build --verbose --release --target x86_64-unknown-linux-musl
-
-      - uses: actions/upload-artifact@v2
+      - uses: actions-rs/cargo@v1
         with:
-          name: elm-test-rs
-          path: target/x86_64-unknown-linux-musl/release/elm-test-rs
+          command: build
+
+      # - name: Download cache
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: |
+      #       ~/.cargo/registry/index/
+      #       ~/.cargo/registry/cache/
+      #       ~/.cargo/git/db/
+      #       target/
+      #     key: ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-${{ hashFiles('Cargo.toml') }}
+      #       ${{ runner.os }}
+      #
+      #
+      # - uses: actions/upload-artifact@v2
+      #   with:
+      #     name: elm-test-rs
+      #     path: target/x86_64-unknown-linux-musl/release/elm-test-rs
 
   # test:
   #   name: Test
