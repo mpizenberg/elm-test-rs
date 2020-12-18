@@ -48,7 +48,7 @@ Missing features for parity with elm-test:
  - [ ] `--watch` mode ([issue #7][watch-mode])
  - [ ] colors ([issue #5][colors])
  - [ ] pretty-printing of diffs ([issue #6][pretty-printing])
- - [ ] timing of runs
+ - [x] timing of runs
 
 Additional features:
 
@@ -117,7 +117,6 @@ The CLI program, if asked to run the tests, performs the following actions.
 
 To find all tests, we perform a small trick, depending on kernel code (compiled elm code to JS).
 First we parse all the tests modules to extract all potential `Test` exposed values.
-This is done thanks to [tree-sitter-elm][tree-sitter-elm].
 Then in the template file `Runner.elm` we embed code shaped like this (but not exactly).
 
 ```elm
@@ -147,9 +146,8 @@ in [mpizenberg/elm-test-runner][elm-test-runner].
 
 ![architecture diagram][diagram]
 
-[tree-sitter-elm]: https://github.com/Razzeee/tree-sitter-elm
 [diagram]: https://mpizenberg.github.io/resources/elm-test-rs/elm-test-rs.png
-[elm-test-runner]: elm
+[elm-test-runner]: https://github.com/mpizenberg/elm-test-runner
 
 
 ## Contributing
@@ -166,8 +164,8 @@ rustup component add clippy rustfmt
 And then before committing run
 
 ```bash
-cargo fmt
-cargo clippy
+cargo fmt -- --check
+touch Cargo.toml && cargo clippy
 ```
 
 PS: clippy is a rapidly evolving tool so if there are lint errors on CI
@@ -175,17 +173,3 @@ don't forget to `rustup update`.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [clippy]: https://github.com/rust-lang/rust-clippy
-
-
-## Cross compilation for OSX and Windows (TODO)
-
-- Look at configuration of [BurntSushi/ripgrep][ripgrep]
-- Look at configuration of [zwilias/elm-json][elm-json]
-- Discussion on Rust forum: [Cross compile macOS and MS Windows][forum-cross]
-- Medium post by Dotan Nahum:
-  [Building Rust for Multiple Platforms Using Github Actions][medium-github-action]
-
-[ripgrep]: https://github.com/BurntSushi/ripgrep
-[elm-json]: https://github.com/zwilias/elm-json
-[forum-cross]: https://users.rust-lang.org/t/cross-compile-macos-and-ms-windows/38323
-[medium-github-action]: https://medium.com/@jondot/building-rust-on-multiple-platforms-using-github-6f3e6f8b8458
