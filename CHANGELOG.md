@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 #### Fixed
 
+- Swap the `dirs` crate (unmaintained) by `dirs-next`.
+
 
 ## [0.1.1] - (2020-12-19) [(diff)][diff-0.1.1]
 
