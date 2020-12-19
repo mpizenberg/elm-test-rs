@@ -51,6 +51,10 @@ pub fn main(options: Options) {
         std::process::exit(1);
     }
 
+    // Prints to stderr the current version
+    eprintln!("elm-test-rs {}", std::env!("CARGO_PKG_VERSION"));
+    eprintln!("-----------------\n");
+
     // Verify that we are in an Elm project
     let elm_project_root = crate::utils::elm_project_root().unwrap();
 

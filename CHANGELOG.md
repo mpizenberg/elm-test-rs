@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 - `CHANGELOG.md` to record important changes.
 - Includes a stealthy `--watch` option explaining why it is not needed.
+- Print elm-test-rs version to stderr at the beginning of output.
 
 #### Changed
 
