@@ -5,6 +5,7 @@ mod install;
 mod parser;
 mod run;
 mod utils;
+mod watch;
 
 #[derive(Debug)]
 /// Type representing command line arguments.
@@ -53,6 +54,7 @@ fn no_subcommand_args(
     Ok(Args::Run(run::Options {
         help: args.contains("--help"),
         version: args.contains("--version"),
+        watch: args.contains("--watch"),
         compiler: args
             .opt_value_from_str("--compiler")?
             .unwrap_or_else(|| "elm".to_string()),

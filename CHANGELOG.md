@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 #### Added
 
 - `CHANGELOG.md` to record important changes.
+- Includes a stealthy `--watch` option explaining why it is not needed.
 
 #### Changed
 

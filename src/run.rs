@@ -16,6 +16,7 @@ use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 pub struct Options {
     pub help: bool,
     pub version: bool,
+    pub watch: bool,
     pub compiler: String,
     pub seed: u32,
     pub fuzz: u32,
@@ -35,6 +36,7 @@ pub struct Options {
 ///  6. Compile `Reporter.elm` into a Node module.
 ///  7. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
+    let start_time = std::time::Instant::now();
     // The help option is prioritary over the other options
     if options.help {
         crate::help::main();
@@ -43,6 +45,10 @@ pub fn main(options: Options) {
     } else if options.version {
         println!("{}", std::env!("CARGO_PKG_VERSION"));
         return;
+    // The watch option does not exist but some people might try it
+    } else if options.watch {
+        crate::watch::main();
+        std::process::exit(1);
     }
 
     // Verify that we are in an Elm project
@@ -127,7 +133,7 @@ pub fn main(options: Options) {
     std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
     let tests_config_str = serde_json::to_string(&tests_config).unwrap();
     match std::fs::read_to_string(&tests_config_path) {
-        Ok(old_conf) if &tests_config_str == &old_conf => (),
+        Ok(old_conf) if tests_config_str == old_conf => (),
         _ => std::fs::write(tests_config_path, tests_config_str)
             .expect("Unable to write to generated elm.json"),
     };
@@ -174,6 +180,8 @@ pub fn main(options: Options) {
     );
 
     // Compile the src/Runner.elm file into Runner.elm.js
+    let preparation_time = start_time.elapsed().as_secs_f32();
+    eprintln!("Spent {}s generating Runner.elm", preparation_time);
     eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     compile(
