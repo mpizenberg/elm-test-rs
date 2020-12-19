@@ -16,6 +16,7 @@ use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 pub struct Options {
     pub help: bool,
     pub version: bool,
+    pub watch: bool,
     pub compiler: String,
     pub seed: u32,
     pub fuzz: u32,
@@ -44,6 +45,10 @@ pub fn main(options: Options) {
     } else if options.version {
         println!("{}", std::env!("CARGO_PKG_VERSION"));
         return;
+    // The watch option does not exist but some people might try it
+    } else if options.watch {
+        crate::watch::main();
+        std::process::exit(1);
     }
 
     // Verify that we are in an Elm project
