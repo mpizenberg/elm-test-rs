@@ -188,12 +188,14 @@ pub fn main(options: Options) {
     eprintln!("Spent {}s generating Runner.elm", preparation_time);
     eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
-    compile(
+    if !compile(
         &tests_root,       // current_dir
         &options.compiler, // compiler
         &compiled_runner,  // output
         &[Path::new("src").join("Runner.elm")],
-    );
+    ) {
+        std::process::exit(1);
+    }
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
@@ -233,12 +235,14 @@ pub fn main(options: Options) {
     std::fs::write(&reporter_elm_path, reporter_template)
         .expect("Error writing Reporter.elm to test folder");
     let compiled_reporter = tests_root.join("js").join("Reporter.elm.js");
-    compile(
+    if !compile(
         &tests_root,        // current_dir
         &options.compiler,  // compiler
         &compiled_reporter, // output
         &[&reporter_elm_path],
-    );
+    ) {
+        std::process::exit(1);
+    }
 
     // Generate the supervisor Node module
     #[cfg(unix)]
@@ -300,7 +304,7 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
 }
 
 /// Compile an Elm module into a JS file (without --optimized)
-fn compile<P1, P2, I, S>(current_dir: P1, compiler: &str, output: P2, src: I)
+fn compile<P1, P2, I, S>(current_dir: P1, compiler: &str, output: P2, src: I) -> bool
 where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
@@ -318,9 +322,7 @@ where
         .stderr(Stdio::inherit())
         .status()
         .expect("Command elm make failed to start");
-    if !status.success() {
-        std::process::exit(1);
-    }
+    status.success()
 }
 
 /// Replace the template keys and write result to output file.
