@@ -45,7 +45,7 @@ However, this doesn't intend to support Elm prior to 0.19.1.
 
 Missing features for parity with elm-test:
 
- - [ ] `--watch` mode ([issue #7][watch-mode])
+ - [x] ~`--watch` mode ([issue #7][watch-mode])~
  - [ ] colors ([issue #5][colors])
  - [ ] pretty-printing of diffs ([issue #6][pretty-printing])
  - [x] timing of runs
