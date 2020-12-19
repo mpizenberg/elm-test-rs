@@ -11,6 +11,10 @@ use std::process::{Command, Stdio};
 
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 
+use notify::{watcher, RecursiveMode, Watcher};
+use std::sync::mpsc::channel;
+use std::time::Duration;
+
 #[derive(Debug)]
 /// Options passed as arguments.
 pub struct Options {
@@ -78,7 +82,7 @@ pub fn main(options: Options) {
             format!("{}/{}", root_string, "tests/**/*.elm"),
         ]
     } else {
-        options.files
+        options.files.clone()
     };
 
     // Get file paths of all modules in canonical form (absolute path)
@@ -128,13 +132,40 @@ pub fn main(options: Options) {
         .chain(vec!["src".into()])
         .collect();
 
+    // Create a channel to receive the events.
+    let (tx, rx) = channel();
+    // Create a watcher object, delivering debounced events.
+    // The notification back-end is selected based on the platform.
+    let mut watcher = watcher(tx, Duration::from_secs(4)).unwrap();
+    main_helper(
+        &options,
+        &start_time,
+        &info,
+        &test_directories,
+        &source_directories_for_runner,
+        &tests_root,
+        &modules_abs_paths,
+        &reporter,
+    );
+}
+
+fn main_helper(
+    options: &Options,
+    start_time: &std::time::Instant,
+    info: &ProjectConfig,
+    test_directories: &[PathBuf],
+    source_directories_for_runner: &[PathBuf],
+    tests_root: &Path,
+    modules_abs_paths: &HashSet<PathBuf>,
+    reporter: &str,
+) {
     // Generate an elm.json for the to-be-generated Runner.elm.
     eprintln!("Generating the elm.json for the Runner.elm");
     let tests_config = ProjectConfig::Application(
-        crate::deps::solve(&info, &source_directories_for_runner).unwrap(),
+        crate::deps::solve(info, source_directories_for_runner).unwrap(),
     );
     let tests_config_path = tests_root.join("elm.json");
-    std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
+    std::fs::create_dir_all(tests_root.join("src")).expect("Could not create tests dir");
     let tests_config_str = serde_json::to_string(&tests_config).unwrap();
     match std::fs::read_to_string(&tests_config_path) {
         Ok(old_conf) if tests_config_str == old_conf => (),
@@ -145,7 +176,7 @@ pub fn main(options: Options) {
     // Find module names
     let module_names: Vec<String> = modules_abs_paths
         .iter()
-        .map(|p| get_module_name(&test_directories, p))
+        .map(|p| get_module_name(test_directories, p))
         .collect();
 
     // Runner.elm imports of tests modules
@@ -189,7 +220,7 @@ pub fn main(options: Options) {
     eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     if !compile(
-        &tests_root,       // current_dir
+        tests_root,        // current_dir
         &options.compiler, // compiler
         &compiled_runner,  // output
         &[Path::new("src").join("Runner.elm")],
@@ -236,7 +267,7 @@ pub fn main(options: Options) {
         .expect("Error writing Reporter.elm to test folder");
     let compiled_reporter = tests_root.join("js").join("Reporter.elm.js");
     if !compile(
-        &tests_root,        // current_dir
+        tests_root,         // current_dir
         &options.compiler,  // compiler
         &compiled_reporter, // output
         &[&reporter_elm_path],
@@ -265,7 +296,7 @@ pub fn main(options: Options) {
     eprintln!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
         .arg("js/node_supervisor.js")
-        .current_dir(&tests_root)
+        .current_dir(tests_root)
         .stdin(Stdio::piped())
         .spawn()
         .expect("command failed to start");
