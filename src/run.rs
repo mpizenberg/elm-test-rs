@@ -35,6 +35,7 @@ pub struct Options {
 ///  6. Compile `Reporter.elm` into a Node module.
 ///  7. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
+    let start_time = std::time::Instant::now();
     // The help option is prioritary over the other options
     if options.help {
         crate::help::main();
@@ -174,6 +175,8 @@ pub fn main(options: Options) {
     );
 
     // Compile the src/Runner.elm file into Runner.elm.js
+    let preparation_time = start_time.elapsed().as_secs_f32();
+    eprintln!("Spent {}s generating Runner.elm", preparation_time);
     eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     compile(
