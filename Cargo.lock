@@ -181,7 +181,6 @@ dependencies = [
  "dirs",
  "fs_extra",
  "glob",
- "lazy_static",
  "nom",
  "num_cpus",
  "pathdiff",

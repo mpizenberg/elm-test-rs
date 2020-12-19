@@ -376,26 +376,30 @@ fn is_valid_module_name(name: &str) -> bool {
 /// Add a kernel patch to the generated code in order to be able to recognize
 /// values of type Test at runtime with the `check: a -> Maybe Test` function.
 fn kernel_patch_tests(elm_js: &str) -> String {
-    let elm_js =
-        TEST_VARIANT_DEFINITION.replace_all(&elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
-    let elm_js = CHECK_DEFINITION.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
-
-    ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n")
-}
-
-lazy_static::lazy_static! {
-    /// For older versions of elm-explorations/test we need to list every single
-    /// variant of the `Test` type. To avoid having to update this regex if a new
-    /// variant is added, newer versions of elm-explorations/test have prefixed all
-    /// variants with `ElmTestVariant__` so we can match just on that.
-    static ref TEST_VARIANT_DEFINITION: Regex = Regex::new(r#"(?mx)
+    // For older versions of elm-explorations/test we need to list every single
+    // variant of the `Test` type. To avoid having to update this regex if a new
+    // variant is added, newer versions of elm-explorations/test have prefixed all
+    // variants with `ElmTestVariant__` so we can match just on that.
+    let test_variant_definition = Regex::new(
+        r#"(?mx)
     ^var\s+\$elm_explorations\$test\$Test\$Internal\$
     (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)
     \s*=\s*(?:\w+\(\s*)?function\s*\([\w,\s]*\)\s*\{\s*return\s*\{
-"#).unwrap();
+"#,
+    )
+    .unwrap();
 
-    static ref CHECK_DEFINITION: Regex = Regex::new(r#"(?mx)
+    let check_definition = Regex::new(
+        r#"(?mx)
     ^(var\s+\$author\$project\$Runner\$check)
     \s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$
-"#).unwrap();
+"#,
+    )
+    .unwrap();
+
+    let elm_js =
+        test_variant_definition.replace_all(&elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
+    let elm_js = check_definition.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
+
+    ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n")
 }
