@@ -176,7 +176,7 @@ checksum = "212d0f5754cb6769937f4501cc0e67f4f4483c8d2c3e1e922ee9edbe4ab4c7c0"
 
 [[package]]
 name = "elm-test-rs"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "dirs",
  "fs_extra",
