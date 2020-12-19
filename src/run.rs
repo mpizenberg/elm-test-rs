@@ -125,11 +125,12 @@ pub fn main(options: Options) {
     );
     let tests_config_path = tests_root.join("elm.json");
     std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
-    std::fs::write(
-        tests_config_path,
-        serde_json::to_string(&tests_config).unwrap(),
-    )
-    .expect("Unable to write to generated elm.json");
+    let tests_config_str = serde_json::to_string(&tests_config).unwrap();
+    match std::fs::read_to_string(&tests_config_path) {
+        Ok(old_conf) if &tests_config_str == &old_conf => (),
+        _ => std::fs::write(tests_config_path, tests_config_str)
+            .expect("Unable to write to generated elm.json"),
+    };
 
     // Find module names
     let module_names: Vec<String> = modules_abs_paths

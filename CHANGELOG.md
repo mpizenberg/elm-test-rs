@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 #### Changed
 
+- Do not overwrite the generated `elm.json` for the tests if identical.
+  This considerably speeds up the compilation step since the elm
+  binary uses timestamps to invalidate cache.
 
 #### Removed
 
