@@ -10,7 +10,11 @@ Just replace `elm-test` by `elm-test-rs`.
 
 ## Install
 
-There is no installation yet, you need to build the tool
+You can directly download the executable for your system
+from the [latest release](https://github.com/mpizenberg/elm-test-rs/releases),
+and put it in a directory in your PATH env variable.
+
+You can also compile it from sources,
 and add a link to it in a directory in your PATH env variable.
 This repository holds a submodule so make sure to
 
@@ -45,10 +49,8 @@ However, this doesn't intend to support Elm prior to 0.19.1.
 
 Missing features for parity with elm-test:
 
- - [x] ~`--watch` mode ([issue #7][watch-mode])~
  - [ ] colors ([issue #5][colors])
  - [ ] pretty-printing of diffs ([issue #6][pretty-printing])
- - [x] timing of runs
 
 Additional features:
 
@@ -56,7 +58,6 @@ Additional features:
  - [ ] capturing `Debug.log` calls ([issue #26][capture-log])
  - [ ] progess bar ([issue #25][progress-bar])
 
-[watch-mode]: https://github.com/mpizenberg/elm-test-rs/issues/7
 [colors]: https://github.com/mpizenberg/elm-test-rs/issues/5
 [pretty-printing]: https://github.com/mpizenberg/elm-test-rs/issues/6
 [capture-log]: https://github.com/mpizenberg/elm-test-rs/issues/26
