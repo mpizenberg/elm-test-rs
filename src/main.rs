@@ -5,7 +5,6 @@ mod install;
 mod parser;
 mod run;
 mod utils;
-mod watch;
 
 #[derive(Debug)]
 /// Type representing command line arguments.

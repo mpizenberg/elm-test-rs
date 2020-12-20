@@ -1,6 +1,6 @@
 [package]
 name = "elm-test-rs"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Matthieu Pizenberg <matthieu.pizenberg@gmail.com>", "Harry Sarson <harry.sarson@hotmail.co.uk>"]
 edition = "2018"
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
@@ -17,12 +17,13 @@ regex = "1.4.1"
 pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub-dependency-provider-elm", branch = "master" }
 serde_json = "1.0.59"
 ureq = "1.5.2"
-dirs = "3.0.1"
+dirs-next = "2.0.0"
 pubgrub = { version = "0.2", features = ["serde"] }
 nom = "6.0.1"
+notify = "4.0.15"
 
 [dev-dependencies]
 
 [build-dependencies]
 fs_extra = "1.2.0"
-dirs = "3.0.1"
+dirs-next = "2.0.0"

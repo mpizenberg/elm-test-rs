@@ -11,6 +11,10 @@ use std::process::{Command, Stdio};
 
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 
+use notify::{watcher, RecursiveMode, Watcher};
+use std::sync::mpsc::channel;
+use std::time::Duration;
+
 #[derive(Debug)]
 /// Options passed as arguments.
 pub struct Options {
@@ -36,7 +40,6 @@ pub struct Options {
 ///  6. Compile `Reporter.elm` into a Node module.
 ///  7. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
-    let start_time = std::time::Instant::now();
     // The help option is prioritary over the other options
     if options.help {
         crate::help::main();
@@ -45,10 +48,6 @@ pub fn main(options: Options) {
     } else if options.version {
         println!("{}", std::env!("CARGO_PKG_VERSION"));
         return;
-    // The watch option does not exist but some people might try it
-    } else if options.watch {
-        crate::watch::main();
-        std::process::exit(1);
     }
 
     // Prints to stderr the current version
@@ -70,15 +69,55 @@ pub fn main(options: Options) {
         }
     };
 
+    if options.watch {
+        let mut test_directories = main_helper(&options, &elm_project_root, &reporter);
+        // Create a channel to receive the events.
+        let (tx, rx) = channel();
+        // Create a watcher object, delivering debounced events.
+        let mut watcher = watcher(tx, Duration::from_secs(1)).unwrap();
+        let recursive = RecursiveMode::Recursive;
+        let elm_json_path = elm_project_root.join("elm.json");
+        // Watch the elm.json and the content of source directories.
+        watcher.watch(elm_json_path, recursive).unwrap();
+        for path in test_directories.iter() {
+            watcher.watch(path, recursive).unwrap();
+        }
+        loop {
+            match rx.recv() {
+                Ok(notify::DebouncedEvent::NoticeWrite(_)) => {}
+                Ok(notify::DebouncedEvent::NoticeRemove(_)) => {}
+                Ok(event) => {
+                    eprintln!("{:?}", event);
+                    let new_test_directories = main_helper(&options, &elm_project_root, &reporter);
+                    if new_test_directories != test_directories {
+                        for path in test_directories.iter() {
+                            watcher.unwatch(path).unwrap();
+                        }
+                        for path in new_test_directories.iter() {
+                            watcher.watch(path, recursive).unwrap();
+                        }
+                        test_directories = new_test_directories;
+                    }
+                }
+                Err(e) => eprintln!("watch error: {:?}", e),
+            }
+        }
+    } else {
+        main_helper(&options, &elm_project_root, &reporter);
+    }
+}
+
+fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Vec<PathBuf> {
+    let start_time = std::time::Instant::now();
     // Default with tests in the tests/ directory
     let module_globs = if options.files.is_empty() {
-        let root_string = &elm_project_root.to_str().unwrap().to_string();
+        let root_string = elm_project_root.to_str().unwrap().to_string();
         vec![
             format!("{}/{}", root_string, "tests/*.elm"),
             format!("{}/{}", root_string, "tests/**/*.elm"),
         ]
     } else {
-        options.files
+        options.files.clone()
     };
 
     // Get file paths of all modules in canonical form (absolute path)
@@ -134,7 +173,7 @@ pub fn main(options: Options) {
         crate::deps::solve(&info, &source_directories_for_runner).unwrap(),
     );
     let tests_config_path = tests_root.join("elm.json");
-    std::fs::create_dir_all(&tests_root.join("src")).expect("Could not create tests dir");
+    std::fs::create_dir_all(tests_root.join("src")).expect("Could not create tests dir");
     let tests_config_str = serde_json::to_string(&tests_config).unwrap();
     match std::fs::read_to_string(&tests_config_path) {
         Ok(old_conf) if tests_config_str == old_conf => (),
@@ -188,12 +227,18 @@ pub fn main(options: Options) {
     eprintln!("Spent {}s generating Runner.elm", preparation_time);
     eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
-    compile(
+    if !compile(
         &tests_root,       // current_dir
         &options.compiler, // compiler
         &compiled_runner,  // output
         &[Path::new("src").join("Runner.elm")],
-    );
+    ) {
+        if options.watch {
+            return test_directories;
+        } else {
+            std::process::exit(1);
+        }
+    }
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
@@ -233,12 +278,18 @@ pub fn main(options: Options) {
     std::fs::write(&reporter_elm_path, reporter_template)
         .expect("Error writing Reporter.elm to test folder");
     let compiled_reporter = tests_root.join("js").join("Reporter.elm.js");
-    compile(
+    if !compile(
         &tests_root,        // current_dir
         &options.compiler,  // compiler
         &compiled_reporter, // output
         &[&reporter_elm_path],
-    );
+    ) {
+        if options.watch {
+            return test_directories;
+        } else {
+            std::process::exit(1);
+        }
+    }
 
     // Generate the supervisor Node module
     #[cfg(unix)]
@@ -261,7 +312,7 @@ pub fn main(options: Options) {
     eprintln!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
         .arg("js/node_supervisor.js")
-        .current_dir(&tests_root)
+        .current_dir(tests_root)
         .stdin(Stdio::piped())
         .spawn()
         .expect("command failed to start");
@@ -281,7 +332,11 @@ pub fn main(options: Options) {
     // Wait for supervisor child process to end and terminate with same exit code
     let exit_code = wait_child(&mut supervisor);
     eprintln!("Exited with code {:?}", exit_code);
-    std::process::exit(exit_code.unwrap_or(1));
+    if options.watch {
+        test_directories
+    } else {
+        std::process::exit(1);
+    }
 }
 
 /// Wait for child process to end
@@ -300,7 +355,7 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
 }
 
 /// Compile an Elm module into a JS file (without --optimized)
-fn compile<P1, P2, I, S>(current_dir: P1, compiler: &str, output: P2, src: I)
+fn compile<P1, P2, I, S>(current_dir: P1, compiler: &str, output: P2, src: I) -> bool
 where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
@@ -318,9 +373,7 @@ where
         .stderr(Stdio::inherit())
         .status()
         .expect("Command elm make failed to start");
-    if !status.success() {
-        std::process::exit(1);
-    }
+    status.success()
 }
 
 /// Replace the template keys and write result to output file.

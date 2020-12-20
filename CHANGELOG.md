@@ -14,6 +14,17 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [0.2.0] - (2020-12-20) [(diff)][diff-0.2.0]
+
+#### Added
+
+- Include a simple `--watch` option for convenience.
+
+#### Fixed
+
+- Swap the `dirs` crate (unmaintained) by `dirs-next`.
+
+
 ## [0.1.1] - (2020-12-19) [(diff)][diff-0.1.1]
 
 #### Added
@@ -46,7 +57,9 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1.1...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.2...master
+[diff-0.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1.1...v0.2
 [diff-0.1.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1...v0.1.1

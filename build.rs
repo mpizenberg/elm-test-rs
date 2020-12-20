@@ -35,14 +35,14 @@ pub fn elm_home() -> PathBuf {
 
 #[cfg(target_family = "unix")]
 fn default_elm_home() -> PathBuf {
-    dirs::home_dir()
+    dirs_next::home_dir()
         .expect("Unknown home directory")
         .join(".elm")
 }
 
 #[cfg(target_family = "windows")]
 fn default_elm_home() -> PathBuf {
-    dirs::data_dir()
+    dirs_next::data_dir()
         .expect("Unknown data directory")
         .join("elm")
 }
