@@ -164,7 +164,7 @@ pub fn main(options: Options) {
                 Ok(event) => {
                     eprintln!("{:?}", event);
                     let new_test_directories = helper();
-                    if &new_test_directories != &test_directories {
+                    if new_test_directories != test_directories {
                         for path in test_directories.iter() {
                             watcher.unwatch(path).unwrap();
                         }
@@ -357,9 +357,7 @@ fn main_helper(
     // Wait for supervisor child process to end and terminate with same exit code
     let exit_code = wait_child(&mut supervisor);
     eprintln!("Exited with code {:?}", exit_code);
-    if options.watch {
-        return;
-    } else {
+    if !options.watch {
         std::process::exit(1);
     }
 }
