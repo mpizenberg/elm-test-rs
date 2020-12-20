@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- Include a simple `--watch` option for convenience.
+
 #### Changed
 
 #### Removed

@@ -40,7 +40,6 @@ pub struct Options {
 ///  6. Compile `Reporter.elm` into a Node module.
 ///  7. Generate and start the Node supervisor program.
 pub fn main(options: Options) {
-    let start_time = std::time::Instant::now();
     // The help option is prioritary over the other options
     if options.help {
         crate::help::main();
@@ -49,10 +48,6 @@ pub fn main(options: Options) {
     } else if options.version {
         println!("{}", std::env!("CARGO_PKG_VERSION"));
         return;
-    // The watch option does not exist but some people might try it
-    } else if options.watch {
-        crate::watch::main();
-        std::process::exit(1);
     }
 
     // Prints to stderr the current version
@@ -74,84 +69,121 @@ pub fn main(options: Options) {
         }
     };
 
-    // Default with tests in the tests/ directory
-    let module_globs = if options.files.is_empty() {
-        let root_string = &elm_project_root.to_str().unwrap().to_string();
-        vec![
-            format!("{}/{}", root_string, "tests/*.elm"),
-            format!("{}/{}", root_string, "tests/**/*.elm"),
-        ]
+    // Helper closure for --watch logic.
+    let helper = || {
+        // Default with tests in the tests/ directory
+        let module_globs = if options.files.is_empty() {
+            let root_string = &elm_project_root.to_str().unwrap().to_string();
+            vec![
+                format!("{}/{}", root_string, "tests/*.elm"),
+                format!("{}/{}", root_string, "tests/**/*.elm"),
+            ]
+        } else {
+            options.files.clone()
+        };
+
+        // Get file paths of all modules in canonical form (absolute path)
+        let modules_abs_paths: HashSet<PathBuf> = module_globs
+            .iter()
+            // join expanded globs for each pattern
+            .flat_map(|pattern| {
+                glob(pattern)
+                    .unwrap_or_else(|_| panic!(format!("Failed to read glob pattern {}", pattern)))
+            })
+            // filter out errors
+            .filter_map(|x| x.ok())
+            // canonical form of paths
+            .map(|path| {
+                path.canonicalize()
+                    .unwrap_or_else(|_| panic!(format!("Error in canonicalize of {:?}", path)))
+            })
+            // collect into a set of unique values
+            .collect();
+
+        // Read project elm.json
+        let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
+            .expect("Unable to read elm.json");
+        // let info = Config::try_from(elm_json_str.as_ref()).unwrap();
+        let info: ProjectConfig = serde_json::from_str(&elm_json_str).unwrap();
+        let source_directories = match &info {
+            ProjectConfig::Application(app_config) => app_config.source_directories.clone(),
+            ProjectConfig::Package(_) => vec!["src".to_string()],
+        };
+
+        // Make src dirs relative to the generated tests root
+        let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
+        let mut test_directories: Vec<PathBuf> = source_directories
+            .iter()
+            // Get canonical paths
+            .map(|path| elm_project_root.join(path).canonicalize().unwrap())
+            .collect();
+        // Add tests/ to the list of source directories
+        if let Ok(path) = elm_project_root.join("tests").canonicalize() {
+            test_directories.push(path);
+        }
+        let source_directories_for_runner: Vec<PathBuf> = test_directories
+            .iter()
+            // Get path relative to tests_root
+            .map(|path| {
+                pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path")
+            })
+            // Add src/ to the source directories
+            .chain(vec!["src".into()])
+            .collect();
+
+        main_helper(
+            &options,
+            &info,
+            &test_directories,
+            &source_directories_for_runner,
+            &tests_root,
+            &modules_abs_paths,
+            &reporter,
+        );
+
+        test_directories
+    };
+
+    if options.watch {
+        let mut test_directories = helper();
+        // Create a channel to receive the events.
+        let (tx, rx) = channel();
+        // Create a watcher object, delivering debounced events.
+        let mut watcher = watcher(tx, Duration::from_secs(1)).unwrap();
+        let recursive = RecursiveMode::Recursive;
+        let elm_json_path = elm_project_root.join("elm.json");
+        // Watch the elm.json and the content of source directories.
+        watcher.watch(elm_json_path, recursive).unwrap();
+        for path in test_directories.iter() {
+            watcher.watch(path, recursive).unwrap();
+        }
+        loop {
+            match rx.recv() {
+                Ok(notify::DebouncedEvent::NoticeWrite(_)) => {}
+                Ok(notify::DebouncedEvent::NoticeRemove(_)) => {}
+                Ok(event) => {
+                    eprintln!("{:?}", event);
+                    let new_test_directories = helper();
+                    if &new_test_directories != &test_directories {
+                        for path in test_directories.iter() {
+                            watcher.unwatch(path).unwrap();
+                        }
+                        for path in new_test_directories.iter() {
+                            watcher.watch(path, recursive).unwrap();
+                        }
+                        test_directories = new_test_directories;
+                    }
+                }
+                Err(e) => eprintln!("watch error: {:?}", e),
+            }
+        }
     } else {
-        options.files.clone()
-    };
-
-    // Get file paths of all modules in canonical form (absolute path)
-    let modules_abs_paths: HashSet<PathBuf> = module_globs
-        .iter()
-        // join expanded globs for each pattern
-        .flat_map(|pattern| {
-            glob(pattern)
-                .unwrap_or_else(|_| panic!(format!("Failed to read glob pattern {}", pattern)))
-        })
-        // filter out errors
-        .filter_map(|x| x.ok())
-        // canonical form of paths
-        .map(|path| {
-            path.canonicalize()
-                .unwrap_or_else(|_| panic!(format!("Error in canonicalize of {:?}", path)))
-        })
-        // collect into a set of unique values
-        .collect();
-
-    // Read project elm.json
-    let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
-        .expect("Unable to read elm.json");
-    // let info = Config::try_from(elm_json_str.as_ref()).unwrap();
-    let info: ProjectConfig = serde_json::from_str(&elm_json_str).unwrap();
-    let source_directories = match &info {
-        ProjectConfig::Application(app_config) => app_config.source_directories.clone(),
-        ProjectConfig::Package(_) => vec!["src".to_string()],
-    };
-
-    // Make src dirs relative to the generated tests root
-    let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
-    let mut test_directories: Vec<PathBuf> = source_directories
-        .iter()
-        // Get canonical paths
-        .map(|path| elm_project_root.join(path).canonicalize().unwrap())
-        .collect();
-    // Add tests/ to the list of source directories
-    if let Ok(path) = elm_project_root.join("tests").canonicalize() {
-        test_directories.push(path);
+        helper();
     }
-    let source_directories_for_runner: Vec<PathBuf> = test_directories
-        .iter()
-        // Get path relative to tests_root
-        .map(|path| pathdiff::diff_paths(&path, &tests_root).expect("Could not get relative path"))
-        // Add src/ to the source directories
-        .chain(vec!["src".into()])
-        .collect();
-
-    // Create a channel to receive the events.
-    let (tx, rx) = channel();
-    // Create a watcher object, delivering debounced events.
-    // The notification back-end is selected based on the platform.
-    let mut watcher = watcher(tx, Duration::from_secs(4)).unwrap();
-    main_helper(
-        &options,
-        &start_time,
-        &info,
-        &test_directories,
-        &source_directories_for_runner,
-        &tests_root,
-        &modules_abs_paths,
-        &reporter,
-    );
 }
 
 fn main_helper(
     options: &Options,
-    start_time: &std::time::Instant,
     info: &ProjectConfig,
     test_directories: &[PathBuf],
     source_directories_for_runner: &[PathBuf],
@@ -159,6 +191,7 @@ fn main_helper(
     modules_abs_paths: &HashSet<PathBuf>,
     reporter: &str,
 ) {
+    let start_time = std::time::Instant::now();
     // Generate an elm.json for the to-be-generated Runner.elm.
     eprintln!("Generating the elm.json for the Runner.elm");
     let tests_config = ProjectConfig::Application(
@@ -225,7 +258,11 @@ fn main_helper(
         &compiled_runner,  // output
         &[Path::new("src").join("Runner.elm")],
     ) {
-        std::process::exit(1);
+        if options.watch {
+            return;
+        } else {
+            std::process::exit(1);
+        }
     }
 
     // Add a kernel patch to the generated code in order to be able to recognize
@@ -272,7 +309,11 @@ fn main_helper(
         &compiled_reporter, // output
         &[&reporter_elm_path],
     ) {
-        std::process::exit(1);
+        if options.watch {
+            return;
+        } else {
+            std::process::exit(1);
+        }
     }
 
     // Generate the supervisor Node module
@@ -316,7 +357,11 @@ fn main_helper(
     // Wait for supervisor child process to end and terminate with same exit code
     let exit_code = wait_child(&mut supervisor);
     eprintln!("Exited with code {:?}", exit_code);
-    std::process::exit(exit_code.unwrap_or(1));
+    if options.watch {
+        return;
+    } else {
+        std::process::exit(1);
+    }
 }
 
 /// Wait for child process to end
