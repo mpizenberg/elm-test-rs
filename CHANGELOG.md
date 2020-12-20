@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 
 #### Changed
 
+- Rename all occurences of ...Nb... into ...Count, for example:
+  `askNbTests` becomes `askTestsCount`,
+  `sendNbTests` becomes `sendTestsCount`,
+  `nb_workers` becomes `workersCount`, etc.
+
 #### Removed
 
 #### Fixed

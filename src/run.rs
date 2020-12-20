@@ -300,7 +300,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         node_supervisor_template,                         // template
         tests_root.join("js").join("node_supervisor.js"), // output
         &[
-            ("{{ nb_workers }}", &options.workers.to_string()),
+            ("{{ workersCount }}", &options.workers.to_string()),
             ("{{ initialSeed }}", &options.seed.to_string()),
             ("{{ fuzzRuns }}", &options.fuzz.to_string()),
             ("{{ reporter }}", &reporter),

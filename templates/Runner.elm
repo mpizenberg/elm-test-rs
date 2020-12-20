@@ -7,10 +7,10 @@ import Json.Encode exposing (Value)
 import Test exposing (Test)
 
 
-port askNbTests : (Value -> msg) -> Sub msg
+port askTestsCount : (Value -> msg) -> Sub msg
 
 
-port sendNbTests : { type_ : String, nbTests : Int } -> Cmd msg
+port sendTestsCount : { type_ : String, testsCount : Int } -> Cmd msg
 
 
 port receiveRunTest : ({ id : Int, startTime : Float } -> msg) -> Sub msg
@@ -55,8 +55,8 @@ main =
     in
     concatenatedTest
         |> ElmTestRunner.Runner.worker
-            { askNbTests = askNbTests
-            , sendNbTests = \nb -> sendNbTests { type_ = "nbTests", nbTests = nb }
+            { askTestsCount = askTestsCount
+            , sendTestsCount = \count -> sendTestsCount { type_ = "testsCount", testsCount = count }
             , receiveRunTest = receiveRunTest
             , sendResult = \{ id, startTime } res ->
                 sendResult { type_ = "result", id = id, startTime = startTime, result = res }

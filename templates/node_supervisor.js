@@ -9,11 +9,11 @@ const EventEmitter = require("events");
 const { performance } = require("perf_hooks");
 
 // Global variables
-let nbTests, doneTests, todoTests;
+let testsCount, doneTests, todoTests;
 let reporter;
 let runners = [];
 let working = false;
-let nb_workers = {{ nb_workers }};
+let workersCount = {{ workersCount }};
 const supervisorEvent = new EventEmitter();
 
 // Create a long lived reporter worker
@@ -60,14 +60,14 @@ function startWork(runnerFile) {
     handleRunnerMsg(runners[0], runnerFile, msg)
   );
   runners[0].on("online", () =>
-    runners[0].postMessage({ type_: "askNbTests" })
+    runners[0].postMessage({ type_: "askTestsCount" })
   );
 }
 
 // Handle a test result
 function handleRunnerMsg(runner, runnerFile, msg) {
-  if (msg.type_ == "nbTests") {
-    setupWithNbTests(runnerFile, msg.nbTests);
+  if (msg.type_ == "testsCount") {
+    setupWithTestsCount(runnerFile, msg.testsCount);
   } else if (msg.type_ == "result") {
     handleResult(runner, msg.id, msg.startTime, msg.endTime, msg.result);
   } else {
@@ -77,19 +77,19 @@ function handleRunnerMsg(runner, runnerFile, msg) {
 
 // Reset supervisor tests count and reporter
 // Start work on all runners
-function setupWithNbTests(runnerFile, nb) {
+function setupWithTestsCount(runnerFile, count) {
   // Reset supervisor tests
-  nbTests = nb;
-  doneTests = Array(nb).fill(false);
-  todoTests = Array(nb)
+  testsCount = count;
+  doneTests = Array(count).fill(false);
+  todoTests = Array(count)
     .fill(0)
     .map((_, id) => id)
     .reverse();
   // Reset reporter
-  reporter.ports.restart.send(nb);
+  reporter.ports.restart.send(count);
 
   // Custom handling in the case of no test
-  if (nbTests == 0) {
+  if (testsCount == 0) {
     return;
   }
 
@@ -97,7 +97,7 @@ function setupWithNbTests(runnerFile, nb) {
   runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
 
   // Create and send work to all other workers.
-  let max_workers = Math.min(nb_workers, nbTests);
+  let max_workers = Math.min(workersCount, testsCount);
   for (let i = 1; i < max_workers; i++) {
     runners[i] = new Worker(runnerFile); //, { stdout: true, stderr: true });
     runners[i].on("message", (msg) =>

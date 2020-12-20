@@ -13,8 +13,8 @@ const app = Elm.Runner.init({ flags: flags });
 
 // Communication from Supervisor to Elm runner via port
 parentPort.on("message", (msg) => {
-  if (msg.type_ == "askNbTests") {
-    app.ports.askNbTests.send(null);
+  if (msg.type_ == "askTestsCount") {
+    app.ports.askTestsCount.send(null);
   } else if (msg.type_ == "runTest") {
     app.ports.receiveRunTest.send({ id: msg.id, startTime: performance.now() });
   } else {
@@ -28,4 +28,4 @@ app.ports.sendResult.subscribe((msg) => {
   msg.endTime = performance.now();
   parentPort.postMessage(msg);
 });
-app.ports.sendNbTests.subscribe((msg) => parentPort.postMessage(msg));
+app.ports.sendTestsCount.subscribe((msg) => parentPort.postMessage(msg));
