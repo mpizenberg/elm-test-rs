@@ -55,7 +55,7 @@ Missing features for parity with elm-test:
 Additional features:
 
  - [x] `--workers` option to choose the number of runner workers
- - [ ] capturing `Debug.log` calls ([issue #26][capture-log])
+ - [x] capturing `Debug.log` calls ([issue #26][capture-log])
  - [ ] progess bar ([issue #25][progress-bar])
 
 [colors]: https://github.com/mpizenberg/elm-test-rs/issues/5
