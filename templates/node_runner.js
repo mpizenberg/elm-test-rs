@@ -29,6 +29,7 @@ parentPort.on("message", (msg) => {
 // Communication from Elm runner to Supervisor via port
 // Subscribe to outgoing Elm ports defined in templates/Runner.elm
 app.ports.sendResult.subscribe((msg) => {
+  msg.type_ = "testResult";
   msg.duration = performance.now() - startTime;
   parentPort.postMessage(msg);
 });

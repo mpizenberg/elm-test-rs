@@ -68,7 +68,7 @@ function startWork(runnerFile) {
 function handleRunnerMsg(runner, runnerFile, msg) {
   if (msg.type_ == "testsCount") {
     setupWithTestsCount(runnerFile, msg.testsCount);
-  } else if (msg.type_ == "result") {
+  } else if (msg.type_ == "testResult") {
     dispatchWork(runner, todoTests.pop());
     reporter.ports.incomingResult.send(msg);
   } else {
