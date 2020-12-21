@@ -10,7 +10,7 @@ import Test exposing (Test)
 port askTestsCount : (Value -> msg) -> Sub msg
 
 
-port sendTestsCount : { type_ : String, testsCount : Int } -> Cmd msg
+port sendTestsCount : Int -> Cmd msg
 
 
 port receiveRunTest : (Int -> msg) -> Sub msg
@@ -56,7 +56,7 @@ main =
     concatenatedTest
         |> ElmTestRunner.Runner.worker
             { askTestsCount = askTestsCount
-            , sendTestsCount = \count -> sendTestsCount { type_ = "testsCount", testsCount = count }
+            , sendTestsCount = sendTestsCount
             , receiveRunTest = receiveRunTest
             , sendResult = \id res -> sendResult { type_ = "result", id = id, result = res }
             }
