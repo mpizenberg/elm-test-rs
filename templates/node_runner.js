@@ -4,6 +4,10 @@ const { performance } = require("perf_hooks");
 // From templates/polyfills.js
 {{ polyfills }}
 
+// Capture Debug.log from elm code
+let logs = [];
+process.stdout.write = (str) => logs.push(str);
+
 // Compiled by elm-test-rs from templates/Runner.elm
 const { Elm } = require("./Runner.elm.js");
 
@@ -31,9 +35,12 @@ parentPort.on("message", (msg) => {
 app.ports.sendResult.subscribe((msg) => {
   msg.type_ = "testResult";
   msg.duration = performance.now() - startTime;
+  msg.logs = logs;
   parentPort.postMessage(msg);
+  logs = [];
 });
 app.ports.sendTestsCount.subscribe((count) => {
-  msg = { type_: "testsCount", testsCount: count };
+  msg = { type_: "testsCount", testsCount: count, logs: logs };
   parentPort.postMessage(msg);
+  logs = [];
 });
