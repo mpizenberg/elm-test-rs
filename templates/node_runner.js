@@ -11,7 +11,7 @@ const { Elm } = require("./Runner.elm.js");
 const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }} };
 const app = Elm.Runner.init({ flags: flags });
 
-// Record the timing at witch we received the last "runTest" message
+// Record the timing at which we received the last "runTest" message
 let startTime;
 
 // Communication from Supervisor to Elm runner via port
