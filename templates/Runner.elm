@@ -13,10 +13,10 @@ port askTestsCount : (Value -> msg) -> Sub msg
 port sendTestsCount : { type_ : String, testsCount : Int } -> Cmd msg
 
 
-port receiveRunTest : ({ id : Int, startTime : Float } -> msg) -> Sub msg
+port receiveRunTest : (Int -> msg) -> Sub msg
 
 
-port sendResult : { type_ : String, id : Int, startTime : Float, result : Value } -> Cmd msg
+port sendResult : { type_ : String, id : Int, result : Value } -> Cmd msg
 
 
 {-| The implementation of this function will be replaced in the generated JS
@@ -58,6 +58,5 @@ main =
             { askTestsCount = askTestsCount
             , sendTestsCount = \count -> sendTestsCount { type_ = "testsCount", testsCount = count }
             , receiveRunTest = receiveRunTest
-            , sendResult = \{ id, startTime } res ->
-                sendResult { type_ = "result", id = id, startTime = startTime, result = res }
+            , sendResult = \id res -> sendResult { type_ = "result", id = id, result = res }
             }

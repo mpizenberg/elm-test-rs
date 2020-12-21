@@ -11,12 +11,16 @@ const { Elm } = require("./Runner.elm.js");
 const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }} };
 const app = Elm.Runner.init({ flags: flags });
 
+// Record the timing at witch we received the last "runTest" message
+let startTime;
+
 // Communication from Supervisor to Elm runner via port
 parentPort.on("message", (msg) => {
   if (msg.type_ == "askTestsCount") {
-    app.ports.askTestsCount.send(null);
+    app.ports.askTestsCount.send();
   } else if (msg.type_ == "runTest") {
-    app.ports.receiveRunTest.send({ id: msg.id, startTime: performance.now() });
+    startTime = performance.now();
+    app.ports.receiveRunTest.send(msg.id);
   } else {
     console.error("Invalid supervisor msg.type_:", msg.type_);
   }
@@ -25,7 +29,7 @@ parentPort.on("message", (msg) => {
 // Communication from Elm runner to Supervisor via port
 // Subscribe to outgoing Elm ports defined in templates/Runner.elm
 app.ports.sendResult.subscribe((msg) => {
-  msg.endTime = performance.now();
+  msg.duration = performance.now() - startTime;
   parentPort.postMessage(msg);
 });
 app.ports.sendTestsCount.subscribe((msg) => parentPort.postMessage(msg));
