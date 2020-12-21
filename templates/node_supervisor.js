@@ -67,6 +67,9 @@ function startWork(runnerFile) {
 // Handle a test result
 function handleRunnerMsg(runner, runnerFile, msg) {
   if (msg.type_ == "testsCount") {
+    console.warn("Debug logs captured when setting up tests: -----------\n");
+    msg.logs.forEach((str) => process.stderr.write(str));
+    console.warn("\n------------------------------------------------------\n");
     setupWithTestsCount(runnerFile, msg.testsCount);
   } else if (msg.type_ == "testResult") {
     dispatchWork(runner, todoTests.pop());
