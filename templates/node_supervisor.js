@@ -9,7 +9,7 @@ const EventEmitter = require("events");
 const { performance } = require("perf_hooks");
 
 // Global variables
-let testsCount, doneTests, todoTests;
+let testsCount, todoTests;
 let reporter;
 let runners = [];
 let working = false;
@@ -69,7 +69,8 @@ function handleRunnerMsg(runner, runnerFile, msg) {
   if (msg.type_ == "testsCount") {
     setupWithTestsCount(runnerFile, msg.testsCount);
   } else if (msg.type_ == "result") {
-    handleResult(runner, msg.id, msg.startTime, msg.endTime, msg.result);
+    dispatchWork(runner, todoTests.pop());
+    reporter.ports.incomingResult.send(msg);
   } else {
     console.error("Invalid runner msg.type_:", msg.type_);
   }
@@ -80,7 +81,6 @@ function handleRunnerMsg(runner, runnerFile, msg) {
 function setupWithTestsCount(runnerFile, count) {
   // Reset supervisor tests
   testsCount = count;
-  doneTests = Array(count).fill(false);
   todoTests = Array(count)
     .fill(0)
     .map((_, id) => id)
@@ -99,24 +99,18 @@ function setupWithTestsCount(runnerFile, count) {
   // Create and send work to all other workers.
   let max_workers = Math.min(workersCount, testsCount);
   for (let i = 1; i < max_workers; i++) {
-    runners[i] = new Worker(runnerFile); //, { stdout: true, stderr: true });
-    runners[i].on("message", (msg) =>
-      handleRunnerMsg(runners[i], runnerFile, msg)
+    let runner = new Worker(runnerFile); //, { stdout: true, stderr: true });
+    runners[i] = runner;
+    runner.on("message", (msg) =>
+      handleRunnerMsg(runner, runnerFile, msg)
     );
-    runners[i].on("online", () => {
-      if (todoTests.length > 0) {
-        runners[i].postMessage({ type_: "runTest", id: todoTests.pop() });
-      }
-    });
+    runner.on("online", () => dispatchWork(runner, todoTests.pop()));
   }
 }
 
-// Update supervisor tests, transfer result to reporter and ask to run another test
-function handleResult(runner, id, startTime, endTime, result) {
-  doneTests[id] = true;
-  const nextTest = todoTests.pop();
-  if (nextTest != undefined) {
-    runner.postMessage({ type_: "runTest", id: nextTest });
+// Ask runner to run some test.
+function dispatchWork(runner, testId) {
+  if (testId != undefined) {
+    runner.postMessage({ type_: "runTest", id: testId });
   }
-  reporter.ports.incomingResult.send({ duration: endTime - startTime, result: result });
 }
