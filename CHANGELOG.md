@@ -7,12 +7,15 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- Capture `Debug.log` calls happening when running a test.
+
 #### Changed
 
 - Rename all occurences of ...Nb... into ...Count, for example:
   `askNbTests` becomes `askTestsCount`,
   `sendNbTests` becomes `sendTestsCount`,
   `nb_workers` becomes `workersCount`, etc.
+- Simplfy the Elm/JS interop code between the runners and supervisor.
 
 #### Removed
 
