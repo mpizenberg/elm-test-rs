@@ -7,6 +7,17 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+#### Changed
+
+#### Removed
+
+#### Fixed
+
+
+## [0.3.0] - (2020-12-21) [(diff)][diff-0.3.0]
+
+#### Added
+
 - Capture `Debug.log` calls happening when running a test.
 
 #### Changed
@@ -16,10 +27,6 @@ All notable changes to this project will be documented in this file.
   `sendNbTests` becomes `sendTestsCount`,
   `nb_workers` becomes `workersCount`, etc.
 - Simplfy the Elm/JS interop code between the runners and supervisor.
-
-#### Removed
-
-#### Fixed
 
 
 ## [0.2.0] - (2020-12-20) [(diff)][diff-0.2.0]
@@ -65,9 +72,11 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[0.3.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.3
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.2...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.3...master
+[diff-0.3.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.2...v0.3
 [diff-0.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1.1...v0.2
 [diff-0.1.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1...v0.1.1

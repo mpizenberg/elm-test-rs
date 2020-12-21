@@ -12,7 +12,7 @@ fn main() {
         .join("packages")
         .join("mpizenberg")
         .join("elm-test-runner")
-        .join("2.0.1");
+        .join("2.0.2");
     let elm_stuff = Path::new("elm").join("elm-stuff");
     std::fs::remove_dir_all(&elm_stuff)
         .unwrap_or_else(|_| println!("Error removing elm/elm-stuff"));
