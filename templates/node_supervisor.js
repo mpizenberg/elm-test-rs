@@ -103,9 +103,11 @@ function setupWithTestsCount(runnerFile, count) {
     runners[i].on("message", (msg) =>
       handleRunnerMsg(runners[i], runnerFile, msg)
     );
-    runners[i].on("online", () =>
-      runners[i].postMessage({ type_: "runTest", id: todoTests.pop() })
-    );
+    runners[i].on("online", () => {
+      if (todoTests.length > 0) {
+        runners[i].postMessage({ type_: "runTest", id: todoTests.pop() });
+      }
+    });
   }
 }
 
