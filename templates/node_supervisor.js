@@ -71,8 +71,6 @@ function handleRunnerMsg(runner, runnerFile, msg) {
   } else if (msg.type_ == "testResult") {
     dispatchWork(runner, todoTests.pop());
     reporter.ports.incomingResult.send(msg);
-    console.log("Logs for test", msg.id, ":");
-    msg.logs.forEach((elem) => process.stdout.write(elem));
   } else {
     console.error("Invalid runner msg.type_:", msg.type_);
   }
