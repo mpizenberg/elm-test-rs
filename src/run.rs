@@ -57,9 +57,12 @@ pub fn main(options: Options) {
     // Verify that we are in an Elm project
     let elm_project_root = crate::utils::elm_project_root().unwrap();
 
-    // Validate reporter
+    // Validate reporter mode
     let reporter = match options.report.as_ref() {
-        "console" => "console".to_string(),
+        "console" => console_color_mode().to_string(), // returns "consoleColor" or "consoleNoColor"
+        "consoleDebug" => "consoleDebug".to_string(),
+        "consoleColor" => "consoleColor".to_string(),
+        "consoleNoColor" => "consoleNoColor".to_string(),
         "json" => "json".to_string(),
         "junit" => "junit".to_string(),
         value => {
@@ -104,6 +107,26 @@ pub fn main(options: Options) {
         }
     } else {
         main_helper(&options, &elm_project_root, &reporter);
+    }
+}
+
+/// Returns "consoleColor" or "consoleNoColor" based on the following two standards:
+///  - https://bixense.com/clicolors/
+///  - https://no-color.org/
+fn console_color_mode() -> &'static str {
+    if &std::env::var("CLICOLOR_FORCE").unwrap_or("0".to_string()) != "0" {
+        "consoleColor"
+    } else if std::env::var("NO_COLOR").is_ok() {
+        "consoleNoColor"
+    } else {
+        match (
+            atty::is(atty::Stream::Stdout),
+            std::env::var("CLICOLOR").as_deref(),
+        ) {
+            (false, _) => "consoleNoColor",
+            (true, Ok("0")) => "consoleNoColor",
+            (true, _) => "consoleColor",
+        }
     }
 }
 
