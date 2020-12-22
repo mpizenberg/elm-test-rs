@@ -335,7 +335,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     if options.watch {
         test_directories
     } else {
-        std::process::exit(1);
+        std::process::exit(exit_code.unwrap_or(0));
     }
 }
 
