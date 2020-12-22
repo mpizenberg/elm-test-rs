@@ -39,8 +39,9 @@ app.ports.sendResult.subscribe((msg) => {
   parentPort.postMessage(msg);
   logs = [];
 });
-app.ports.sendTestsCount.subscribe((count) => {
-  msg = { type_: "testsCount", testsCount: count, logs: logs };
+app.ports.sendTestsCount.subscribe((msg) => {
+  msg.type_ = "testsCount";
+  msg.logs = logs;
   parentPort.postMessage(msg);
   logs = [];
 });

@@ -10,7 +10,7 @@ import Test exposing (Test)
 port askTestsCount : (Value -> msg) -> Sub msg
 
 
-port sendTestsCount : Int -> Cmd msg
+port sendTestsCount : { kind : String, testsCount : Int } -> Cmd msg
 
 
 port receiveRunTest : (Int -> msg) -> Sub msg

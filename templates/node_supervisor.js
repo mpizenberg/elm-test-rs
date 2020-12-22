@@ -31,7 +31,7 @@ reporter.ports.stdout.subscribe((str) => process.stdout.write(str));
 // When the reporter has finished clean runners
 reporter.ports.signalFinished.subscribe(({ exitCode, testsCount }) => {
   if (testsCount == 0) {
-    process.stdout.write("There isn't any test, start with: elm-test-rs init\n");
+    process.stderr.write("There isn't any test, start with: elm-test-rs init\n");
   }
   runners.forEach((runner) => runner.terminate());
   working = false;
@@ -70,7 +70,7 @@ function handleRunnerMsg(runner, runnerFile, msg) {
     console.warn("Debug logs captured when setting up tests: -----------\n");
     msg.logs.forEach((str) => process.stderr.write(str));
     console.warn("\n------------------------------------------------------\n");
-    setupWithTestsCount(runnerFile, msg.testsCount);
+    setupWithTestsCount(runnerFile, msg);
   } else if (msg.type_ == "testResult") {
     dispatchWork(runner, todoTests.pop());
     reporter.ports.incomingResult.send(msg);
@@ -81,23 +81,23 @@ function handleRunnerMsg(runner, runnerFile, msg) {
 
 // Reset supervisor tests count and reporter
 // Start work on all runners
-function setupWithTestsCount(runnerFile, count) {
+function setupWithTestsCount(runnerFile, msg) {
   // Reset supervisor tests
-  testsCount = count;
-  todoTests = Array(count)
+  testsCount = msg.testsCount;
+  todoTests = Array(testsCount)
     .fill(0)
     .map((_, id) => id)
     .reverse();
-  // Reset reporter
-  reporter.ports.restart.send(count);
 
-  // Custom handling in the case of no test
-  if (testsCount == 0) {
-    return;
-  }
+  // Reset reporter
+  reporter.ports.restart.send(msg);
 
   // Send first runner job
-  runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
+  if (testsCount == 0) {
+    return;
+  } else {
+    runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
+  }
 
   // Create and send work to all other workers.
   let max_workers = Math.min(workersCount, testsCount);

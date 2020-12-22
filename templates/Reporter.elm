@@ -4,7 +4,7 @@ import ElmTestRunner.Reporter exposing (Flags, Model, Msg)
 import Json.Decode exposing (Value)
 
 
-port restart : (Int -> msg) -> Sub msg
+port restart : ({ kind : String, testsCount : Int } -> msg) -> Sub msg
 
 
 port incomingResult : ({ duration : Float, result : Value, logs : List String } -> msg) -> Sub msg
