@@ -29,11 +29,8 @@ reporter = Elm.Reporter.init({ flags: flags });
 reporter.ports.stdout.subscribe((str) => process.stdout.write(str));
 
 // When the reporter has finished clean runners
-reporter.ports.signalFinished.subscribe(({ exitCode, testsCount }) => {
-  if (testsCount == 0) {
-    process.stderr.write("There isn't any test, start with: elm-test-rs init\n");
-  }
-  runners.forEach((runner) => runner.terminate());
+reporter.ports.signalFinished.subscribe(async ({ exitCode, testsCount }) => {
+  await Promise.all(runners.map((runner) => runner.terminate()));
   working = false;
   supervisorEvent.emit("finishedWork");
   console.error("Running duration (since Node.js start):", Math.round(performance.now()), "ms\n");
