@@ -7,12 +7,20 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- Now handles tests runs of the kind "Only" | "Skipping" | "Invalid".
+- Support for colors.
+- Nice formatting of failure diffs like in node-test-runner.
+
 #### Changed
+
+- Renamed the "Console" reporter into "ConsoleDebug" reporter.
 
 #### Removed
 
 #### Fixed
 
+- Exit code error.
+- Await termination of runners before exiting.
 
 ## [0.3.0] - (2020-12-21) [(diff)][diff-0.3.0]
 
