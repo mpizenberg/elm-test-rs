@@ -23,6 +23,7 @@ FLAGS:
     --seed integer               # Run with initial fuzzer seed (defaults to random)
     --fuzz integer               # Precise number of iterations of fuzz tests (defaults to 100)
     --workers integer            # Precise number of worker threads (defaults to number of logic cores)
+    --filter "substring"         # Keep only the tests whose descriptions contain the given string
     --report console|json|junit  # Print results to stdout in given the format (defaults to console)
     --connectivity progressive|offline|online-newest|online-oldest
                                  # Connectivity mode (defaults to progessive)

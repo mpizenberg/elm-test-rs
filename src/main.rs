@@ -62,6 +62,7 @@ fn no_subcommand_args(
         workers: args
             .opt_value_from_str("--workers")?
             .unwrap_or(num_cpus::get() as u32),
+        filter: args.opt_value_from_str("--filter")?,
         report: args
             .opt_value_from_str("--report")?
             .unwrap_or_else(|| "console".to_string()),

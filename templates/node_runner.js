@@ -12,7 +12,7 @@ process.stdout.write = (str) => logs.push(str);
 const { Elm } = require("./Runner.elm.js");
 
 // Start the Elm app
-const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }} };
+const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }}, filter: {{ filter }} };
 const app = Elm.Runner.init({ flags: flags });
 
 // Record the timing at which we received the last "runTest" message

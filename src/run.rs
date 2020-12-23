@@ -23,6 +23,7 @@ pub struct Options {
     pub seed: u32,
     pub fuzz: u32,
     pub workers: u32,
+    pub filter: Option<String>,
     pub report: String,
     pub connectivity: crate::deps::ConnectivityStrategy,
     pub files: Vec<String>,
@@ -287,12 +288,17 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     #[cfg(windows)]
     let node_runner_template = include_str!("..\\templates\\node_runner.js");
     let node_runner_path = tests_root.join("js").join("node_runner.js");
+    let filter = match &options.filter {
+        None => "null".to_string(),
+        Some(s) => format!("\"{}\"", s),
+    };
     create_templated(
         node_runner_template, // template
         &node_runner_path,    // output
         &[
             ("{{ initialSeed }}", &options.seed.to_string()),
             ("{{ fuzzRuns }}", &options.fuzz.to_string()),
+            ("{{ filter }}", &filter),
             ("{{ polyfills }}", polyfills),
         ],
     );

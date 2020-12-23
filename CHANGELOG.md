@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Support for colors.
 - Nice formatting of failure diffs like in node-test-runner.
 - Ability to pick connectivity with version stratey: "offline" | "online-newest" | "online-oldest".
+- Add a --filter option to only run some tests based on their description.
 
 #### Changed
 
