@@ -5,6 +5,7 @@ use pubgrub::solver::resolve;
 use pubgrub::type_aliases::Map;
 use pubgrub::version::SemanticVersion as SemVer;
 use std::path::Path;
+use std::str::FromStr;
 use std::{collections::BTreeMap, error::Error};
 
 use pubgrub_dependency_provider_elm::constraint::Constraint;
@@ -14,6 +15,26 @@ use pubgrub_dependency_provider_elm::dependency_provider::{
 use pubgrub_dependency_provider_elm::project_config::{
     AppDependencies, ApplicationConfig, PackageConfig, ProjectConfig,
 };
+
+#[derive(Debug)]
+pub enum ConnectivityStrategy {
+    Progressive,
+    Offline,
+    Online(VersionStrategy),
+}
+
+impl FromStr for ConnectivityStrategy {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "progressive" => Ok(Self::Progressive),
+            "offline" => Ok(Self::Offline),
+            "online-newest" => Ok(Self::Online(VersionStrategy::Newest)),
+            "online-oldest" => Ok(Self::Online(VersionStrategy::Oldest)),
+            _ => Err(format!("Invalid connectivity option: {}", s)),
+        }
+    }
+}
 
 /// Install elm-explorations/test to the tests dependencies.
 pub fn init(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
@@ -64,7 +85,12 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
     all_deps.insert(test_pkg.clone(), Range::between((1, 0, 0), (2, 0, 0)));
 
     // Solve dependencies
-    let solution = solve_deps(&all_deps, "root".to_string(), SemVer::zero())?;
+    let solution = solve_deps(
+        &ConnectivityStrategy::Progressive,
+        &all_deps,
+        "root".to_string(),
+        SemVer::zero(),
+    )?;
 
     // Add the selected elm-explorations/test version to direct tests deps
     let test_version = solution.get(&test_pkg).unwrap();
@@ -105,7 +131,12 @@ fn init_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Erro
     all_deps.insert(test_pkg.clone(), test_range.clone());
 
     // Solve dependencies to check that elm-explorations/test is compatible
-    solve_deps(&all_deps, pkg_config.name.clone(), SemVer::zero())?;
+    solve_deps(
+        &ConnectivityStrategy::Progressive,
+        &all_deps,
+        pkg_config.name.clone(),
+        SemVer::zero(),
+    )?;
 
     // Add elm-explorations/test to tests deps
     pkg_config
@@ -116,6 +147,7 @@ fn init_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Erro
 
 /// Solve dependencies needed to run the tests.
 pub fn solve<P: AsRef<Path>>(
+    connectivity: &ConnectivityStrategy,
     config: &ProjectConfig,
     src_dirs: &[P],
 ) -> Result<ApplicationConfig, Box<dyn Error>> {
@@ -126,7 +158,13 @@ pub fn solve<P: AsRef<Path>>(
                 .chain(app_config.test_dependencies.direct.iter())
                 .map(|(p, v)| (p.clone(), Range::exact(*v)))
                 .collect();
-            solve_helper(src_dirs, &"root".to_string(), SemVer::zero(), deps)
+            solve_helper(
+                connectivity,
+                src_dirs,
+                &"root".to_string(),
+                SemVer::zero(),
+                deps,
+            )
         }
         ProjectConfig::Package(pkg_config) => {
             let normal_deps = pkg_config.dependencies.iter();
@@ -134,13 +172,20 @@ pub fn solve<P: AsRef<Path>>(
                 .chain(pkg_config.test_dependencies.iter())
                 .map(|(p, c)| (p.clone(), c.0.clone()))
                 .collect();
-            solve_helper(src_dirs, &pkg_config.name, pkg_config.version, deps)
+            solve_helper(
+                connectivity,
+                src_dirs,
+                &pkg_config.name,
+                pkg_config.version,
+                deps,
+            )
         }
     }
 }
 
 #[allow(clippy::ptr_arg)]
 fn solve_helper<P: AsRef<Path>>(
+    connectivity: &ConnectivityStrategy,
     src_dirs: &[P],
     pkg_id: &String,
     version: SemVer,
@@ -152,7 +197,7 @@ fn solve_helper<P: AsRef<Path>>(
         "mpizenberg/elm-test-runner".to_string(),
         Range::exact((2, 0, 2)),
     );
-    let mut solution = solve_deps(&deps, pkg_id.clone(), version)?;
+    let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)?;
     solution.remove(pkg_id);
 
     // TODO: Split solution into direct and indirect deps.
@@ -178,10 +223,16 @@ fn solve_helper<P: AsRef<Path>>(
 }
 
 /// Check that those dependencies are correct.
+/// Use progressive connectivity mode.
 fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> Result<(), Box<dyn Error>> {
     let pkg_id = "root".to_string();
     let version = SemVer::zero();
-    let mut solution = solve_deps(deps, pkg_id.clone(), version)?;
+    let mut solution = solve_deps(
+        &ConnectivityStrategy::Progressive,
+        deps,
+        pkg_id.clone(),
+        version,
+    )?;
     // Check that indirect deps are correct if this is for an application.
     // All packages in the solution must exist in the original dependencies.
     if is_app {
@@ -197,28 +248,50 @@ fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> Result<(), Bo
 
 /// Solve project dependencies.
 fn solve_deps(
+    connectivity: &ConnectivityStrategy,
     deps: &Map<String, Range<SemVer>>,
     pkg_id: String,
     version: SemVer,
 ) -> Result<Map<String, SemVer>, Box<dyn Error>> {
-    let offline_provider = ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
-    let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, deps, &offline_provider);
-    let resolution = resolve(&deps_provider, pkg_id.clone(), version).or_else(|_| {
-        eprintln!("Checking offline failed, switching to online");
-        let online_provider = ElmPackageProviderOnline::new(
-            crate::utils::elm_home(),
-            "0.19.1",
-            "https://package.elm-lang.org",
-            crate::utils::http_fetch,
-            VersionStrategy::Newest,
-        )
-        .unwrap();
-        let deps_provider = ProjectAdapter::new(pkg_id.clone(), version, deps, &online_provider);
-        resolve(&deps_provider, pkg_id.clone(), version)
-    });
-    match resolution {
+    let solution = |resolution| match resolution {
         Ok(sol) => Ok(sol),
         Err(PubGrubError::NoSolution(tree)) => Err(DefaultStringReporter::report(&tree).into()),
         Err(err) => Err(err.into()),
+    };
+    match connectivity {
+        ConnectivityStrategy::Offline => {
+            let offline_provider =
+                ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
+            let deps_provider =
+                ProjectAdapter::new(pkg_id.clone(), version, deps, &offline_provider);
+            solution(resolve(&deps_provider, pkg_id, version))
+        }
+        ConnectivityStrategy::Online(strategy) => {
+            let online_provider = ElmPackageProviderOnline::new(
+                crate::utils::elm_home(),
+                "0.19.1",
+                "https://package.elm-lang.org",
+                crate::utils::http_fetch,
+                strategy.clone(),
+            )
+            .unwrap();
+            let deps_provider =
+                ProjectAdapter::new(pkg_id.clone(), version, deps, &online_provider);
+            solution(resolve(&deps_provider, pkg_id, version))
+        }
+        ConnectivityStrategy::Progressive => solve_deps(
+            &ConnectivityStrategy::Offline,
+            deps,
+            pkg_id.clone(),
+            version,
+        )
+        .or_else(|_| {
+            solve_deps(
+                &ConnectivityStrategy::Online(VersionStrategy::Newest),
+                deps,
+                pkg_id,
+                version,
+            )
+        }),
     }
 }

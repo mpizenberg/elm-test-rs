@@ -19,11 +19,17 @@ FLAGS:
     --help                       # Print this message and exit
     --version                    # Print version string and exit
     --watch                      # Rerun tests on file changes
-    --compiler /path/to/compiler # Precis the compiler to use (defaults to just elm)
+    --compiler /path/to/compiler # Precise the compiler to use (defaults to just elm)
     --seed integer               # Run with initial fuzzer seed (defaults to random)
     --fuzz integer               # Precise number of iterations of fuzz tests (defaults to 100)
     --workers integer            # Precise number of worker threads (defaults to number of logic cores)
-    --report console|json|junit  # Print results to stdout in given format (defaults to console)
+    --report console|json|junit  # Print results to stdout in given the format (defaults to console)
+    --connectivity progressive|offline|online-newest|online-oldest
+                                 # Connectivity mode (defaults to progessive)
+                                 #    offline: elm-test-rs only use installed packages to solve dependencies
+                                 #    online-newest: the newest compatible dependencies are picked to run tests
+                                 #    online-oldest: the oldest compatible dependencies are picked to run tests
+                                 #    progressive: try offline first and if that fails, switch to online-newest
 
 SUBCOMMANDS:
     init               # Initialize tests dependencies and directory

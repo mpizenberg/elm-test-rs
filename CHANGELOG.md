@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Now handles tests runs of the kind "Only" | "Skipping" | "Invalid".
 - Support for colors.
 - Nice formatting of failure diffs like in node-test-runner.
+- Ability to pick connectivity with version stratey: "offline" | "online-newest" | "online-oldest".
 
 #### Changed
 

@@ -65,6 +65,9 @@ fn no_subcommand_args(
         report: args
             .opt_value_from_str("--report")?
             .unwrap_or_else(|| "console".to_string()),
+        connectivity: args
+            .opt_value_from_str("--connectivity")?
+            .unwrap_or(deps::ConnectivityStrategy::Progressive),
         files: {
             let mut files = args.free()?;
             if let Some(file) = first_arg {

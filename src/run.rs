@@ -1,6 +1,8 @@
 //! Module dealing with actually running all the tests.
 
 use glob::glob;
+use notify::{watcher, RecursiveMode, Watcher};
+use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 use regex::Regex;
 use std::collections::HashSet;
 use std::ffi::OsStr;
@@ -8,10 +10,6 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-
-use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
-
-use notify::{watcher, RecursiveMode, Watcher};
 use std::sync::mpsc::channel;
 use std::time::Duration;
 
@@ -26,6 +24,7 @@ pub struct Options {
     pub fuzz: u32,
     pub workers: u32,
     pub report: String,
+    pub connectivity: crate::deps::ConnectivityStrategy,
     pub files: Vec<String>,
 }
 
@@ -114,7 +113,7 @@ pub fn main(options: Options) {
 ///  - https://bixense.com/clicolors/
 ///  - https://no-color.org/
 fn console_color_mode() -> &'static str {
-    if &std::env::var("CLICOLOR_FORCE").unwrap_or("0".to_string()) != "0" {
+    if &std::env::var("CLICOLOR_FORCE").unwrap_or_else(|_| "0".to_string()) != "0" {
         "consoleColor"
     } else if std::env::var("NO_COLOR").is_ok() {
         "consoleNoColor"
@@ -192,9 +191,16 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
 
     // Generate an elm.json for the to-be-generated Runner.elm.
     eprintln!("Generating the elm.json for the Runner.elm");
-    let tests_config = ProjectConfig::Application(
-        crate::deps::solve(&info, &source_directories_for_runner).unwrap(),
-    );
+    let tests_config =
+        crate::deps::solve(&options.connectivity, &info, &source_directories_for_runner).unwrap();
+    match options.connectivity {
+        crate::deps::ConnectivityStrategy::Progressive => (),
+        _ => eprintln!(
+            "The dependencies picked for your chosen connectivity are:\n{}",
+            serde_json::to_string_pretty(&tests_config.dependencies).unwrap(),
+        ),
+    };
+    let tests_config = ProjectConfig::Application(tests_config);
     let tests_config_path = tests_root.join("elm.json");
     std::fs::create_dir_all(tests_root.join("src")).expect("Could not create tests dir");
     let tests_config_str = serde_json::to_string(&tests_config).unwrap();
