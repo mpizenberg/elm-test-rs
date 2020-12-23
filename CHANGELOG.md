@@ -7,8 +7,19 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+#### Changed
+
+#### Removed
+
+#### Fixed
+
+
+## [0.4.0] - (2020-12-23) [(diff)][diff-0.4.0]
+
+#### Added
+
 - Now handles tests runs of the kind "Only" | "Skipping" | "Invalid".
-- Support for colors.
+- Support for colors with the ConsoleColor reporter.
 - Nice formatting of failure diffs like in node-test-runner.
 - Ability to pick connectivity with version stratey: "offline" | "online-newest" | "online-oldest".
 - Add a --filter option to only run some tests based on their description.
@@ -16,8 +27,6 @@ All notable changes to this project will be documented in this file.
 #### Changed
 
 - Renamed the "Console" reporter into "ConsoleDebug" reporter.
-
-#### Removed
 
 #### Fixed
 
@@ -82,11 +91,13 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[0.4.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4
 [0.3.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.3
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.3...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4...master
+[diff-0.4.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.3...v0.4
 [diff-0.3.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.2...v0.3
 [diff-0.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1.1...v0.2
 [diff-0.1.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1...v0.1.1
