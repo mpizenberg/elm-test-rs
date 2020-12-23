@@ -47,20 +47,17 @@ The aim is to provide at least feature parity with elm-test
 plus few other nice additions.
 However, this doesn't intend to support Elm prior to 0.19.1.
 
-Missing features for parity with elm-test:
-
- - [ ] colors ([issue #5][colors])
- - [ ] pretty-printing of diffs ([issue #6][pretty-printing])
-
 Additional features:
 
  - [x] `--workers` option to choose the number of runner workers
  - [x] capturing `Debug.log` calls ([issue #26][capture-log])
+ - [x] ability to chose the newest or oldest versions for dependencies ([issue #14][version-strat])
+ - [x] `--filter` option to filter tests based on their description ([issue #30][filter])
  - [ ] progess bar ([issue #25][progress-bar])
 
-[colors]: https://github.com/mpizenberg/elm-test-rs/issues/5
-[pretty-printing]: https://github.com/mpizenberg/elm-test-rs/issues/6
 [capture-log]: https://github.com/mpizenberg/elm-test-rs/issues/26
+[version-strat]: https://github.com/mpizenberg/elm-test-rs/issues/14
+[filter]: https://github.com/mpizenberg/elm-test-rs/issues/30
 [progress-bar]: https://github.com/mpizenberg/elm-test-rs/issues/25
 
 
