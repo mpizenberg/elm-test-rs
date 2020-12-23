@@ -148,7 +148,7 @@ checksum = "212d0f5754cb6769937f4501cc0e67f4f4483c8d2c3e1e922ee9edbe4ab4c7c0"
 
 [[package]]
 name = "elm-test-rs"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "atty",
  "dirs-next",
@@ -534,7 +534,7 @@ dependencies = [
 [[package]]
 name = "pubgrub-dependency-provider-elm"
 version = "0.1.0"
-source = "git+https://github.com/mpizenberg/pubgrub-dependency-provider-elm?branch=master#121b7b36e314daae88bbe94f580d366402d2bb67"
+source = "git+https://github.com/mpizenberg/pubgrub-dependency-provider-elm?branch=master#c75010471b27fe138811ab24493911304073bd2e"
 dependencies = [
  "pubgrub",
  "rustc-hash",

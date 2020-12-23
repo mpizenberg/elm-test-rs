@@ -51,7 +51,7 @@ pub fn main(options: Options) {
     }
 
     // Prints to stderr the current version
-    eprintln!("elm-test-rs {}", std::env!("CARGO_PKG_VERSION"));
+    eprintln!("\nelm-test-rs {}", std::env!("CARGO_PKG_VERSION"));
     eprintln!("-----------------\n");
 
     // Verify that we are in an Elm project
@@ -68,7 +68,7 @@ pub fn main(options: Options) {
         value => {
             eprintln!("Wrong --report value: {}", value);
             crate::help::main();
-            return;
+            std::process::exit(1);
         }
     };
 
@@ -89,8 +89,8 @@ pub fn main(options: Options) {
             match rx.recv() {
                 Ok(notify::DebouncedEvent::NoticeWrite(_)) => {}
                 Ok(notify::DebouncedEvent::NoticeRemove(_)) => {}
-                Ok(event) => {
-                    eprintln!("{:?}", event);
+                Ok(_event) => {
+                    // eprintln!("{:?}", _event);
                     let new_test_directories = main_helper(&options, &elm_project_root, &reporter);
                     if new_test_directories != test_directories {
                         for path in test_directories.iter() {
@@ -191,7 +191,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         .collect();
 
     // Generate an elm.json for the to-be-generated Runner.elm.
-    eprintln!("Generating the elm.json for the Runner.elm");
+    // eprintln!("Generating the elm.json for the Runner.elm");
     let tests_config =
         crate::deps::solve(&options.connectivity, &info, &source_directories_for_runner).unwrap();
     match options.connectivity {
@@ -224,7 +224,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         .collect();
 
     // Find all potential tests
-    eprintln!("Finding all potential tests ...");
+    // eprintln!("Finding all potential tests ...");
     let potential_tests: Vec<String> = module_names
         .iter()
         .zip(modules_abs_paths)
@@ -253,9 +253,9 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     );
 
     // Compile the src/Runner.elm file into Runner.elm.js
-    let preparation_time = start_time.elapsed().as_secs_f32();
-    eprintln!("Spent {}s generating Runner.elm", preparation_time);
-    eprintln!("Compiling the generated templated src/Runner.elm ...");
+    let _preparation_time = start_time.elapsed().as_secs_f32();
+    // eprintln!("Spent {}s generating Runner.elm", _preparation_time);
+    // eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     if !compile(
         &tests_root,       // current_dir
@@ -272,7 +272,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
-    eprintln!("Kernel-patching Runner.elm.js ...");
+    // eprintln!("Kernel-patching Runner.elm.js ...");
     let compiled_runner_src =
         fs::read_to_string(&compiled_runner).expect("Cannot read newly created elm.js file");
     fs::write(&compiled_runner, &kernel_patch_tests(&compiled_runner_src))
@@ -304,7 +304,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     );
 
     // Compile the Reporter.elm into Reporter.elm.js
-    eprintln!("Compiling Reporter.elm.js ...");
+    // eprintln!("Compiling Reporter.elm.js ...");
     #[cfg(unix)]
     let reporter_template = include_str!("../templates/Reporter.elm");
     #[cfg(windows)]
@@ -344,7 +344,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     );
 
     // Start the tests supervisor
-    eprintln!("Starting the supervisor ...");
+    // eprintln!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
         .arg("js/node_supervisor.js")
         .current_dir(tests_root)
@@ -360,13 +360,13 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     };
 
     // Send runner module path to supervisor to start the work
-    eprintln!("Running tests ...");
+    // eprintln!("Running tests ...");
     let node_runner_path_string = node_runner_path.to_str().unwrap().to_string();
     writeln(&node_runner_path_string.as_bytes());
 
     // Wait for supervisor child process to end and terminate with same exit code
     let exit_code = wait_child(&mut supervisor);
-    eprintln!("Exited with code {:?}", exit_code);
+    // eprintln!("Exited with code {:?}", exit_code);
     if options.watch {
         test_directories
     } else {
@@ -426,7 +426,7 @@ fn get_module_name(
     source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
     file: impl AsRef<Path>,
 ) -> String {
-    eprintln!("get_module_name of: {}", file.as_ref().display());
+    // eprintln!("get_module_name of: {}", file.as_ref().display());
     let file = file.as_ref();
     let matching_source_dir = {
         let mut matching = source_dirs.into_iter().filter(|dir| file.starts_with(dir));
