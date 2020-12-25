@@ -257,6 +257,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     // eprintln!("Spent {}s generating Runner.elm", _preparation_time);
     // eprintln!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
+    let compile_time = std::time::Instant::now();
     if !compile(
         &tests_root,       // current_dir
         &options.compiler, // compiler
@@ -269,6 +270,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
             std::process::exit(1);
         }
     }
+    let mut total_time_elm_compiler = compile_time.elapsed().as_secs_f32();
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
@@ -313,6 +315,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     std::fs::write(&reporter_elm_path, reporter_template)
         .expect("Error writing Reporter.elm to test folder");
     let compiled_reporter = tests_root.join("js").join("Reporter.elm.js");
+    let compile_time = std::time::Instant::now();
     if !compile(
         &tests_root,        // current_dir
         &options.compiler,  // compiler
@@ -325,6 +328,11 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
             std::process::exit(1);
         }
     }
+    total_time_elm_compiler += compile_time.elapsed().as_secs_f32();
+    eprintln!(
+        "Total time spent in the elm compiler: {}s",
+        total_time_elm_compiler
+    );
 
     // Generate the supervisor Node module
     #[cfg(unix)]
