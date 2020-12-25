@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [0.4.1] - (2020-12-25) [(diff)][diff-0.4.1]
+
+#### Changed
+
+- Only display startup debug logs if there are any.
+
+
 ## [0.4.0] - (2020-12-23) [(diff)][diff-0.4.0]
 
 #### Added
@@ -91,12 +98,14 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[0.4.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4
 [0.3.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.3
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4.1...master
+[diff-0.4.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4...v0.4.1
 [diff-0.4.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.3...v0.4
 [diff-0.3.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.2...v0.3
 [diff-0.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.1.1...v0.2
