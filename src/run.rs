@@ -351,10 +351,24 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         ],
     );
 
+    let node_version = Command::new("node")
+        .arg("--version")
+        .output()
+        .expect("command failed to start")
+        .stdout;
+
+    // Node supports worker_threads as experimental feature since 10.5,
+    // but it is unknown whether all versions since 10.5 actually work with elm-test-rs.
+    let mut supervisor_args = Vec::new();
+    if node_version.starts_with(b"v10.") {
+        supervisor_args.push("--experimental-worker");
+    }
+    supervisor_args.push("js/node_supervisor.js");
+
     // Start the tests supervisor
     // eprintln!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
-        .arg("js/node_supervisor.js")
+        .args(supervisor_args)
         .current_dir(tests_root)
         .stdin(Stdio::piped())
         .spawn()
