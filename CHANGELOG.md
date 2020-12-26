@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- Support Node 10 with `--experimental-worker` option.
+
 #### Changed
 
 #### Removed

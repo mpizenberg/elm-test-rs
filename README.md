@@ -5,7 +5,7 @@ Attempt at a simpler alternative to node-test-runner for elm tests.
 Minimum supported version:
 
 - elm 0.19.1
-- Node 12
+- Node 10.5
 
 ## Usage
 
