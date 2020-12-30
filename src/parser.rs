@@ -423,6 +423,7 @@ mod nom_tests {
         asrt_eq(r#"'\''a"#, Ok(("a", "\\'")));
         asrt_eq(r#"'\n'a"#, Ok(("a", "\\n")));
         asrt_eq(r#"'\r'a"#, Ok(("a", "\\r")));
+        asrt_eq(r#"'✔'a"#, Ok(("a", "✔")));
     }
     #[test]
     fn string_literal() {
@@ -436,6 +437,7 @@ mod nom_tests {
         asrt_eq("\"to\nto\"a", Ok(("a", "to\nto")));
         asrt_eq(r#""to\nto"a"#, Ok(("a", "to\\nto")));
         asrt_eq(r#""\""a"#, Ok(("a", "\\\"")));
+        asrt_eq(r#""✔"a"#, Ok(("a", "✔")));
     }
     #[test]
     fn multiline_string_literal() {
@@ -448,6 +450,7 @@ mod nom_tests {
         asrt_eq(r#""""" """a"#, Ok(("a", "\" ")));
         asrt_eq(r#""""to\"""to"""a"#, Ok(("a", "to\\\"\"\"to")));
         asrt_eq(r#""""to\"""\"to"""a"#, Ok(("a", "to\\\"\"\"\\\"to")));
+        asrt_eq(r#""""✔"""a"#, Ok(("a", "✔")));
     }
     #[test]
     fn line_comment() {
@@ -455,6 +458,7 @@ mod nom_tests {
         assert!(super::line_comment("-").is_err());
         assert_eq!(super::line_comment("-- hoho \n"), Ok(("\n", " hoho ")));
         assert_eq!(super::line_comment("-- hoho"), Ok(("", " hoho")));
+        assert_eq!(super::line_comment("-- ✔"), Ok(("", " ✔")));
     }
     #[test]
     fn block_comment() {
@@ -469,5 +473,6 @@ mod nom_tests {
             "{-{- first -} between {- second -}-}",
             Ok(("", "{- first -} between {- second -}")),
         );
+        asrt_eq("{- ✔ -}", Ok(("", " ✔ ")));
     }
 }
