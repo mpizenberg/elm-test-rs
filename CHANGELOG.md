@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 #### Added
 
 - Support Node 10 with `--experimental-worker` option.
+- Exercism support with the "exercism" value for `--report` option.
 
 #### Changed
 
