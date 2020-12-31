@@ -7,12 +7,19 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
-- Support Node 10 with `--experimental-worker` option.
-- Exercism support with the "exercism" value for `--report` option.
-
 #### Changed
 
 #### Removed
+
+#### Fixed
+
+
+## [0.5.0] - (2020-12-31) [(diff)][diff-0.5.0]
+
+#### Added
+
+- Support Node 10 with `--experimental-worker` option.
+- Exercism support with the "exercism" value for `--report` option.
 
 #### Fixed
 
@@ -103,13 +110,15 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[0.5.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.5
 [0.4.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4
 [0.3.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.3
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4.1...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5...master
+[diff-0.5.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4.1...v0.5
 [diff-0.4.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4...v0.4.1
 [diff-0.4.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.3...v0.4
 [diff-0.3.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.2...v0.3
