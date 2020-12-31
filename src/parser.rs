@@ -185,6 +185,7 @@ fn block_comment(input: &str) -> IResult<&str, &str> {
 }
 
 // Warning, the start or end pattern must not contain the other one.
+#[allow(clippy::manual_strip)]
 fn within_recursive<'a>(start: &'a str, end: &'a str, input: &'a str) -> IResult<&'a str, &'a str> {
     let (input, _) = tag(start)(input)?;
     let start_count = start.chars().count();
