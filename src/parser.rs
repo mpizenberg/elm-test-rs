@@ -185,31 +185,35 @@ fn block_comment(input: &str) -> IResult<&str, &str> {
 }
 
 // Warning, the start or end pattern must not contain the other one.
+#[allow(clippy::manual_strip)]
 fn within_recursive<'a>(start: &'a str, end: &'a str, input: &'a str) -> IResult<&'a str, &'a str> {
     let (input, _) = tag(start)(input)?;
-    let mut rest = input;
+    let start_count = start.chars().count();
+    let end_count = end.chars().count();
     let mut open_count = 1;
-    let mut char_count = 0;
-    let start_len = start.len();
-    let end_len = end.len();
-    while open_count > 0 {
-        if rest.is_empty() {
-            // fail
-            return tag("x")("o");
-        } else if rest.starts_with(start) {
-            rest = &rest[start_len..];
-            open_count += 1;
-            char_count += start_len;
-        } else if rest.starts_with(end) {
-            rest = &rest[end_len..];
-            open_count -= 1;
-            char_count += end_len;
-        } else {
-            rest = &rest[1..];
-            char_count += 1;
+    let mut char_indices = input.char_indices();
+    loop {
+        match char_indices.next() {
+            None => return tag("x")(""), // force fail
+            Some((index, _)) => {
+                let rest = &input[index..];
+                if rest.starts_with(start) {
+                    open_count += 1;
+                    for _ in 1..start_count {
+                        char_indices.next();
+                    }
+                } else if rest.starts_with(end) {
+                    open_count -= 1;
+                    if open_count == 0 {
+                        return Ok((&rest[end.len()..], &input[..index]));
+                    }
+                    for _ in 1..end_count {
+                        char_indices.next();
+                    }
+                }
+            }
         }
     }
-    Ok((rest, &input[..char_count - end_len]))
 }
 
 // ------------------
@@ -257,17 +261,17 @@ fn multiline_string_literal(input: &str) -> IResult<&str, &str> {
 }
 
 fn take_till_escape_or_string_end(input: &str) -> IResult<&str, &str> {
-    let mut rest = input;
-    let mut count = 0;
-    while !rest.is_empty() && !rest.starts_with('\\') && !rest.starts_with("\"\"\"") {
-        rest = &rest[1..];
-        count += 1;
+    for (index, c) in input.char_indices() {
+        let rest = &input[index..];
+        if c == '\\' || rest.starts_with("\"\"\"") {
+            if index == 0 {
+                return tag("x")(rest); // for fail
+            } else {
+                return Ok((rest, &input[..index]));
+            }
+        }
     }
-    if count == 0 {
-        tag("x")(rest)
-    } else {
-        Ok((rest, &input[..count]))
-    }
+    tag("x")("") // fail if we reach end of string
 }
 
 // ------------------
@@ -423,6 +427,7 @@ mod nom_tests {
         asrt_eq(r#"'\''a"#, Ok(("a", "\\'")));
         asrt_eq(r#"'\n'a"#, Ok(("a", "\\n")));
         asrt_eq(r#"'\r'a"#, Ok(("a", "\\r")));
+        asrt_eq(r#"'✔'a"#, Ok(("a", "✔")));
     }
     #[test]
     fn string_literal() {
@@ -436,6 +441,7 @@ mod nom_tests {
         asrt_eq("\"to\nto\"a", Ok(("a", "to\nto")));
         asrt_eq(r#""to\nto"a"#, Ok(("a", "to\\nto")));
         asrt_eq(r#""\""a"#, Ok(("a", "\\\"")));
+        asrt_eq(r#""✔"a"#, Ok(("a", "✔")));
     }
     #[test]
     fn multiline_string_literal() {
@@ -448,6 +454,7 @@ mod nom_tests {
         asrt_eq(r#""""" """a"#, Ok(("a", "\" ")));
         asrt_eq(r#""""to\"""to"""a"#, Ok(("a", "to\\\"\"\"to")));
         asrt_eq(r#""""to\"""\"to"""a"#, Ok(("a", "to\\\"\"\"\\\"to")));
+        asrt_eq(r#""""✔"""a"#, Ok(("a", "✔")));
     }
     #[test]
     fn line_comment() {
@@ -455,6 +462,7 @@ mod nom_tests {
         assert!(super::line_comment("-").is_err());
         assert_eq!(super::line_comment("-- hoho \n"), Ok(("\n", " hoho ")));
         assert_eq!(super::line_comment("-- hoho"), Ok(("", " hoho")));
+        assert_eq!(super::line_comment("-- ✔"), Ok(("", " ✔")));
     }
     #[test]
     fn block_comment() {
@@ -469,5 +477,6 @@ mod nom_tests {
             "{-{- first -} between {- second -}-}",
             Ok(("", "{- first -} between {- second -}")),
         );
+        asrt_eq("{- ✔ -}", Ok(("", " ✔ ")));
     }
 }
