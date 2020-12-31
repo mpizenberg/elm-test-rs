@@ -65,6 +65,7 @@ pub fn main(options: Options) {
         "consoleNoColor" => "consoleNoColor".to_string(),
         "json" => "json".to_string(),
         "junit" => "junit".to_string(),
+        "exercism" => "exercism".to_string(),
         value => {
             eprintln!("Wrong --report value: {}", value);
             crate::help::main();
