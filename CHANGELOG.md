@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 #### Fixed
 
+- Fixed parser issue for long unicode chars.
+
 
 ## [0.4.1] - (2020-12-25) [(diff)][diff-0.4.1]
 
