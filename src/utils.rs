@@ -15,7 +15,7 @@ macro_rules! include_template {
 #[cfg(windows)]
 macro_rules! include_template {
     ($name:expr) => {
-        include_str!(concat!("..\\templates\\", name))
+        include_str!(concat!("..\\templates\\", $name))
     };
 }
 
