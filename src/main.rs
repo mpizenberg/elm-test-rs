@@ -4,7 +4,6 @@ mod init;
 mod install;
 mod parser;
 mod run;
-#[macro_use]
 mod utils;
 
 #[derive(Debug)]
