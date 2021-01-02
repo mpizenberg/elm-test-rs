@@ -7,7 +7,12 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- `utils::include_template!` macro for easier logic and maintainance.
+
 #### Changed
+
+- Use `utils::include_template!` macro for easier logic and maintainance,
+  instead of duplicated calls to `include_str!` with a `unix` or `windows` guard.
 
 #### Removed
 
