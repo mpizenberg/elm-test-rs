@@ -13,6 +13,8 @@ use std::process::{Command, Stdio};
 use std::sync::mpsc::channel;
 use std::time::Duration;
 
+use crate::include_template;
+
 #[derive(Debug)]
 /// Options passed as arguments.
 pub struct Options {
@@ -240,10 +242,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         .collect();
 
     // Generate templated src/Runner.elm
-    #[cfg(unix)]
-    let runner_template = include_str!("../templates/Runner.elm");
-    #[cfg(windows)]
-    let runner_template = include_str!("..\\templates\\Runner.elm");
+    let runner_template = include_template!("Runner.elm");
     create_templated(
         runner_template,                           // template
         tests_root.join("src").join("Runner.elm"), // output
@@ -282,14 +281,9 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         .expect("Cannot write updated elm.js file");
 
     // Generate the node_runner.js node module embedding the Elm runner
-    #[cfg(unix)]
-    let polyfills = include_str!("../templates/node_polyfills.js");
-    #[cfg(windows)]
-    let polyfills = include_str!("..\\templates\\node_polyfills.js");
-    #[cfg(unix)]
-    let node_runner_template = include_str!("../templates/node_runner.js");
-    #[cfg(windows)]
-    let node_runner_template = include_str!("..\\templates\\node_runner.js");
+
+    let polyfills = include_template!("node_polyfills.js");
+    let node_runner_template = include_template!("node_runner.js");
     let node_runner_path = tests_root.join("js").join("node_runner.js");
     let filter = match &options.filter {
         None => "null".to_string(),
@@ -308,10 +302,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
 
     // Compile the Reporter.elm into Reporter.elm.js
     // eprintln!("Compiling Reporter.elm.js ...");
-    #[cfg(unix)]
-    let reporter_template = include_str!("../templates/Reporter.elm");
-    #[cfg(windows)]
-    let reporter_template = include_str!("..\\templates\\Reporter.elm");
+    let reporter_template = include_template!("Reporter.elm");
     let reporter_elm_path = tests_root.join("src").join("Reporter.elm");
     std::fs::write(&reporter_elm_path, reporter_template)
         .expect("Error writing Reporter.elm to test folder");
@@ -336,10 +327,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     );
 
     // Generate the supervisor Node module
-    #[cfg(unix)]
-    let node_supervisor_template = include_str!("../templates/node_supervisor.js");
-    #[cfg(windows)]
-    let node_supervisor_template = include_str!("..\\templates\\node_supervisor.js");
+    let node_supervisor_template = include_template!("node_supervisor.js");
     create_templated(
         node_supervisor_template,                         // template
         tests_root.join("js").join("node_supervisor.js"), // output
