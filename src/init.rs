@@ -2,6 +2,8 @@
 
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 
+use crate::include_template;
+
 /// Add elm-explorations/test to test dependencies
 /// and initialize a template tests/Tests.elm file.
 pub fn main() {
@@ -17,10 +19,7 @@ pub fn main() {
     .expect("Unable to write to updated elm.json");
 
     // Create the tests/Tests.elm template
-    #[cfg(unix)]
-    let init_tests_template = include_str!("../templates/Tests.elm");
-    #[cfg(windows)]
-    let init_tests_template = include_str!("..\\templates\\Tests.elm");
+    let init_tests_template = include_template!("Tests.elm");
     std::fs::create_dir_all("tests").expect("Impossible to create directory tests/");
     let new_file_path = std::path::Path::new("tests").join("Tests.elm");
     if !new_file_path.exists() {

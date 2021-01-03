@@ -3,6 +3,22 @@
 use std::error::Error;
 use std::path::{Path, PathBuf};
 
+#[macro_export]
+#[cfg(unix)]
+macro_rules! include_template {
+    ($name:expr) => {
+        include_str!(concat!("../templates/", $name))
+    };
+}
+
+#[macro_export]
+#[cfg(windows)]
+macro_rules! include_template {
+    ($name:expr) => {
+        include_str!(concat!("..\\templates\\", $name))
+    };
+}
+
 /// Find the root of the elm project (of current dir).
 pub fn elm_project_root() -> Result<PathBuf, Box<dyn Error>> {
     let current_dir = std::env::current_dir()?;
