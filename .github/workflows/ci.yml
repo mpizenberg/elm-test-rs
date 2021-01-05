@@ -43,32 +43,34 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
+            ~/.cargo/
             target/
-          key: ${{ runner.os }}-${{ matrix.target }}-build-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ matrix.target }}-build-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.target }}-build-${{ hashFiles('Cargo.toml') }}
-            ${{ runner.os }}-${{ matrix.target }}-build
-            ${{ runner.os }}-${{ matrix.target }}
-            ${{ runner.os }}
+            ${{ matrix.target }}-build-
+            ${{ matrix.target }}-
 
       - uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --target ${{ matrix.target }}
 
+      - name: Compress compiled binary
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf elm-test-rs_${{ matrix.target }}.tar.gz elm-test-rs
+
       - uses: actions/upload-artifact@v2
         if: ${{ !startsWith(matrix.os, 'windows') }}
         with:
-          name: ${{ matrix.target }}_elm-test-rs
-          path: target/${{ matrix.target }}/release/elm-test-rs
+          name: elm-test-rs_${{ matrix.target }}.tar.gz
+          path: target/${{ matrix.target }}/release/elm-test-rs_${{ matrix.target }}.tar.gz
 
       - uses: actions/upload-artifact@v2
         if: ${{ startsWith(matrix.os, 'windows') }}
         with:
-          name: ${{ matrix.target }}_elm-test-rs
+          name: elm-test-rs_${{ matrix.target }}
           path: target/${{ matrix.target }}/release/elm-test-rs.exe
 
   test:
@@ -100,16 +102,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
+            ~/.cargo/
             target/
-          key: ${{ runner.os }}-${{ matrix.toolchain }}-test-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ matrix.target }}-test-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.toolchain }}-test-${{ hashFiles('Cargo.toml') }}
-            ${{ runner.os }}-${{ matrix.toolchain }}-test
-            ${{ runner.os }}-${{ matrix.toolchain }}
-            ${{ runner.os }}
+            ${{ matrix.target }}-test-
+            ${{ matrix.target }}-
 
       - uses: actions-rs/cargo@v1
         with:
