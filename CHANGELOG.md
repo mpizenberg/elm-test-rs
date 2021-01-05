@@ -7,6 +7,17 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+#### Changed
+
+#### Removed
+
+#### Fixed
+
+
+## [0.5.1] - (2021-01-05) [(diff)][diff-0.5.1]
+
+#### Added
+
 - `utils::include_template!` macro for easier logic and maintainance.
 
 #### Changed
@@ -14,9 +25,9 @@ All notable changes to this project will be documented in this file.
 - Use `utils::include_template!` macro for easier logic and maintainance,
   instead of duplicated calls to `include_str!` with a `unix` or `windows` guard.
 
-#### Removed
-
 #### Fixed
+
+- Update to version 3.1.1 of elm code that fixes some things in exercism report.
 
 
 ## [0.5.0] - (2020-12-31) [(diff)][diff-0.5.0]
@@ -115,6 +126,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[0.5.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.5.1
 [0.5.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.5
 [0.4.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4
@@ -122,7 +134,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5.1...master
+[diff-0.5.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5...v0.5.1
 [diff-0.5.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4.1...v0.5
 [diff-0.4.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4...v0.4.1
 [diff-0.4.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.3...v0.4

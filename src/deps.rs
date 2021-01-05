@@ -195,7 +195,7 @@ fn solve_helper<P: AsRef<Path>>(
     let mut deps = deps;
     deps.insert(
         "mpizenberg/elm-test-runner".to_string(),
-        Range::exact((3, 1, 0)),
+        Range::exact((3, 1, 1)),
     );
     let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)?;
     solution.remove(pkg_id);

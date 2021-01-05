@@ -1,6 +1,6 @@
 [package]
 name = "elm-test-rs"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Matthieu Pizenberg <matthieu.pizenberg@gmail.com>", "Harry Sarson <harry.sarson@hotmail.co.uk>"]
 edition = "2018"
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"

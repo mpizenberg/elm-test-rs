@@ -59,16 +59,21 @@ jobs:
           command: build
           args: --release --target ${{ matrix.target }}
 
+      - name: Compress compiled binary
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf elm-test-rs_${{ matrix.target }}.tar.gz elm-test-rs
+
       - uses: actions/upload-artifact@v2
         if: ${{ !startsWith(matrix.os, 'windows') }}
         with:
-          name: ${{ matrix.target }}_elm-test-rs
-          path: target/${{ matrix.target }}/release/elm-test-rs
+          path: target/${{ matrix.target }}/release/elm-test-rs_${{ matrix.target }}.tar.gz
 
       - uses: actions/upload-artifact@v2
         if: ${{ startsWith(matrix.os, 'windows') }}
         with:
-          name: ${{ matrix.target }}_elm-test-rs
+          name: elm-test-rs_${{ matrix.target }}
           path: target/${{ matrix.target }}/release/elm-test-rs.exe
 
   test:
