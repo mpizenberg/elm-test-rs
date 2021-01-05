@@ -64,6 +64,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: ${{ !startsWith(matrix.os, 'windows') }}
         with:
+          name: elm-test-rs_${{ matrix.target }}.tar.gz
           path: target/${{ matrix.target }}/release/elm-test-rs_${{ matrix.target }}.tar.gz
 
       - uses: actions/upload-artifact@v2
