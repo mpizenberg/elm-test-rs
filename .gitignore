@@ -220,3 +220,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/osx,elm,vim,node,rust,linux,windows
+
+# nix-build output
+/result
