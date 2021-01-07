@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- A `--quiet` CLI option. Currently it reduces the amount of stderr logging.
+
 #### Changed
 
 #### Removed

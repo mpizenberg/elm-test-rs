@@ -20,6 +20,7 @@ use crate::include_template;
 pub struct Options {
     pub help: bool,
     pub version: bool,
+    pub quiet: bool,
     pub watch: bool,
     pub compiler: String,
     pub seed: u32,
@@ -53,8 +54,10 @@ pub fn main(options: Options) {
     }
 
     // Prints to stderr the current version
-    eprintln!("\nelm-test-rs {}", std::env!("CARGO_PKG_VERSION"));
-    eprintln!("-----------------\n");
+    if !options.quiet {
+        eprintln!("\nelm-test-rs {}", std::env!("CARGO_PKG_VERSION"));
+        eprintln!("-----------------\n");
+    }
 
     // Verify that we are in an Elm project
     let elm_project_root = crate::utils::elm_project_root().unwrap();
@@ -197,8 +200,8 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     // eprintln!("Generating the elm.json for the Runner.elm");
     let tests_config =
         crate::deps::solve(&options.connectivity, &info, &source_directories_for_runner).unwrap();
-    match options.connectivity {
-        crate::deps::ConnectivityStrategy::Progressive => (),
+    match (options.quiet, &options.connectivity) {
+        (true, _) | (_, crate::deps::ConnectivityStrategy::Progressive) => (),
         _ => eprintln!(
             "The dependencies picked for your chosen connectivity are:\n{}",
             serde_json::to_string_pretty(&tests_config.dependencies).unwrap(),
@@ -321,10 +324,12 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         }
     }
     total_time_elm_compiler += compile_time.elapsed().as_secs_f32();
-    eprintln!(
-        "Total time spent in the elm compiler: {}s",
-        total_time_elm_compiler
-    );
+    if !options.quiet {
+        eprintln!(
+            "Total time spent in the elm compiler: {}s",
+            total_time_elm_compiler
+        );
+    }
 
     // Generate the supervisor Node module
     let node_supervisor_template = include_template!("node_supervisor.js");

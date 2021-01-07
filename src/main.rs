@@ -53,6 +53,7 @@ fn no_subcommand_args(
     Ok(Args::Run(run::Options {
         help: args.contains("--help"),
         version: args.contains("--version"),
+        quiet: args.contains("--quiet"),
         watch: args.contains("--watch"),
         compiler: args
             .opt_value_from_str("--compiler")?
