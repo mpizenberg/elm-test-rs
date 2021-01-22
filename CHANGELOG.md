@@ -7,16 +7,30 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
-- A `--quiet` CLI option. Currently it reduces the amount of stderr logging.
-
 #### Changed
-
-- Split direct and indirect dependencies after dependency resolution
-  to avoid naming issues when importing modules.
 
 #### Removed
 
 #### Fixed
+
+
+## [0.6.0] - (2021-01-22) [(diff)][diff-0.6.0]
+
+#### Added
+
+- A `--quiet` CLI option. Currently it reduces the amount of stderr logging.
+
+#### Changed
+
+- Update pico-args dependency from 0.3.4 to 0.4.
+- Update regex dependency from 1.4.1 to 1.4.3.
+- Update serde_json dependency from 1.0.59 to 1.0.61.
+- Update ureq dependency from 1.5.2 to 2.0.1.
+
+#### Fixed
+
+- Split direct and indirect dependencies after dependency resolution
+  to avoid naming issues when importing modules.
 
 
 ## [0.5.1] - (2021-01-05) [(diff)][diff-0.5.1]
@@ -131,6 +145,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[0.6.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.6
 [0.5.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.5.1
 [0.5.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.5
 [0.4.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.4.1
@@ -139,7 +154,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5.1...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.6...master
+[diff-0.6.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5.1...v0.6
 [diff-0.5.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5...v0.5.1
 [diff-0.5.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4.1...v0.5
 [diff-0.4.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.4...v0.4.1
