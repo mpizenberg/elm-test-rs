@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 
 #### Changed
 
+- Split direct and indirect dependencies after dependency resolution
+  to avoid naming issues when importing modules.
+
 #### Removed
 
 #### Fixed

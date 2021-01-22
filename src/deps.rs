@@ -154,16 +154,17 @@ pub fn solve<P: AsRef<Path>>(
     match config {
         ProjectConfig::Application(app_config) => {
             let normal_deps = app_config.dependencies.direct.iter();
-            let deps: Map<String, Range<SemVer>> = normal_deps
+            let direct_deps: Map<String, Range<SemVer>> = normal_deps
                 .chain(app_config.test_dependencies.direct.iter())
                 .map(|(p, v)| (p.clone(), Range::exact(*v)))
                 .collect();
+            // TODO: take somehow into account already picked versions for indirect deps.
             solve_helper(
                 connectivity,
                 src_dirs,
                 &"root".to_string(),
                 SemVer::zero(),
-                deps,
+                direct_deps,
             )
         }
         ProjectConfig::Package(pkg_config) => {
@@ -189,10 +190,10 @@ fn solve_helper<P: AsRef<Path>>(
     src_dirs: &[P],
     pkg_id: &String,
     version: SemVer,
-    deps: Map<String, Range<SemVer>>,
+    direct_deps: Map<String, Range<SemVer>>,
 ) -> Result<ApplicationConfig, Box<dyn Error>> {
     // TODO: there might be an issue if that was already in the dependencies.
-    let mut deps = deps;
+    let mut deps = direct_deps;
     deps.insert(
         "mpizenberg/elm-test-runner".to_string(),
         Range::exact((3, 1, 1)),
@@ -200,10 +201,17 @@ fn solve_helper<P: AsRef<Path>>(
     let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)?;
     solution.remove(pkg_id);
 
-    // TODO: Split solution into direct and indirect deps.
+    // Split solution into direct and indirect deps.
     let dependencies = AppDependencies {
-        direct: solution.into_iter().collect(),
-        indirect: BTreeMap::new(),
+        direct: solution
+            .clone()
+            .into_iter()
+            .filter(|(d, _)| deps.contains_key(d))
+            .collect(),
+        indirect: solution
+            .into_iter()
+            .filter(|(d, _)| !deps.contains_key(d))
+            .collect(),
     };
     let test_dependencies = AppDependencies {
         direct: BTreeMap::new(),
