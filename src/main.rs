@@ -6,6 +6,8 @@ mod parser;
 mod run;
 mod utils;
 
+use std::ffi::OsString;
+
 #[derive(Debug)]
 /// Type representing command line arguments.
 enum Args {
@@ -30,7 +32,7 @@ fn main_args() -> Result<Args, Box<dyn std::error::Error>> {
     match args.subcommand()?.as_deref() {
         Some("init") => Ok(Args::Init),
         Some("install") => Ok(Args::Install {
-            packages: args.free()?,
+            packages: free_args_str(args.finish())?,
         }),
         // The first arg may be mistaken for an unknown subcommand
         Some(first_arg) => no_subcommand_args(Some(first_arg.to_string()), args),
@@ -71,11 +73,19 @@ fn no_subcommand_args(
             .opt_value_from_str("--connectivity")?
             .unwrap_or(deps::ConnectivityStrategy::Progressive),
         files: {
-            let mut files = args.free()?;
+            let mut files = free_args_str(args.finish())?;
             if let Some(file) = first_arg {
                 files.insert(0, file);
             }
             files
         },
     }))
+}
+
+fn free_args_str(free_args: Vec<OsString>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let mut string_args = Vec::with_capacity(free_args.len());
+    for arg in free_args.into_iter() {
+        string_args.push(arg.into_string().unwrap());
+    }
+    Ok(string_args)
 }

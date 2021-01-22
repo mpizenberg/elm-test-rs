@@ -60,9 +60,8 @@ fn default_elm_home() -> PathBuf {
 }
 
 pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
-    ureq::get(url)
-        .timeout_connect(10_000)
-        .call()
-        .into_string()
-        .map_err(|e| e.into())
+    let agent = ureq::builder()
+        .timeout_connect(std::time::Duration::from_secs(1))
+        .build();
+    agent.get(url).call()?.into_string().map_err(|e| e.into())
 }

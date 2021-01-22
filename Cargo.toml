@@ -1,6 +1,6 @@
 [package]
 name = "elm-test-rs"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Matthieu Pizenberg <matthieu.pizenberg@gmail.com>", "Harry Sarson <harry.sarson@hotmail.co.uk>"]
 edition = "2018"
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
@@ -8,15 +8,15 @@ description = "Simple and fast Rust alternative to node-test-runner to run elm t
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pico-args = "0.3.4"
+pico-args = "0.4.0"
 glob = "0.3.0"
 pathdiff = "0.2.0"
 num_cpus = "1.13.0"
-regex = "1.4.1"
+regex = "1.4.3"
 # pubgrub-dependency-provider-elm = { path = "../pubgrub-dependency-provider-elm" }
 pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub-dependency-provider-elm", branch = "master" }
-serde_json = "1.0.59"
-ureq = "1.5.2"
+serde_json = "1.0.61"
+ureq = "2.0.1"
 dirs-next = "2.0.0"
 pubgrub = { version = "0.2", features = ["serde"] }
 nom = "6.0.1"
