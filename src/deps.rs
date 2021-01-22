@@ -198,6 +198,11 @@ fn solve_helper<P: AsRef<Path>>(
         "mpizenberg/elm-test-runner".to_string(),
         Range::exact((3, 1, 1)),
     );
+    // Add elm/json to the deps since it's used in Runner.elm and Reporter.elm.
+    if !deps.contains_key("elm/json") {
+        // TODO: maybe not the best way to handle but should work most of the time.
+        deps.insert("elm/json".to_string(), Range::between((1, 0, 0), (2, 0, 0)));
+    }
     let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)?;
     solution.remove(pkg_id);
 
