@@ -1,4 +1,5 @@
-{ pkgs ? import <nixpkgs> { }, ... }:
+{ system ? builtins.currentSystem, pkgs ? import <nixpkgs> { system = system; }
+, ... }:
 
 # how to keep this file up to date:
 #
@@ -11,6 +12,15 @@
 # In the longer term, this file could be submitted to nixpkgs to make it easier
 # for Nix users to install elm-test-rs. That's probably the right move once it
 # hits 1.0.0!
+#
+# This configuration will automatically build for the current OS and arch.  If you
+# want to compile for another system (by using a remote builder via nixbuild.net,
+# for example), you can call this file like:
+#
+#     nix-build --arg system \"x86_64-linux\" .
+#
+# The quotes need to be escaped, since `--arg` takes a literal nix value without
+# assuming it's a string.
 
 let macosDeps = [ pkgs.darwin.apple_sdk.frameworks.CoreServices ];
 in pkgs.rustPlatform.buildRustPackage {
