@@ -15,7 +15,7 @@
 let macosDeps = [ pkgs.darwin.apple_sdk.frameworks.CoreServices ];
 in pkgs.rustPlatform.buildRustPackage {
   pname = "elm-test-rs";
-  version = "0.5.1";
+  version = "0.6.1";
 
   # a nice addition here might be https://github.com/hercules-ci/gitignore.nix to
   # ignore files from git, which would prevent unnecessary rebuilds. But since
@@ -25,6 +25,6 @@ in pkgs.rustPlatform.buildRustPackage {
 
   buildInputs = pkgs.lib.optionals pkgs.stdenv.isDarwin macosDeps;
 
-  cargoSha256 = "1p3fyzs5bkvyvzm5ns3azjb82m5dsafy2c481rxkm00vanadk1mi";
+  cargoSha256 = "16bx4yw5qnjilfkysxnmylirlrfaw4dri8xxdbp67n1b019sf8hg";
   verifyCargoDeps = true;
 }
