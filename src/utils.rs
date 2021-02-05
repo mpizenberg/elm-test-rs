@@ -21,9 +21,9 @@ macro_rules! include_template {
 }
 
 /// Find the root of the elm project (of current dir).
-pub fn elm_project_root() -> anyhow::Result<PathBuf> {
-    let current_dir = std::env::current_dir()
-        .context("Could not retrieve the path of the current working directory")?;
+pub fn elm_project_root(root: &str) -> anyhow::Result<PathBuf> {
+    let current_dir = std::fs::canonicalize(root)
+        .context("Could not retrieve the path of the project directory")?;
     parent_traversal("elm.json", &current_dir)
         .context("I didn't find any elm.json, are you in an Elm project")
 }

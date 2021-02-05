@@ -24,6 +24,7 @@ pub struct Options {
     pub quiet: bool,
     pub watch: bool,
     pub compiler: String,
+    pub root: String,
     pub seed: u32,
     pub fuzz: u32,
     pub workers: u32,
@@ -61,7 +62,7 @@ pub fn main(options: Options) -> anyhow::Result<()> {
     }
 
     // Verify that we are in an Elm project
-    let elm_project_root = crate::utils::elm_project_root()?;
+    let elm_project_root = crate::utils::elm_project_root(&options.root)?;
 
     // Validate reporter mode
     let reporter = match options.report.as_ref() {
