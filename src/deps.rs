@@ -4,9 +4,9 @@ use pubgrub::report::{DefaultStringReporter, Reporter};
 use pubgrub::solver::resolve;
 use pubgrub::type_aliases::Map;
 use pubgrub::version::SemanticVersion as SemVer;
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::str::FromStr;
-use std::{collections::BTreeMap, error::Error};
 
 use pubgrub_dependency_provider_elm::constraint::Constraint;
 use pubgrub_dependency_provider_elm::dependency_provider::{
@@ -37,7 +37,7 @@ impl FromStr for ConnectivityStrategy {
 }
 
 /// Install elm-explorations/test to the tests dependencies.
-pub fn init(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
+pub fn init(config: ProjectConfig) -> anyhow::Result<ProjectConfig> {
     match config {
         ProjectConfig::Application(app_config) => {
             Ok(ProjectConfig::Application(init_app(app_config)?))
@@ -46,7 +46,7 @@ pub fn init(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
     }
 }
 
-fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<dyn Error>> {
+fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConfig> {
     // Retrieve all direct and indirect dependencies
     let indirect_test_deps = app_config.test_dependencies.indirect.iter();
     let mut all_deps: Map<String, Range<SemVer>> = indirect_test_deps
@@ -75,6 +75,14 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
                 .remove(&test_pkg)
                 .unwrap();
             app_config.test_dependencies.direct.insert(test_pkg, v);
+        } else if app_config.dependencies.indirect.contains_key(&test_pkg) {
+            eprintln!("elm-explorations/test is already in your indirect dependencies,");
+            eprintln!("so we copied the same version in your direct test dependencies.");
+            let v = app_config.dependencies.indirect.get(&test_pkg).unwrap();
+            app_config
+                .test_dependencies
+                .direct
+                .insert(test_pkg, v.clone());
         } else {
             eprintln!("elm-explorations/test is already in your dependencies.");
         }
@@ -108,7 +116,7 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
     Ok(app_config)
 }
 
-fn init_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Error>> {
+fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
     // Retrieve all dependencies
     let test_deps = pkg_config.test_dependencies.iter();
     let mut all_deps: Map<String, Range<SemVer>> = test_deps
@@ -150,7 +158,7 @@ pub fn solve<P: AsRef<Path>>(
     connectivity: &ConnectivityStrategy,
     config: &ProjectConfig,
     src_dirs: &[P],
-) -> Result<ApplicationConfig, Box<dyn Error>> {
+) -> anyhow::Result<ApplicationConfig> {
     match config {
         ProjectConfig::Application(app_config) => {
             let normal_deps = app_config.dependencies.direct.iter();
@@ -191,7 +199,7 @@ fn solve_helper<P: AsRef<Path>>(
     pkg_id: &String,
     version: SemVer,
     direct_deps: Map<String, Range<SemVer>>,
-) -> Result<ApplicationConfig, Box<dyn Error>> {
+) -> anyhow::Result<ApplicationConfig> {
     // TODO: there might be an issue if that was already in the dependencies.
     let mut deps = direct_deps;
     deps.insert(
@@ -237,7 +245,7 @@ fn solve_helper<P: AsRef<Path>>(
 
 /// Check that those dependencies are correct.
 /// Use progressive connectivity mode.
-fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> Result<(), Box<dyn Error>> {
+fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> anyhow::Result<()> {
     let pkg_id = "root".to_string();
     let version = SemVer::zero();
     let mut solution = solve_deps(
@@ -252,7 +260,7 @@ fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> Result<(), Bo
         solution.remove(&pkg_id);
         for p in solution.keys() {
             if !deps.contains_key(p) {
-                return Err(format!("{} is missing in the indirect dependencies", p).into());
+                anyhow::bail!("{} is missing in the indirect dependencies", p);
             }
         }
     }
@@ -265,11 +273,49 @@ fn solve_deps(
     deps: &Map<String, Range<SemVer>>,
     pkg_id: String,
     version: SemVer,
-) -> Result<Map<String, SemVer>, Box<dyn Error>> {
+) -> anyhow::Result<Map<String, SemVer>> {
     let solution = |resolution| match resolution {
         Ok(sol) => Ok(sol),
-        Err(PubGrubError::NoSolution(tree)) => Err(DefaultStringReporter::report(&tree).into()),
-        Err(err) => Err(err.into()),
+        Err(PubGrubError::NoSolution(tree)) => {
+            Err(anyhow::anyhow!(DefaultStringReporter::report(&tree)))
+        }
+        Err(PubGrubError::ErrorRetrievingDependencies {
+            package,
+            version,
+            source,
+        }) => Err(anyhow::anyhow!(
+            "An error occured while trying to retrieve dependencies of {}@{}:\n\n{}",
+            package,
+            version,
+            source
+        )),
+        Err(PubGrubError::DependencyOnTheEmptySet {
+            package,
+            version,
+            dependent,
+        }) => Err(anyhow::anyhow!(
+            "{}@{} has an imposible dependency on {}",
+            package,
+            version,
+            dependent
+        )),
+        Err(PubGrubError::SelfDependency { package, version }) => Err(anyhow::anyhow!(
+            "{}@{} somehow depends on itself",
+            package,
+            version
+        )),
+        Err(PubGrubError::ErrorChoosingPackageVersion(err)) => Err(anyhow::anyhow!(
+            "There was an error while picking packages for dependency resolution:\n\n{}",
+            err
+        )),
+        Err(PubGrubError::ErrorInShouldCancel(err)) => Err(anyhow::anyhow!(
+            "Dependency resolution was cancelled.\n\n{}",
+            err
+        )),
+        Err(PubGrubError::Failure(err)) => Err(anyhow::anyhow!(
+            "An unrecoverable error happened while solving dependencies:\n\n{}",
+            err
+        )),
     };
     match connectivity {
         ConnectivityStrategy::Offline => {
