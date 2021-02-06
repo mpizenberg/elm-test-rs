@@ -6,6 +6,7 @@ mod parser;
 mod run;
 mod utils;
 
+use anyhow::Context;
 use std::ffi::OsString;
 
 #[derive(Debug)]
@@ -18,16 +19,15 @@ enum Args {
 
 /// Main entry point of elm-test-rs.
 fn main() -> anyhow::Result<()> {
-    match main_args() {
-        Ok(Args::Init) => init::main(),
-        Ok(Args::Install { packages }) => install::main(packages),
-        Ok(Args::Run(options)) => run::main(options),
-        Err(e) => anyhow::bail!("Error: {:?}.", e),
+    match main_args().context("There was an error while parsing CLI arguments.")? {
+        Args::Init => init::main(),
+        Args::Install { packages } => install::main(packages),
+        Args::Run(options) => run::main(options),
     }
 }
 
 /// Function parsing the command line arguments and returning an Args object or an error.
-fn main_args() -> Result<Args, Box<dyn std::error::Error>> {
+fn main_args() -> anyhow::Result<Args> {
     let mut args = pico_args::Arguments::from_env();
     match args.subcommand()?.as_deref() {
         Some("init") => Ok(Args::Init),
@@ -47,7 +47,7 @@ fn main_args() -> Result<Args, Box<dyn std::error::Error>> {
 fn no_subcommand_args(
     first_arg: Option<String>,
     mut args: pico_args::Arguments,
-) -> Result<Args, Box<dyn std::error::Error>> {
+) -> anyhow::Result<Args> {
     // Use nanoseconds of current time as seed.
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
     let rng_seed = now.unwrap().as_nanos() as u32;
@@ -60,7 +60,10 @@ fn no_subcommand_args(
         compiler: args
             .opt_value_from_str("--compiler")?
             .unwrap_or_else(|| "elm".to_string()),
-        seed: args.opt_value_from_str("--seed")?.unwrap_or(rng_seed),
+        seed: args
+            .opt_value_from_str("--seed")
+            .context("Invalid argument for --seed")?
+            .unwrap_or(rng_seed),
         fuzz: args.opt_value_from_str("--fuzz")?.unwrap_or(100),
         workers: args
             .opt_value_from_str("--workers")?
@@ -82,7 +85,7 @@ fn no_subcommand_args(
     }))
 }
 
-fn free_args_str(free_args: Vec<OsString>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+fn free_args_str(free_args: Vec<OsString>) -> anyhow::Result<Vec<String>> {
     let mut string_args = Vec::with_capacity(free_args.len());
     for arg in free_args.into_iter() {
         string_args.push(arg.into_string().unwrap());

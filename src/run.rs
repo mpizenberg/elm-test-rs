@@ -1,5 +1,6 @@
 //! Module dealing with actually running all the tests.
 
+use anyhow::Context;
 use glob::glob;
 use notify::{watcher, RecursiveMode, Watcher};
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
@@ -271,7 +272,9 @@ fn main_helper(
         &options.compiler, // compiler
         &compiled_runner,  // output
         &[Path::new("src").join("Runner.elm")],
-    ) {
+    )?
+    .success()
+    {
         if options.watch {
             return Ok(test_directories);
         } else {
@@ -321,7 +324,9 @@ fn main_helper(
         &options.compiler,  // compiler
         &compiled_reporter, // output
         &[&reporter_elm_path],
-    ) {
+    )?
+    .success()
+    {
         if options.watch {
             return Ok(test_directories);
         } else {
@@ -411,14 +416,19 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
 }
 
 /// Compile an Elm module into a JS file (without --optimized)
-fn compile<P1, P2, I, S>(current_dir: P1, compiler: &str, output: P2, src: I) -> bool
+fn compile<P1, P2, I, S>(
+    current_dir: P1,
+    compiler: &str,
+    output: P2,
+    src: I,
+) -> anyhow::Result<std::process::ExitStatus>
 where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let status = Command::new(compiler)
+    Command::new(compiler)
         .arg("make")
         .arg(format!("--output={}", output.as_ref().to_str().unwrap()))
         .args(src)
@@ -428,8 +438,7 @@ where
         .stdout(Stdio::null())
         .stderr(Stdio::inherit())
         .status()
-        .expect("Command elm make failed to start");
-    status.success()
+        .context(format!("I failed to run {}", compiler))
 }
 
 /// Replace the template keys and write result to output file.

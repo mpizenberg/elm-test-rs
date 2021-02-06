@@ -1,3 +1,4 @@
+use anyhow::Context;
 use pubgrub::error::PubGrubError;
 use pubgrub::range::Range;
 use pubgrub::report::{DefaultStringReporter, Reporter};
@@ -39,10 +40,12 @@ impl FromStr for ConnectivityStrategy {
 /// Install elm-explorations/test to the tests dependencies.
 pub fn init(config: ProjectConfig) -> anyhow::Result<ProjectConfig> {
     match config {
-        ProjectConfig::Application(app_config) => {
-            Ok(ProjectConfig::Application(init_app(app_config)?))
-        }
-        ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(init_pkg(pkg_config)?)),
+        ProjectConfig::Application(app_config) => Ok(ProjectConfig::Application(
+            init_app(app_config).context("Error while setting up the app test dependencies")?,
+        )),
+        ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(
+            init_pkg(pkg_config).context("Error while setting up the package test dependencies")?,
+        )),
     }
 }
 
@@ -57,7 +60,7 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(&all_deps, true)?;
+    solve_check(&all_deps, true).context("The app dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -98,7 +101,8 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
         &all_deps,
         "root".to_string(),
         SemVer::zero(),
-    )?;
+    )
+    .context("Adding elm-explorations/test to the dependencies failed")?;
 
     // Add the selected elm-explorations/test version to direct tests deps
     let test_version = solution.get(&test_pkg).unwrap();
@@ -125,7 +129,7 @@ fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(&all_deps, false)?;
+    solve_check(&all_deps, false).context("The package dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -144,7 +148,8 @@ fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
         &all_deps,
         pkg_config.name.clone(),
         SemVer::zero(),
-    )?;
+    )
+    .context("Adding elm-explorations/test to the dependencies failed")?;
 
     // Add elm-explorations/test to tests deps
     pkg_config
@@ -211,7 +216,8 @@ fn solve_helper<P: AsRef<Path>>(
         // TODO: maybe not the best way to handle but should work most of the time.
         deps.insert("elm/json".to_string(), Range::between((1, 0, 0), (2, 0, 0)));
     }
-    let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)?;
+    let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)
+        .context("Combining the project dependencies with the ones of the test runner failed")?;
     solution.remove(pkg_id);
 
     // Split solution into direct and indirect deps.
