@@ -76,12 +76,12 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
                 .test_dependencies
                 .indirect
                 .remove(&test_pkg)
-                .unwrap();
+                .unwrap(); // this unwrap is fine since we check existence just before.
             app_config.test_dependencies.direct.insert(test_pkg, v);
         } else if app_config.dependencies.indirect.contains_key(&test_pkg) {
             eprintln!("elm-explorations/test is already in your indirect dependencies,");
             eprintln!("so we copied the same version in your direct test dependencies.");
-            let v = app_config.dependencies.indirect.get(&test_pkg).unwrap();
+            let v = app_config.dependencies.indirect.get(&test_pkg).unwrap(); // this unwrap is fine since we check existence just before.
             app_config
                 .test_dependencies
                 .direct
@@ -105,7 +105,7 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
     .context("Adding elm-explorations/test to the dependencies failed")?;
 
     // Add the selected elm-explorations/test version to direct tests deps
-    let test_version = solution.get(&test_pkg).unwrap();
+    let test_version = solution.get(&test_pkg).unwrap(); // this unwrap is fine since test_pkg was inserted in all_deps just before.
     app_config
         .test_dependencies
         .direct
@@ -238,7 +238,8 @@ fn solve_helper<P: AsRef<Path>>(
     };
     let source_directories: Vec<String> = src_dirs
         .iter()
-        .map(|p| p.as_ref().to_str().unwrap().to_string())
+        .filter_map(|p| p.as_ref().to_str())
+        .map(|s| s.to_string())
         .collect();
     Ok(ApplicationConfig {
         source_directories,
@@ -325,20 +326,24 @@ fn solve_deps(
     };
     match connectivity {
         ConnectivityStrategy::Offline => {
-            let offline_provider =
-                ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
+            let offline_provider = ElmPackageProviderOffline::new(
+                crate::utils::elm_home().context("Elm home not found")?,
+                "0.19.1",
+            );
             let deps_provider =
                 ProjectAdapter::new(pkg_id.clone(), version, deps, &offline_provider);
             solution(resolve(&deps_provider, pkg_id, version))
         }
         ConnectivityStrategy::Online(strategy) => {
             let online_provider = ElmPackageProviderOnline::new(
-                crate::utils::elm_home(),
+                crate::utils::elm_home().context("Elm home not found")?,
                 "0.19.1",
                 "https://package.elm-lang.org",
                 crate::utils::http_fetch,
                 strategy.clone(),
             )
+            // TODO: Improve the pubgrub_dependency_provider_elm package to have
+            // correctly implemented errors with thiserror.
             .unwrap();
             let deps_provider =
                 ProjectAdapter::new(pkg_id.clone(), version, deps, &online_provider);
