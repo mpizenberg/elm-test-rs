@@ -42,15 +42,15 @@ pub struct Options {
 ///  5. Compile it into a JS file wrapped into a Node worker module.
 ///  6. Compile `Reporter.elm` into a Node module.
 ///  7. Generate and start the Node supervisor program.
-pub fn main(options: Options) {
+pub fn main(options: Options) -> anyhow::Result<()> {
     // The help option is prioritary over the other options
     if options.help {
         crate::help::main();
-        return;
+        return Ok(());
     // The version option is the second priority
     } else if options.version {
         println!("{}", std::env!("CARGO_PKG_VERSION"));
-        return;
+        return Ok(());
     }
 
     // Prints to stderr the current version
@@ -79,7 +79,7 @@ pub fn main(options: Options) {
     };
 
     if options.watch {
-        let mut test_directories = main_helper(&options, &elm_project_root, &reporter);
+        let mut test_directories = main_helper(&options, &elm_project_root, &reporter)?;
         // Create a channel to receive the events.
         let (tx, rx) = channel();
         // Create a watcher object, delivering debounced events.
@@ -97,7 +97,7 @@ pub fn main(options: Options) {
                 Ok(notify::DebouncedEvent::NoticeRemove(_)) => {}
                 Ok(_event) => {
                     // eprintln!("{:?}", _event);
-                    let new_test_directories = main_helper(&options, &elm_project_root, &reporter);
+                    let new_test_directories = main_helper(&options, &elm_project_root, &reporter)?;
                     if new_test_directories != test_directories {
                         for path in test_directories.iter() {
                             watcher.unwatch(path).unwrap();
@@ -112,7 +112,8 @@ pub fn main(options: Options) {
             }
         }
     } else {
-        main_helper(&options, &elm_project_root, &reporter);
+        main_helper(&options, &elm_project_root, &reporter)?;
+        Ok(())
     }
 }
 
@@ -136,7 +137,11 @@ fn console_color_mode() -> &'static str {
     }
 }
 
-fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Vec<PathBuf> {
+fn main_helper(
+    options: &Options,
+    elm_project_root: &Path,
+    reporter: &str,
+) -> anyhow::Result<Vec<PathBuf>> {
     let start_time = std::time::Instant::now();
     // Default with tests in the tests/ directory
     let module_globs = if options.files.is_empty() {
@@ -268,7 +273,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         &[Path::new("src").join("Runner.elm")],
     ) {
         if options.watch {
-            return test_directories;
+            return Ok(test_directories);
         } else {
             std::process::exit(1);
         }
@@ -318,7 +323,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
         &[&reporter_elm_path],
     ) {
         if options.watch {
-            return test_directories;
+            return Ok(test_directories);
         } else {
             std::process::exit(1);
         }
@@ -384,7 +389,7 @@ fn main_helper(options: &Options, elm_project_root: &Path, reporter: &str) -> Ve
     let exit_code = wait_child(&mut supervisor);
     // eprintln!("Exited with code {:?}", exit_code);
     if options.watch {
-        test_directories
+        Ok(test_directories)
     } else {
         std::process::exit(exit_code.unwrap_or(0));
     }

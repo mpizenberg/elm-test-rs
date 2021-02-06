@@ -17,12 +17,12 @@ enum Args {
 }
 
 /// Main entry point of elm-test-rs.
-fn main() {
+fn main() -> anyhow::Result<()> {
     match main_args() {
         Ok(Args::Init) => init::main(),
         Ok(Args::Install { packages }) => install::main(packages),
         Ok(Args::Run(options)) => run::main(options),
-        Err(e) => eprintln!("Error: {:?}.", e),
+        Err(e) => anyhow::bail!("Error: {:?}.", e),
     }
 }
 
