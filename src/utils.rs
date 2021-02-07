@@ -77,3 +77,14 @@ pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
         .context("Error converting the http response body to a String")?;
     Ok(response)
 }
+
+/// Utility function useful to handle failures in an iterator with scan.
+pub fn until_err<T, E>(err: &mut &mut Result<(), E>, item: Result<T, E>) -> Option<T> {
+    match item {
+        Ok(item) => Some(item),
+        Err(e) => {
+            **err = Err(e);
+            None
+        }
+    }
+}
