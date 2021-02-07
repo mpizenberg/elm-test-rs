@@ -498,7 +498,11 @@ where
         .stdout(Stdio::null())
         .stderr(Stdio::inherit())
         .status()
-        .context(format!("Failed to run {}", compiler))
+        .context(format!(r#"Failed to run {}. Are you sure it's in your PATH? If you installed elm locally with npm, maybe try running:
+
+    npx --no-install elm-test-rs
+
+since npx adds your locally installed packages to your PATH"#, compiler))
 }
 
 /// Replace the template keys and write result to output file.
