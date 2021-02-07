@@ -82,10 +82,7 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
             eprintln!("elm-explorations/test is already in your indirect dependencies,");
             eprintln!("so we copied the same version in your direct test dependencies.");
             let v = app_config.dependencies.indirect.get(&test_pkg).unwrap(); // this unwrap is fine since we check existence just before.
-            app_config
-                .test_dependencies
-                .direct
-                .insert(test_pkg, v.clone());
+            app_config.test_dependencies.direct.insert(test_pkg, *v);
         } else {
             eprintln!("elm-explorations/test is already in your dependencies.");
         }
