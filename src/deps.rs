@@ -332,16 +332,18 @@ fn solve_deps(
             solution(resolve(&deps_provider, pkg_id, version))
         }
         ConnectivityStrategy::Online(strategy) => {
-            let online_provider = ElmPackageProviderOnline::new(
+            let online_provider = match ElmPackageProviderOnline::new(
                 crate::utils::elm_home().context("Elm home not found")?,
                 "0.19.1",
                 "https://package.elm-lang.org",
                 crate::utils::http_fetch,
                 strategy.clone(),
-            )
+            ) {
+                Ok(provider) => provider,
+                Err(e) => anyhow::bail!("Failed to initialize the online provider.\n{}", e,),
+            };
             // TODO: Improve the pubgrub_dependency_provider_elm package to have
             // correctly implemented errors with thiserror.
-            .unwrap();
             let deps_provider =
                 ProjectAdapter::new(pkg_id.clone(), version, deps, &online_provider);
             solution(resolve(&deps_provider, pkg_id, version))
