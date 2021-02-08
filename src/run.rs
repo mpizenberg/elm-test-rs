@@ -266,7 +266,7 @@ fn main_helper(
     // Find all potential tests
     // eprintln!("Finding all potential tests ...");
     let mut potential_tests = Vec::new();
-    for (module_name, path) in module_names.iter().zip(modules_abs_paths) {
+    for (module_name, path) in module_names.iter().zip(&modules_abs_paths) {
         let source =
             fs::read_to_string(&path).context(format!("Failed to read {}", path.display()))?;
         for potential_test in crate::parser::potential_tests(&source) {
@@ -390,6 +390,8 @@ fn main_helper(
             ("{{ initialSeed }}", &options.seed.to_string()),
             ("{{ fuzzRuns }}", &options.fuzz.to_string()),
             ("{{ reporter }}", &reporter),
+            ("{{ globs }}", &serde_json::to_string(&options.files).context("Failed to convert the list of tests files passed as CLI arguments to a JSON list")?),
+            ("{{ paths }}", &serde_json::to_string(&modules_abs_paths).context("Failed to convert the list of actual tests files to a JSON list")?),
             ("{{ polyfills }}", polyfills),
         ],
     )

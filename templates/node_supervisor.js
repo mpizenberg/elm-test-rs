@@ -22,6 +22,8 @@ const flags = {
   initialSeed: {{ initialSeed }},
   fuzzRuns: {{ fuzzRuns }},
   mode: "{{ reporter }}",
+  globs: {{ globs }},
+  paths: {{ paths }},
 };
 reporter = Elm.Reporter.init({ flags: flags });
 
