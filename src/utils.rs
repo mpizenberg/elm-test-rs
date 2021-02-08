@@ -67,7 +67,7 @@ fn default_elm_home() -> anyhow::Result<PathBuf> {
 
 pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
     let agent = ureq::builder()
-        .timeout_connect(std::time::Duration::from_secs(1))
+        .timeout_connect(std::time::Duration::from_secs(10))
         .build();
     let response = agent
         .get(url)
