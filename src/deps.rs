@@ -1,12 +1,13 @@
+use anyhow::Context;
 use pubgrub::error::PubGrubError;
 use pubgrub::range::Range;
 use pubgrub::report::{DefaultStringReporter, Reporter};
 use pubgrub::solver::resolve;
 use pubgrub::type_aliases::Map;
 use pubgrub::version::SemanticVersion as SemVer;
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::str::FromStr;
-use std::{collections::BTreeMap, error::Error};
 
 use pubgrub_dependency_provider_elm::constraint::Constraint;
 use pubgrub_dependency_provider_elm::dependency_provider::{
@@ -37,16 +38,18 @@ impl FromStr for ConnectivityStrategy {
 }
 
 /// Install elm-explorations/test to the tests dependencies.
-pub fn init(config: ProjectConfig) -> Result<ProjectConfig, Box<dyn Error>> {
+pub fn init(config: ProjectConfig) -> anyhow::Result<ProjectConfig> {
     match config {
-        ProjectConfig::Application(app_config) => {
-            Ok(ProjectConfig::Application(init_app(app_config)?))
-        }
-        ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(init_pkg(pkg_config)?)),
+        ProjectConfig::Application(app_config) => Ok(ProjectConfig::Application(
+            init_app(app_config).context("Error while setting up the app test dependencies")?,
+        )),
+        ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(
+            init_pkg(pkg_config).context("Error while setting up the package test dependencies")?,
+        )),
     }
 }
 
-fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<dyn Error>> {
+fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConfig> {
     // Retrieve all direct and indirect dependencies
     let indirect_test_deps = app_config.test_dependencies.indirect.iter();
     let mut all_deps: Map<String, Range<SemVer>> = indirect_test_deps
@@ -57,7 +60,7 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(&all_deps, true)?;
+    solve_check(&all_deps, true).context("The app dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -73,8 +76,13 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
                 .test_dependencies
                 .indirect
                 .remove(&test_pkg)
-                .unwrap();
+                .unwrap(); // this unwrap is fine since we check existence just before.
             app_config.test_dependencies.direct.insert(test_pkg, v);
+        } else if app_config.dependencies.indirect.contains_key(&test_pkg) {
+            eprintln!("elm-explorations/test is already in your indirect dependencies,");
+            eprintln!("so we copied the same version in your direct test dependencies.");
+            let v = app_config.dependencies.indirect.get(&test_pkg).unwrap(); // this unwrap is fine since we check existence just before.
+            app_config.test_dependencies.direct.insert(test_pkg, *v);
         } else {
             eprintln!("elm-explorations/test is already in your dependencies.");
         }
@@ -90,10 +98,11 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
         &all_deps,
         "root".to_string(),
         SemVer::zero(),
-    )?;
+    )
+    .context("Adding elm-explorations/test to the dependencies failed")?;
 
     // Add the selected elm-explorations/test version to direct tests deps
-    let test_version = solution.get(&test_pkg).unwrap();
+    let test_version = solution.get(&test_pkg).unwrap(); // this unwrap is fine since test_pkg was inserted in all_deps just before.
     app_config
         .test_dependencies
         .direct
@@ -108,7 +117,7 @@ fn init_app(mut app_config: ApplicationConfig) -> Result<ApplicationConfig, Box<
     Ok(app_config)
 }
 
-fn init_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Error>> {
+fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
     // Retrieve all dependencies
     let test_deps = pkg_config.test_dependencies.iter();
     let mut all_deps: Map<String, Range<SemVer>> = test_deps
@@ -117,7 +126,7 @@ fn init_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Erro
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(&all_deps, false)?;
+    solve_check(&all_deps, false).context("The package dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -136,7 +145,8 @@ fn init_pkg(mut pkg_config: PackageConfig) -> Result<PackageConfig, Box<dyn Erro
         &all_deps,
         pkg_config.name.clone(),
         SemVer::zero(),
-    )?;
+    )
+    .context("Adding elm-explorations/test to the dependencies failed")?;
 
     // Add elm-explorations/test to tests deps
     pkg_config
@@ -150,7 +160,7 @@ pub fn solve<P: AsRef<Path>>(
     connectivity: &ConnectivityStrategy,
     config: &ProjectConfig,
     src_dirs: &[P],
-) -> Result<ApplicationConfig, Box<dyn Error>> {
+) -> anyhow::Result<ApplicationConfig> {
     match config {
         ProjectConfig::Application(app_config) => {
             let normal_deps = app_config.dependencies.direct.iter();
@@ -191,7 +201,7 @@ fn solve_helper<P: AsRef<Path>>(
     pkg_id: &String,
     version: SemVer,
     direct_deps: Map<String, Range<SemVer>>,
-) -> Result<ApplicationConfig, Box<dyn Error>> {
+) -> anyhow::Result<ApplicationConfig> {
     // TODO: there might be an issue if that was already in the dependencies.
     let mut deps = direct_deps;
     deps.insert(
@@ -203,7 +213,8 @@ fn solve_helper<P: AsRef<Path>>(
         // TODO: maybe not the best way to handle but should work most of the time.
         deps.insert("elm/json".to_string(), Range::between((1, 0, 0), (2, 0, 0)));
     }
-    let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)?;
+    let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)
+        .context("Combining the project dependencies with the ones of the test runner failed")?;
     solution.remove(pkg_id);
 
     // Split solution into direct and indirect deps.
@@ -224,7 +235,8 @@ fn solve_helper<P: AsRef<Path>>(
     };
     let source_directories: Vec<String> = src_dirs
         .iter()
-        .map(|p| p.as_ref().to_str().unwrap().to_string())
+        .filter_map(|p| p.as_ref().to_str())
+        .map(|s| s.to_string())
         .collect();
     Ok(ApplicationConfig {
         source_directories,
@@ -237,7 +249,7 @@ fn solve_helper<P: AsRef<Path>>(
 
 /// Check that those dependencies are correct.
 /// Use progressive connectivity mode.
-fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> Result<(), Box<dyn Error>> {
+fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> anyhow::Result<()> {
     let pkg_id = "root".to_string();
     let version = SemVer::zero();
     let mut solution = solve_deps(
@@ -252,7 +264,7 @@ fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> Result<(), Bo
         solution.remove(&pkg_id);
         for p in solution.keys() {
             if !deps.contains_key(p) {
-                return Err(format!("{} is missing in the indirect dependencies", p).into());
+                anyhow::bail!("{} is missing in the indirect dependencies", p);
             }
         }
     }
@@ -265,29 +277,73 @@ fn solve_deps(
     deps: &Map<String, Range<SemVer>>,
     pkg_id: String,
     version: SemVer,
-) -> Result<Map<String, SemVer>, Box<dyn Error>> {
+) -> anyhow::Result<Map<String, SemVer>> {
     let solution = |resolution| match resolution {
         Ok(sol) => Ok(sol),
-        Err(PubGrubError::NoSolution(tree)) => Err(DefaultStringReporter::report(&tree).into()),
-        Err(err) => Err(err.into()),
+        Err(PubGrubError::NoSolution(tree)) => {
+            Err(anyhow::anyhow!(DefaultStringReporter::report(&tree)))
+        }
+        Err(PubGrubError::ErrorRetrievingDependencies {
+            package,
+            version,
+            source,
+        }) => Err(anyhow::anyhow!(
+            "An error occured while trying to retrieve dependencies of {}@{}:\n\n{}",
+            package,
+            version,
+            source
+        )),
+        Err(PubGrubError::DependencyOnTheEmptySet {
+            package,
+            version,
+            dependent,
+        }) => Err(anyhow::anyhow!(
+            "{}@{} has an imposible dependency on {}",
+            package,
+            version,
+            dependent
+        )),
+        Err(PubGrubError::SelfDependency { package, version }) => Err(anyhow::anyhow!(
+            "{}@{} somehow depends on itself",
+            package,
+            version
+        )),
+        Err(PubGrubError::ErrorChoosingPackageVersion(err)) => Err(anyhow::anyhow!(
+            "There was an error while picking packages for dependency resolution:\n\n{}",
+            err
+        )),
+        Err(PubGrubError::ErrorInShouldCancel(err)) => Err(anyhow::anyhow!(
+            "Dependency resolution was cancelled.\n\n{}",
+            err
+        )),
+        Err(PubGrubError::Failure(err)) => Err(anyhow::anyhow!(
+            "An unrecoverable error happened while solving dependencies:\n\n{}",
+            err
+        )),
     };
     match connectivity {
         ConnectivityStrategy::Offline => {
-            let offline_provider =
-                ElmPackageProviderOffline::new(crate::utils::elm_home(), "0.19.1");
+            let offline_provider = ElmPackageProviderOffline::new(
+                crate::utils::elm_home().context("Elm home not found")?,
+                "0.19.1",
+            );
             let deps_provider =
                 ProjectAdapter::new(pkg_id.clone(), version, deps, &offline_provider);
             solution(resolve(&deps_provider, pkg_id, version))
         }
         ConnectivityStrategy::Online(strategy) => {
-            let online_provider = ElmPackageProviderOnline::new(
-                crate::utils::elm_home(),
+            let online_provider = match ElmPackageProviderOnline::new(
+                crate::utils::elm_home().context("Elm home not found")?,
                 "0.19.1",
                 "https://package.elm-lang.org",
                 crate::utils::http_fetch,
                 strategy.clone(),
-            )
-            .unwrap();
+            ) {
+                Ok(provider) => provider,
+                Err(e) => anyhow::bail!("Failed to initialize the online provider.\n{}", e,),
+            };
+            // TODO: Improve the pubgrub_dependency_provider_elm package to have
+            // correctly implemented errors with thiserror.
             let deps_provider =
                 ProjectAdapter::new(pkg_id.clone(), version, deps, &online_provider);
             solution(resolve(&deps_provider, pkg_id, version))

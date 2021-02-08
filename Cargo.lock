@@ -10,6 +10,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "afddf7f520a80dbf76e6f50a35bca42a2331ef227a28b3b6dc5c2e2338d114b1"
+
+[[package]]
 name = "arrayvec"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -105,6 +111,7 @@ dependencies = [
 name = "elm-test-rs"
 version = "0.6.1"
 dependencies = [
+ "anyhow",
  "atty",
  "dirs-next",
  "fs_extra",
@@ -474,7 +481,7 @@ dependencies = [
 [[package]]
 name = "pubgrub-dependency-provider-elm"
 version = "0.1.0"
-source = "git+https://github.com/mpizenberg/pubgrub-dependency-provider-elm?branch=master#c75010471b27fe138811ab24493911304073bd2e"
+source = "git+https://github.com/mpizenberg/pubgrub-dependency-provider-elm?branch=master#c811be5ff699f7b92f49658590dc21003ffb0239"
 dependencies = [
  "pubgrub",
  "rustc-hash",
@@ -616,9 +623,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.61"
+version = "1.0.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fceb2595057b6891a4ee808f70054bd2d12f0e97f1cbb78689b59f676df325a"
+checksum = "ea1c6153794552ea7cf7cf63b1231a25de00ec90db326ba6264440fa08e31486"
 dependencies = [
  "itoa",
  "ryu",
