@@ -25,7 +25,7 @@ pub fn elm_project_root(root: &str) -> anyhow::Result<PathBuf> {
     let current_dir = std::fs::canonicalize(root)
         .context("Could not retrieve the path of the project directory")?;
     parent_traversal("elm.json", &current_dir)
-        .context("I didn't find any elm.json, are you in an Elm project")
+        .context("I didn't find any elm.json. Are you in an Elm project?")
 }
 
 /// Recursively (moving up) look for the file to find.
