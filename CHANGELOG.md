@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- New `--root` CLI option to be able to pass as argument the path to the root
+  of the elm project, containing the `elm.json`.
+
 #### Changed
 
 #### Removed

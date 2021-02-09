@@ -21,6 +21,7 @@ FLAGS:
     --quiet                      # Reduce amount of stderr logs
     --watch                      # Rerun tests on file changes
     --compiler /path/to/compiler # Precise the compiler to use (defaults to just elm)
+    --root /path/to/elm.json/dir # Precise the path to the root directory of the project (defaults to current dir)
     --seed integer               # Run with initial fuzzer seed (defaults to random)
     --fuzz integer               # Precise number of iterations of fuzz tests (defaults to 100)
     --workers integer            # Precise number of worker threads (defaults to number of logic cores)
