@@ -21,7 +21,7 @@ FLAGS:
     --version                    # Print version string and exit
     --quiet                      # Reduce amount of stderr logs
     --watch                      # Rerun tests on file changes
-    --compiler /path/to/compiler # Precise the compiler to use (defaults to just elm)
+    --compiler /path/to/compiler # Use a custom path to an Elm executable (defaults to just elm)
     --project /path/to/elm.json/dir
                                  # Precise the path to the root directory of the project (defaults to current dir)
     --seed integer               # Run with initial fuzzer seed (defaults to random)
