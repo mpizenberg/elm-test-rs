@@ -206,7 +206,7 @@ fn solve_helper<P: AsRef<Path>>(
     let mut deps = direct_deps;
     deps.insert(
         "mpizenberg/elm-test-runner".to_string(),
-        Range::exact((3, 1, 1)),
+        Range::exact((4, 0, 1)),
     );
     // Add elm/json to the deps since it's used in Runner.elm and Reporter.elm.
     if !deps.contains_key("elm/json") {

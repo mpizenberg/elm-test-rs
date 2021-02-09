@@ -109,7 +109,7 @@ dependencies = [
 
 [[package]]
 name = "elm-test-rs"
-version = "0.6.1"
+version = "1.0.0-alpha"
 dependencies = [
  "anyhow",
  "atty",
