@@ -61,7 +61,7 @@ pub fn main(options: Options) -> anyhow::Result<()> {
             "\nelm-test-rs {} for elm 0.19.1",
             std::env!("CARGO_PKG_VERSION")
         );
-        eprintln!("-----------------\n");
+        eprintln!("--------------------------------\n");
     }
 
     // Verify that we are in an Elm project
