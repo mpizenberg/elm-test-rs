@@ -57,7 +57,10 @@ pub fn main(options: Options) -> anyhow::Result<()> {
 
     // Prints to stderr the current version
     if !options.quiet {
-        eprintln!("\nelm-test-rs {}", std::env!("CARGO_PKG_VERSION"));
+        eprintln!(
+            "\nelm-test-rs {} for elm 0.19.1",
+            std::env!("CARGO_PKG_VERSION")
+        );
         eprintln!("-----------------\n");
     }
 
