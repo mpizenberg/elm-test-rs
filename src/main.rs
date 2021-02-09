@@ -60,8 +60,8 @@ fn no_subcommand_args(
         compiler: args
             .opt_value_from_str("--compiler")?
             .unwrap_or_else(|| "elm".to_string()),
-        root: args
-            .opt_value_from_str("--root")?
+        project: args
+            .opt_value_from_str("--project")?
             .unwrap_or_else(|| ".".to_string()),
         seed: args
             .opt_value_from_str("--seed")
