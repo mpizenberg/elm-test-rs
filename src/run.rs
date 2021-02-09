@@ -77,9 +77,10 @@ pub fn main(options: Options) -> anyhow::Result<()> {
         "junit" => "junit".to_string(),
         "exercism" => "exercism".to_string(),
         value => {
-            eprintln!("Wrong --report value: {}", value);
-            crate::help::main();
-            std::process::exit(1);
+            anyhow::bail!(
+                "Wrong --report value: {}\nUse elm-test-rs --help to know which report types are available.",
+                value
+            );
         }
     };
 
