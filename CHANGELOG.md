@@ -7,10 +7,15 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
-- New `--root` CLI option to be able to pass as argument the path to the root
+- New `--project` CLI option to be able to pass as argument the path to the root
   of the elm project, containing the `elm.json`.
+- The globs CLI arguments and resulting found tests modules paths
+  are now passed as arguments `globs` and `paths` to the reporter flags.
 
 #### Changed
+
+- Http timeouts are increased from 1s to 10s.
+- Updated the Elm submodule for the test runner.
 
 #### Removed
 
