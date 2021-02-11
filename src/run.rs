@@ -13,16 +13,26 @@ use std::time::Duration;
 
 use crate::include_template;
 
+#[derive(Debug)]
+/// Options passed as arguments.
+pub struct Options {
+    pub seed: u32,
+    pub fuzz: u32,
+    pub workers: u32,
+    pub filter: Option<String>,
+    pub reporter: String,
+}
+
 /// Wrapper for the main_helper function with "watch" functionality.
 /// This will generate, compile and run the tests.
 pub fn main(
     elm_home: &Path,
     elm_project_root: &Path,
-    options: crate::make::Options,
-    reporter: &str,
+    make_options: crate::make::Options,
+    run_options: Options,
 ) -> anyhow::Result<()> {
     // Prints to stderr the current version
-    if !options.quiet {
+    if !make_options.quiet {
         eprintln!(
             "\nelm-test-rs {} for elm 0.19.1",
             std::env!("CARGO_PKG_VERSION")
@@ -30,9 +40,9 @@ pub fn main(
         eprintln!("--------------------------------\n");
     }
 
-    if options.watch {
+    if make_options.watch {
         let (mut test_directories, _) =
-            main_helper(&options, elm_home, elm_project_root, reporter)?;
+            main_helper(elm_home, elm_project_root, &make_options, &run_options)?;
         // Create a channel to receive the events.
         let (tx, rx) = channel();
         // Create a watcher object, delivering debounced events.
@@ -55,7 +65,7 @@ pub fn main(
                 _event => {
                     // eprintln!("{:?}", _event);
                     let (new_test_directories, _) =
-                        main_helper(&options, elm_home, elm_project_root, reporter)?;
+                        main_helper(elm_home, elm_project_root, &make_options, &run_options)?;
                     if new_test_directories != test_directories {
                         for path in test_directories.iter() {
                             watcher
@@ -73,7 +83,7 @@ pub fn main(
             }
         }
     } else {
-        let (_, exit_code) = main_helper(&options, elm_home, elm_project_root, reporter)?;
+        let (_, exit_code) = main_helper(elm_home, elm_project_root, &make_options, &run_options)?;
         std::process::exit(exit_code);
     }
 }
@@ -89,16 +99,16 @@ pub fn main(
 /// Returns the updated test_directories and the last exit code.
 /// (useful for watch mode).
 fn main_helper(
-    options: &crate::make::Options,
     elm_home: &Path,
     elm_project_root: &Path,
-    reporter: &str,
+    make_options: &crate::make::Options,
+    run_options: &Options,
 ) -> anyhow::Result<(Vec<PathBuf>, i32)> {
     // let start_time = std::time::Instant::now();
 
     // Compile the Runner.elm file.
     let (test_directories, tests_root, modules_abs_paths, compiled_runner) =
-        match crate::make::main_helper(options, elm_home, elm_project_root)? {
+        match crate::make::main_helper(elm_home, elm_project_root, make_options)? {
             Output::MakeFailure { test_directories } => return Ok((test_directories, 1)),
             Output::MakeSuccess {
                 test_directories,
@@ -137,7 +147,7 @@ fn main_helper(
     let polyfills = include_template!("node_polyfills.js");
     let node_runner_template = include_template!("node_runner.js");
     let node_runner_path = tests_root.join("js").join("node_runner.js");
-    let filter = match &options.filter {
+    let filter = match &run_options.filter {
         None => "null".to_string(),
         Some(s) => format!("\"{}\"", s),
     };
@@ -145,8 +155,8 @@ fn main_helper(
         node_runner_template, // template
         &node_runner_path,    // output
         &[
-            ("{{ initialSeed }}", &options.seed.to_string()),
-            ("{{ fuzzRuns }}", &options.fuzz.to_string()),
+            ("{{ initialSeed }}", &run_options.seed.to_string()),
+            ("{{ fuzzRuns }}", &run_options.fuzz.to_string()),
             ("{{ filter }}", &filter),
             ("{{ polyfills }}", polyfills),
         ],
@@ -163,9 +173,9 @@ fn main_helper(
     // let compile_time = std::time::Instant::now();
     if !crate::make::compile(
         elm_home,
-        &tests_root,        // current_dir
-        &options.compiler,  // compiler
-        &compiled_reporter, // output
+        &tests_root,            // current_dir
+        &make_options.compiler, // compiler
+        &compiled_reporter,     // output
         &[&reporter_elm_path],
     )?
     .success()
@@ -180,11 +190,11 @@ fn main_helper(
         node_supervisor_template, // template
         &node_supervisor_js_file, // output
         &[
-            ("{{ workersCount }}", &options.workers.to_string()),
-            ("{{ initialSeed }}", &options.seed.to_string()),
-            ("{{ fuzzRuns }}", &options.fuzz.to_string()),
-            ("{{ reporter }}", reporter),
-            ("{{ globs }}", &serde_json::to_string(&options.files).context("Failed to convert the list of tests files passed as CLI arguments to a JSON list")?),
+            ("{{ workersCount }}", &run_options.workers.to_string()),
+            ("{{ initialSeed }}", &run_options.seed.to_string()),
+            ("{{ fuzzRuns }}", &run_options.fuzz.to_string()),
+            ("{{ reporter }}", &run_options.reporter),
+            ("{{ globs }}", &serde_json::to_string(&make_options.files).context("Failed to convert the list of tests files passed as CLI arguments to a JSON list")?),
             ("{{ paths }}", &serde_json::to_string(&modules_abs_paths).context("Failed to convert the list of actual tests files to a JSON list")?),
             ("{{ polyfills }}", polyfills),
         ],

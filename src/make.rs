@@ -20,10 +20,6 @@ pub struct Options {
     pub quiet: bool,
     pub watch: bool,
     pub compiler: String,
-    pub seed: u32,
-    pub fuzz: u32,
-    pub workers: u32,
-    pub filter: Option<String>,
     pub connectivity: crate::deps::ConnectivityStrategy,
     pub files: Vec<String>,
 }
@@ -47,7 +43,7 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
     }
 
     if options.watch {
-        let mut test_directories = match main_helper(&options, elm_home, elm_project_root)? {
+        let mut test_directories = match main_helper(elm_home, elm_project_root, &options)? {
             Output::MakeFailure { test_directories } => test_directories,
             Output::MakeSuccess {
                 test_directories, ..
@@ -75,7 +71,7 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
                 _event => {
                     // eprintln!("{:?}", _event);
                     let new_test_directories =
-                        match main_helper(&options, elm_home, elm_project_root)? {
+                        match main_helper(elm_home, elm_project_root, &options)? {
                             Output::MakeFailure { test_directories } => test_directories,
                             Output::MakeSuccess {
                                 test_directories, ..
@@ -98,7 +94,7 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
             }
         }
     } else {
-        match main_helper(&options, elm_home, elm_project_root)? {
+        match main_helper(elm_home, elm_project_root, &options)? {
             Output::MakeFailure { .. } => anyhow::bail!("Compilation failed"),
             Output::MakeSuccess { .. } => Ok(()),
         }
@@ -120,9 +116,9 @@ pub enum Output {
 /// Do main stuff and outputs the paths to the tests directories
 /// (useful for watch mode).
 pub fn main_helper(
-    options: &Options,
     elm_home: &Path,
     elm_project_root: &Path,
+    options: &Options,
 ) -> anyhow::Result<Output> {
     let start_time = std::time::Instant::now();
     // Default with tests in the tests/ directory

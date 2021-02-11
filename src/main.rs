@@ -12,109 +12,98 @@ use pubgrub_dependency_provider_elm::dependency_provider::VersionStrategy;
 
 /// Main entry point of elm-test-rs.
 fn main() -> anyhow::Result<()> {
+    // Arguments available to all subcommands.
+    let global_args = vec![
+        Arg::with_name("elm-home")
+            .long("elm-home")
+            .global(true)
+            .takes_value(true)
+            .value_name("path")
+            .env("ELM_HOME")
+            .help("Use a custom directory for elm home"),
+        Arg::with_name("project")
+            .long("project")
+            .global(true)
+            .default_value(".")
+            .value_name("path")
+            .help("Path to the root directory of the project"),
+        Arg::with_name("offline")
+            .long("offline")
+            .global(true)
+            .help("No network call made by elm-test-rs"),
+    ];
+    // Arguments shared with the "make" subcommand.
+    let make_args = vec![
+        Arg::with_name("quiet")
+            .long("quiet")
+            .help("Reduce amount of stderr logs"),
+        Arg::with_name("watch")
+            .long("watch")
+            .help("Rerun tests on file changes"),
+        Arg::with_name("compiler")
+            .long("compiler")
+            .default_value("elm")
+            .help("Use a custom path to an Elm executable"),
+        Arg::with_name("dependencies")
+            .long("dependencies")
+            .takes_value(true)
+            .value_name("strategy")
+            .possible_values(&["newest", "oldest"])
+            .conflicts_with("offline")
+            .help("Choose the newest or oldest compatible dependencies (mostly useful for package authors)"),
+        Arg::with_name("PATH or GLOB")
+            .multiple(true)
+            .help("Path to a test module, or glob pattern such as tests/*.elm")
+    ];
+    let run_args = vec![
+        Arg::with_name("seed")
+            .long("seed")
+            .takes_value(true)
+            .help("Initial random seed for fuzz tests [default: <random>]"),
+        Arg::with_name("fuzz")
+            .long("fuzz")
+            .default_value("100")
+            .value_name("N")
+            .help("Number of iterations in fuzz tests"),
+        Arg::with_name("workers")
+            .long("workers")
+            .takes_value(true)
+            .value_name("N")
+            .help("Number of worker threads [default: <number of logic cores>]"),
+        Arg::with_name("filter")
+            .long("filter")
+            .takes_value(true)
+            .value_name("string")
+            .help("Keep only tests whose description contains the given string"),
+        Arg::with_name("report")
+            .long("report")
+            .default_value("console")
+            .possible_value("console")
+            .possible_value("consoleDebug")
+            .possible_value("json")
+            .possible_value("junit")
+            .possible_value("exercism")
+            .help("Print results to stdout in the given format"),
+    ];
     let matches = App::new("elm-test-rs")
         .version(std::env!("CARGO_PKG_VERSION"))
-        .arg(
-            Arg::with_name("quiet")
-                .long("quiet")
-                .help("Reduce amount of stderr logs"),
-        )
-        .arg(
-            Arg::with_name("watch")
-                .long("watch")
-                .help("Rerun tests on file changes"),
-        )
-        .arg(
-            Arg::with_name("elm-home")
-                .long("elm-home")
-                .global(true)
-                .takes_value(true)
-                .value_name("path")
-                .env("ELM_HOME")
-                .help("Use a custom directory for elm home"),
-        )
-        .arg(
-            Arg::with_name("compiler")
-                .long("compiler")
-                .default_value("elm")
-                .help("Use a custom path to an Elm executable"),
-        )
-        .arg(
-            Arg::with_name("project")
-                .long("project")
-                .global(true)
-                .default_value(".")
-                .value_name("path")
-                .help("Path to the root directory of the project"),
-        )
-        .arg(
-            Arg::with_name("seed")
-                .long("seed")
-                .takes_value(true)
-                .help("Initial random seed for fuzz tests [default: <random>]"),
-        )
-        .arg(
-            Arg::with_name("fuzz")
-                .long("fuzz")
-                .default_value("100")
-                .value_name("N")
-                .help("Number of iterations in fuzz tests"),
-        )
-        .arg(
-            Arg::with_name("workers")
-                .long("workers")
-                .takes_value(true)
-                .value_name("N")
-                .help("Number of worker threads [default: <number of logic cores>]"),
-        )
-        .arg(
-            Arg::with_name("filter")
-                .long("filter")
-                .takes_value(true)
-                .value_name("string")
-                .help("Keep only tests whose description contains the given string"),
-        )
-        .arg(
-            Arg::with_name("report")
-                .long("report")
-                .default_value("console")
-                .possible_value("console")
-                .possible_value("consoleDebug")
-                .possible_value("json")
-                .possible_value("junit")
-                .possible_value("exercism")
-                .help("Print results to stdout in the given format"),
-        )
-        .arg(
-            Arg::with_name("offline")
-                .long("offline")
-                .global(true)
-                .help("No network call made by elm-test-rs"),
-        )
-        .arg(
-            Arg::with_name("dependencies")
-                .long("dependencies")
-                .takes_value(true)
-                .value_name("strategy")
-                .possible_values(&["newest", "oldest"])
-                .conflicts_with("offline")
-                .help("Choose the newest or oldest compatible dependencies (mostly useful for package authors)"),
-        )
-        .arg(
-            Arg::with_name("PATH or GLOB")
-                .multiple(true)
-                .help("Path to a test module, or glob pattern such as tests/*.elm")
-        )
+        .args(&global_args)
+        .args(&make_args)
+        .args(&run_args)
         .subcommand(
             SubCommand::with_name("init")
                 .about("Initialize tests dependencies and directory")
-                .setting(AppSettings::DisableVersion)
+                .setting(AppSettings::DisableVersion),
         )
         .subcommand(
             SubCommand::with_name("install")
                 .about("Install packages to \"test-dependencies\" in your elm.json")
-                .arg(Arg::with_name("PACKAGE").multiple(true).help("Package to install"))
-                .setting(AppSettings::DisableVersion)
+                .arg(
+                    Arg::with_name("PACKAGE")
+                        .multiple(true)
+                        .help("Package to install"),
+                )
+                .setting(AppSettings::DisableVersion),
         )
         .get_matches();
 
@@ -182,14 +171,10 @@ fn main() -> anyhow::Result<()> {
                 .flatten()
                 .map(|s| s.to_string())
                 .collect();
-            let options = make::Options {
+            let make_options = make::Options {
                 quiet: matches.is_present("quiet"),
                 watch: matches.is_present("watch"),
                 compiler: matches.value_of("compiler").unwrap().to_string(), // unwrap is fine since compiler has a default value
-                seed,
-                fuzz,
-                workers,
-                filter: matches.value_of("filter").map(|s| s.to_string()),
                 connectivity,
                 files,
             };
@@ -198,7 +183,14 @@ fn main() -> anyhow::Result<()> {
                 "console" => console_color_mode(),
                 r => r,
             };
-            run::main(&elm_home, &elm_project_root, options, report)
+            let run_options = run::Options {
+                seed,
+                fuzz,
+                workers,
+                filter: matches.value_of("filter").map(|s| s.to_string()),
+                reporter: report.to_string(),
+            };
+            run::main(&elm_home, &elm_project_root, make_options, run_options)
         }
     }
 }
