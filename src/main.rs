@@ -167,6 +167,7 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
         (false, Some("oldest")) => deps::ConnectivityStrategy::Online(VersionStrategy::Oldest),
         (false, Some(_)) => anyhow::bail!("Invalid --dependencies value"),
     };
+    let compiler = arg_matches.value_of("compiler").unwrap().to_string(); // unwrap is fine since compiler has a default value
     let files: Vec<String> = arg_matches
         .values_of("PATH or GLOB")
         .into_iter()
@@ -176,7 +177,7 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
     Ok(make::Options {
         quiet: arg_matches.is_present("quiet"),
         watch: arg_matches.is_present("watch"),
-        compiler: arg_matches.value_of("compiler").unwrap().to_string(), // unwrap is fine since compiler has a default value
+        compiler,
         connectivity,
         files,
     })
