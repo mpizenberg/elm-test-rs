@@ -1,6 +1,7 @@
 mod deps;
 mod init;
 mod install;
+mod make;
 mod parser;
 mod run;
 mod utils;
@@ -8,7 +9,6 @@ mod utils;
 use anyhow::Context;
 use clap::{App, AppSettings, Arg, SubCommand};
 use pubgrub_dependency_provider_elm::dependency_provider::VersionStrategy;
-use std::path::PathBuf;
 
 /// Main entry point of elm-test-rs.
 fn main() -> anyhow::Result<()> {
@@ -80,8 +80,6 @@ fn main() -> anyhow::Result<()> {
                 .default_value("console")
                 .possible_value("console")
                 .possible_value("consoleDebug")
-                .possible_value("consoleColor")
-                .possible_value("consoleNoColor")
                 .possible_value("json")
                 .possible_value("junit")
                 .possible_value("exercism")
@@ -184,7 +182,7 @@ fn main() -> anyhow::Result<()> {
                 .flatten()
                 .map(|s| s.to_string())
                 .collect();
-            let options = run::Options {
+            let options = make::Options {
                 quiet: matches.is_present("quiet"),
                 watch: matches.is_present("watch"),
                 compiler: matches.value_of("compiler").unwrap().to_string(), // unwrap is fine since compiler has a default value
@@ -192,11 +190,35 @@ fn main() -> anyhow::Result<()> {
                 fuzz,
                 workers,
                 filter: matches.value_of("filter").map(|s| s.to_string()),
-                report: matches.value_of("report").unwrap().to_string(), // unwrap is fined since there is a default value
                 connectivity,
                 files,
             };
-            run::main(&elm_home, &elm_project_root, options)
+            let report = match matches.value_of("report").unwrap() {
+                // unwrap is fine since there is a default value
+                "console" => console_color_mode(),
+                r => r,
+            };
+            run::main(&elm_home, &elm_project_root, options, report)
+        }
+    }
+}
+
+/// Returns "consoleColor" or "consoleNoColor" based on the following two standards:
+///  - https://bixense.com/clicolors/
+///  - https://no-color.org/
+fn console_color_mode() -> &'static str {
+    if &std::env::var("CLICOLOR_FORCE").unwrap_or_else(|_| "0".to_string()) != "0" {
+        "consoleColor"
+    } else if std::env::var("NO_COLOR").is_ok() {
+        "consoleNoColor"
+    } else {
+        match (
+            atty::is(atty::Stream::Stdout),
+            std::env::var("CLICOLOR").as_deref(),
+        ) {
+            (false, _) => "consoleNoColor",
+            (true, Ok("0")) => "consoleNoColor",
+            (true, _) => "consoleColor",
         }
     }
 }
