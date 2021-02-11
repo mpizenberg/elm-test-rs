@@ -67,6 +67,9 @@ pub fn main(options: Options) -> anyhow::Result<()> {
     // Verify that we are in an Elm project
     let elm_project_root = crate::utils::elm_project_root(&options.project)?;
 
+    // Retrieve the elm home directory
+    let elm_home = crate::utils::elm_home().context("Elm home not found")?;
+
     // Validate reporter mode
     let reporter = match options.report.as_ref() {
         "console" => console_color_mode().to_string(), // returns "consoleColor" or "consoleNoColor"
@@ -85,7 +88,7 @@ pub fn main(options: Options) -> anyhow::Result<()> {
     };
 
     if options.watch {
-        let mut test_directories = main_helper(&options, &elm_project_root, &reporter)?;
+        let mut test_directories = main_helper(&options, &elm_home, &elm_project_root, &reporter)?;
         // Create a channel to receive the events.
         let (tx, rx) = channel();
         // Create a watcher object, delivering debounced events.
@@ -107,7 +110,8 @@ pub fn main(options: Options) -> anyhow::Result<()> {
                 notify::DebouncedEvent::NoticeRemove(_) => {}
                 _event => {
                     // eprintln!("{:?}", _event);
-                    let new_test_directories = main_helper(&options, &elm_project_root, &reporter)?;
+                    let new_test_directories =
+                        main_helper(&options, &elm_home, &elm_project_root, &reporter)?;
                     if new_test_directories != test_directories {
                         for path in test_directories.iter() {
                             watcher
@@ -125,7 +129,7 @@ pub fn main(options: Options) -> anyhow::Result<()> {
             }
         }
     } else {
-        main_helper(&options, &elm_project_root, &reporter)?;
+        main_helper(&options, &elm_home, &elm_project_root, &reporter)?;
         Ok(())
     }
 }
@@ -154,6 +158,7 @@ fn console_color_mode() -> &'static str {
 /// (useful for watch mode).
 fn main_helper(
     options: &Options,
+    elm_home: &Path,
     elm_project_root: &Path,
     reporter: &str,
 ) -> anyhow::Result<Vec<PathBuf>> {
@@ -231,9 +236,13 @@ fn main_helper(
 
     // Generate an elm.json for the to-be-generated Runner.elm.
     // eprintln!("Generating the elm.json for the Runner.elm");
-    let tests_config =
-        crate::deps::solve(&options.connectivity, &info, &source_directories_for_runner)
-            .context("Failed to solve dependencies for tests to run")?;
+    let tests_config = crate::deps::solve(
+        elm_home,
+        &options.connectivity,
+        &info,
+        source_directories_for_runner.as_slice(),
+    )
+    .context("Failed to solve dependencies for tests to run")?;
     match (options.quiet, &options.connectivity) {
         (true, _) | (_, crate::deps::ConnectivityStrategy::Progressive) => (),
         _ => eprintln!(

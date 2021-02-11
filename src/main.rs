@@ -7,6 +7,7 @@ mod run;
 mod utils;
 
 use anyhow::Context;
+use clap::{App, AppSettings, Arg, SubCommand};
 use std::ffi::OsString;
 
 #[derive(Debug)]
@@ -19,8 +20,121 @@ enum Args {
 
 /// Main entry point of elm-test-rs.
 fn main() -> anyhow::Result<()> {
+    let matches = App::new("elm-test-rs")
+        .version(std::env!("CARGO_PKG_VERSION"))
+        .arg(
+            Arg::with_name("quiet")
+                .long("quiet")
+                .help("Reduce amount of stderr logs"),
+        )
+        .arg(
+            Arg::with_name("watch")
+                .long("watch")
+                .help("Rerun tests on file changes"),
+        )
+        .arg(
+            Arg::with_name("elm-home")
+                .long("elm-home")
+                .global(true)
+                .takes_value(true)
+                .value_name("path")
+                .env("ELM_HOME")
+                .help("Use a custom directory for elm home"),
+        )
+        .arg(
+            Arg::with_name("compiler")
+                .long("compiler")
+                .default_value("elm")
+                .help("Use a custom path to an Elm executable"),
+        )
+        .arg(
+            Arg::with_name("project")
+                .long("project")
+                .global(true)
+                .default_value(".")
+                .value_name("path")
+                .help("Path to the root directory of the project"),
+        )
+        .arg(
+            Arg::with_name("seed")
+                .long("seed")
+                .takes_value(true)
+                .help("Initial random seed for fuzz tests [default: <random>]"),
+        )
+        .arg(
+            Arg::with_name("fuzz")
+                .long("fuzz")
+                .default_value("100")
+                .value_name("N")
+                .help("Number of iterations in fuzz tests"),
+        )
+        .arg(
+            Arg::with_name("workers")
+                .long("workers")
+                .takes_value(true)
+                .value_name("N")
+                .help("Number of worker threads [default: <number of logic cores>]"),
+        )
+        .arg(
+            Arg::with_name("filter")
+                .long("filter")
+                .takes_value(true)
+                .value_name("string")
+                .help("Keep only tests whose description contains the given string"),
+        )
+        .arg(
+            Arg::with_name("report")
+                .long("report")
+                .default_value("console")
+                .possible_value("console")
+                .possible_value("consoleDebug")
+                .possible_value("consoleColor")
+                .possible_value("consoleNoColor")
+                .possible_value("json")
+                .possible_value("junit")
+                .possible_value("exercism")
+                .help("Print results to stdout in the given format"),
+        )
+        .arg(
+            Arg::with_name("offline")
+                .long("offline")
+                .help("No network call made by elm-test-rs"),
+        )
+        .arg(
+            Arg::with_name("dependencies")
+                .long("dependencies")
+                .takes_value(true)
+                .value_name("strategy")
+                .possible_values(&["newest", "oldest"])
+                .conflicts_with("offline")
+                .help("Choose the newest or oldest compatible dependencies (mostly useful for package authors)"),
+        )
+        .arg(
+            Arg::with_name("PATH or GLOB")
+                .multiple(true)
+                .help("Path to a test module, or glob pattern such as tests/*.elm")
+        )
+        .subcommand(
+            SubCommand::with_name("init")
+                .about("Initialize tests dependencies and directory")
+                .setting(AppSettings::DisableVersion)
+        )
+        .subcommand(
+            SubCommand::with_name("install")
+                .about("Install packages to \"test-dependencies\" in your elm.json")
+                .setting(AppSettings::DisableVersion)
+        )
+        .get_matches();
+    Ok(())
+}
+
+/// Main entry point of elm-test-rs.
+fn main_() -> anyhow::Result<()> {
     match main_args().context("There was an error while parsing CLI arguments.")? {
-        Args::Init => init::main(),
+        Args::Init => init::main(
+            utils::elm_home().context("Elm home not found")?,
+            utils::elm_project_root("")?,
+        ),
         Args::Install { packages } => install::main(packages),
         Args::Run(options) => run::main(options),
     }
