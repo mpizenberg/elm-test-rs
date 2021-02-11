@@ -38,18 +38,23 @@ impl FromStr for ConnectivityStrategy {
 }
 
 /// Install elm-explorations/test to the tests dependencies.
-pub fn init(config: ProjectConfig) -> anyhow::Result<ProjectConfig> {
+pub fn init<P: AsRef<Path>>(elm_home: P, config: ProjectConfig) -> anyhow::Result<ProjectConfig> {
     match config {
         ProjectConfig::Application(app_config) => Ok(ProjectConfig::Application(
-            init_app(app_config).context("Error while setting up the app test dependencies")?,
+            init_app(elm_home.as_ref(), app_config)
+                .context("Error while setting up the app test dependencies")?,
         )),
         ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(
-            init_pkg(pkg_config).context("Error while setting up the package test dependencies")?,
+            init_pkg(elm_home.as_ref(), pkg_config)
+                .context("Error while setting up the package test dependencies")?,
         )),
     }
 }
 
-fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConfig> {
+fn init_app(
+    elm_home: &Path,
+    mut app_config: ApplicationConfig,
+) -> anyhow::Result<ApplicationConfig> {
     // Retrieve all direct and indirect dependencies
     let indirect_test_deps = app_config.test_dependencies.indirect.iter();
     let mut all_deps: Map<String, Range<SemVer>> = indirect_test_deps
@@ -60,7 +65,7 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(&all_deps, true).context("The app dependencies are incorrect")?;
+    solve_check(elm_home, &all_deps, true).context("The app dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -94,6 +99,7 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
 
     // Solve dependencies
     let solution = solve_deps(
+        elm_home,
         &ConnectivityStrategy::Progressive,
         &all_deps,
         "root".to_string(),
@@ -117,7 +123,7 @@ fn init_app(mut app_config: ApplicationConfig) -> anyhow::Result<ApplicationConf
     Ok(app_config)
 }
 
-fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
+fn init_pkg(elm_home: &Path, mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
     // Retrieve all dependencies
     let test_deps = pkg_config.test_dependencies.iter();
     let mut all_deps: Map<String, Range<SemVer>> = test_deps
@@ -126,7 +132,7 @@ fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(&all_deps, false).context("The package dependencies are incorrect")?;
+    solve_check(elm_home, &all_deps, false).context("The package dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -141,6 +147,7 @@ fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
 
     // Solve dependencies to check that elm-explorations/test is compatible
     solve_deps(
+        elm_home,
         &ConnectivityStrategy::Progressive,
         &all_deps,
         pkg_config.name.clone(),
@@ -157,6 +164,7 @@ fn init_pkg(mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
 
 /// Solve dependencies needed to run the tests.
 pub fn solve<P: AsRef<Path>>(
+    elm_home: &Path,
     connectivity: &ConnectivityStrategy,
     config: &ProjectConfig,
     src_dirs: &[P],
@@ -170,6 +178,7 @@ pub fn solve<P: AsRef<Path>>(
                 .collect();
             // TODO: take somehow into account already picked versions for indirect deps.
             solve_helper(
+                elm_home,
                 connectivity,
                 src_dirs,
                 &"root".to_string(),
@@ -184,6 +193,7 @@ pub fn solve<P: AsRef<Path>>(
                 .map(|(p, c)| (p.clone(), c.0.clone()))
                 .collect();
             solve_helper(
+                elm_home,
                 connectivity,
                 src_dirs,
                 &pkg_config.name,
@@ -196,6 +206,7 @@ pub fn solve<P: AsRef<Path>>(
 
 #[allow(clippy::ptr_arg)]
 fn solve_helper<P: AsRef<Path>>(
+    elm_home: &Path,
     connectivity: &ConnectivityStrategy,
     src_dirs: &[P],
     pkg_id: &String,
@@ -213,7 +224,7 @@ fn solve_helper<P: AsRef<Path>>(
         // TODO: maybe not the best way to handle but should work most of the time.
         deps.insert("elm/json".to_string(), Range::between((1, 0, 0), (2, 0, 0)));
     }
-    let mut solution = solve_deps(connectivity, &deps, pkg_id.clone(), version)
+    let mut solution = solve_deps(elm_home, connectivity, &deps, pkg_id.clone(), version)
         .context("Combining the project dependencies with the ones of the test runner failed")?;
     solution.remove(pkg_id);
 
@@ -249,10 +260,15 @@ fn solve_helper<P: AsRef<Path>>(
 
 /// Check that those dependencies are correct.
 /// Use progressive connectivity mode.
-fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> anyhow::Result<()> {
+fn solve_check(
+    elm_home: &Path,
+    deps: &Map<String, Range<SemVer>>,
+    is_app: bool,
+) -> anyhow::Result<()> {
     let pkg_id = "root".to_string();
     let version = SemVer::zero();
     let mut solution = solve_deps(
+        elm_home,
         &ConnectivityStrategy::Progressive,
         deps,
         pkg_id.clone(),
@@ -273,6 +289,7 @@ fn solve_check(deps: &Map<String, Range<SemVer>>, is_app: bool) -> anyhow::Resul
 
 /// Solve project dependencies.
 fn solve_deps(
+    elm_home: &Path,
     connectivity: &ConnectivityStrategy,
     deps: &Map<String, Range<SemVer>>,
     pkg_id: String,
@@ -323,17 +340,14 @@ fn solve_deps(
     };
     match connectivity {
         ConnectivityStrategy::Offline => {
-            let offline_provider = ElmPackageProviderOffline::new(
-                crate::utils::elm_home().context("Elm home not found")?,
-                "0.19.1",
-            );
+            let offline_provider = ElmPackageProviderOffline::new(elm_home, "0.19.1");
             let deps_provider =
                 ProjectAdapter::new(pkg_id.clone(), version, deps, &offline_provider);
             solution(resolve(&deps_provider, pkg_id, version))
         }
         ConnectivityStrategy::Online(strategy) => {
             let online_provider = match ElmPackageProviderOnline::new(
-                crate::utils::elm_home().context("Elm home not found")?,
+                elm_home,
                 "0.19.1",
                 "https://package.elm-lang.org",
                 crate::utils::http_fetch,
@@ -349,6 +363,7 @@ fn solve_deps(
             solution(resolve(&deps_provider, pkg_id, version))
         }
         ConnectivityStrategy::Progressive => solve_deps(
+            elm_home,
             &ConnectivityStrategy::Offline,
             deps,
             pkg_id.clone(),
@@ -356,6 +371,7 @@ fn solve_deps(
         )
         .or_else(|_| {
             solve_deps(
+                elm_home,
                 &ConnectivityStrategy::Online(VersionStrategy::Newest),
                 deps,
                 pkg_id,
