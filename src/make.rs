@@ -272,6 +272,7 @@ pub fn main_helper(
     )?
     .success()
     {
+        eprintln!("✓ Compilation of tests modules succeeded");
         Ok(Output::MakeSuccess {
             test_directories,
             tests_root,

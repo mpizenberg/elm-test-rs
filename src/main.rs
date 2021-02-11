@@ -105,6 +105,12 @@ fn main() -> anyhow::Result<()> {
                 )
                 .setting(AppSettings::DisableVersion),
         )
+        .subcommand(
+            SubCommand::with_name("make")
+                .about("Compile tests modules")
+                .args(&make_args)
+                .setting(AppSettings::DisableVersion),
+        )
         .get_matches();
 
     // Retrieve the path to the elm home.
@@ -137,62 +143,72 @@ fn main() -> anyhow::Result<()> {
                 .collect();
             install::main(packages)
         }
+        ("make", Some(sub_matches)) => {
+            make::main(&elm_home, &elm_project_root, get_make_options(sub_matches)?)
+        }
         _ => {
-            // Use nanoseconds of current time as seed.
-            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
-            let seed: u32 = match matches.value_of("seed") {
-                None => now.unwrap().as_nanos() as u32,
-                Some(str_seed) => str_seed.parse().context("Invalid --seed value")?,
-            };
-            let str_fuzz = matches.value_of("fuzz").unwrap(); // unwrap is fine since there is a default value
-            let fuzz: u32 = str_fuzz.parse().context("Invalid --fuzz value")?;
-            let workers: u32 = match matches.value_of("workers") {
-                None => num_cpus::get() as u32,
-                Some(str_workers) => str_workers.parse().context("Invalid --workers value")?,
-            };
-            let connectivity = match (
-                matches.is_present("offline"),
-                matches.value_of("dependencies"),
-            ) {
-                (false, None) => deps::ConnectivityStrategy::Progressive,
-                (true, None) => deps::ConnectivityStrategy::Offline,
-                (true, Some(_)) => anyhow::bail!("--offline is incompatible with --dependencies"),
-                (false, Some("newest")) => {
-                    deps::ConnectivityStrategy::Online(VersionStrategy::Newest)
-                }
-                (false, Some("oldest")) => {
-                    deps::ConnectivityStrategy::Online(VersionStrategy::Oldest)
-                }
-                (false, Some(_)) => anyhow::bail!("Invalid --dependencies value"),
-            };
-            let files: Vec<String> = matches
-                .values_of("PATH or GLOB")
-                .into_iter()
-                .flatten()
-                .map(|s| s.to_string())
-                .collect();
-            let make_options = make::Options {
-                quiet: matches.is_present("quiet"),
-                watch: matches.is_present("watch"),
-                compiler: matches.value_of("compiler").unwrap().to_string(), // unwrap is fine since compiler has a default value
-                connectivity,
-                files,
-            };
-            let report = match matches.value_of("report").unwrap() {
-                // unwrap is fine since there is a default value
-                "console" => console_color_mode(),
-                r => r,
-            };
-            let run_options = run::Options {
-                seed,
-                fuzz,
-                workers,
-                filter: matches.value_of("filter").map(|s| s.to_string()),
-                reporter: report.to_string(),
-            };
+            let make_options = get_make_options(&matches)?;
+            let run_options = get_run_options(&matches)?;
             run::main(&elm_home, &elm_project_root, make_options, run_options)
         }
     }
+}
+
+/// Retrieve options related to the make subcommand.
+fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Options> {
+    let connectivity = match (
+        arg_matches.is_present("offline"),
+        arg_matches.value_of("dependencies"),
+    ) {
+        (false, None) => deps::ConnectivityStrategy::Progressive,
+        (true, None) => deps::ConnectivityStrategy::Offline,
+        (true, Some(_)) => anyhow::bail!("--offline is incompatible with --dependencies"),
+        (false, Some("newest")) => deps::ConnectivityStrategy::Online(VersionStrategy::Newest),
+        (false, Some("oldest")) => deps::ConnectivityStrategy::Online(VersionStrategy::Oldest),
+        (false, Some(_)) => anyhow::bail!("Invalid --dependencies value"),
+    };
+    let files: Vec<String> = arg_matches
+        .values_of("PATH or GLOB")
+        .into_iter()
+        .flatten()
+        .map(|s| s.to_string())
+        .collect();
+    Ok(make::Options {
+        quiet: arg_matches.is_present("quiet"),
+        watch: arg_matches.is_present("watch"),
+        compiler: arg_matches.value_of("compiler").unwrap().to_string(), // unwrap is fine since compiler has a default value
+        connectivity,
+        files,
+    })
+}
+
+/// Retrieve options related to the main run command.
+fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Options> {
+    // Use nanoseconds of current time as seed.
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
+    let seed: u32 = match arg_matches.value_of("seed") {
+        None => now.unwrap().as_nanos() as u32,
+        Some(str_seed) => str_seed.parse().context("Invalid --seed value")?,
+    };
+    let str_fuzz = arg_matches.value_of("fuzz").unwrap(); // unwrap is fine since there is a default value
+    let fuzz: u32 = str_fuzz.parse().context("Invalid --fuzz value")?;
+    let workers: u32 = match arg_matches.value_of("workers") {
+        None => num_cpus::get() as u32,
+        Some(str_workers) => str_workers.parse().context("Invalid --workers value")?,
+    };
+
+    let report = match arg_matches.value_of("report").unwrap() {
+        // unwrap is fine since there is a default value
+        "console" => console_color_mode(),
+        r => r,
+    };
+    Ok(run::Options {
+        seed,
+        fuzz,
+        workers,
+        filter: arg_matches.value_of("filter").map(|s| s.to_string()),
+        reporter: report.to_string(),
+    })
 }
 
 /// Returns "consoleColor" or "consoleNoColor" based on the following two standards:
