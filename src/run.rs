@@ -289,6 +289,7 @@ fn main_helper(
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     let compile_time = std::time::Instant::now();
     if !compile(
+        elm_home,
         &tests_root,       // current_dir
         &options.compiler, // compiler
         &compiled_runner,  // output
@@ -353,6 +354,7 @@ fn main_helper(
     let compiled_reporter = tests_root.join("js").join("Reporter.elm.js");
     let compile_time = std::time::Instant::now();
     if !compile(
+        elm_home,
         &tests_root,        // current_dir
         &options.compiler,  // compiler
         &compiled_reporter, // output
@@ -468,6 +470,7 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
 
 /// Compile an Elm module into a JS file (without --optimized)
 fn compile<P1, P2, I, S>(
+    elm_home: &Path,
     current_dir: P1,
     compiler: &str,
     output: P2,
@@ -481,6 +484,7 @@ where
 {
     Command::new(compiler)
         .arg("make")
+        .env("ELM_HOME", elm_home)
         .arg(format!(
             "--output={}",
             output.as_ref().to_str().context(format!(

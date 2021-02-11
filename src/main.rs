@@ -123,7 +123,13 @@ fn main() -> anyhow::Result<()> {
     // Retrieve the path to the elm home.
     let elm_home = match matches.value_of("elm-home") {
         None => utils::elm_home().context("Elm home not found")?,
-        Some(str_path) => PathBuf::from(str_path),
+        Some(str_path) => {
+            // Create the path to make sure it exists.
+            std::fs::create_dir_all(str_path)
+                .context(format!("{} does not exist and is not writable", str_path))?;
+            std::fs::canonicalize(str_path)
+                .context(format!("Error getting absolute path of {}", str_path))?
+        }
     };
 
     // Retrieve the path to the project root directory.
