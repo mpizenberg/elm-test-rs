@@ -11,13 +11,19 @@ All notable changes to this project will be documented in this file.
   of the elm project, containing the `elm.json`.
 - The globs CLI arguments and resulting found tests modules paths
   are now passed as arguments `globs` and `paths` to the reporter flags.
+- New `--offline` flag instead of old `--connectivity` to run offline.
+- New `--dependencies [newest|oldest]` argument.
 
 #### Changed
 
 - Http timeouts are increased from 1s to 10s.
 - Updated the Elm submodule for the test runner.
+- Changed the CLI crate from pico_args to clap.
 
 #### Removed
+
+- The `--connectivity` argument is no more.
+  Replaced by a combination of `--offline` and `--dependencies <strategy>`.
 
 #### Fixed
 
