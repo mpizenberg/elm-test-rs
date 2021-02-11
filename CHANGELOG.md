@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
   are now passed as arguments `globs` and `paths` to the reporter flags.
 - New `--offline` flag instead of old `--connectivity` to run offline.
 - New `--dependencies [newest|oldest]` argument.
+- New `make` subcommand that stops after compilation of the tests modules.
+- New `--elm-home` argument also able to pick up the env variable `ELM_HOME`.
 
 #### Changed
 

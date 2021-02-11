@@ -1,6 +1,7 @@
 mod deps;
 mod init;
 mod install;
+mod make;
 mod parser;
 mod run;
 mod utils;
@@ -8,115 +9,107 @@ mod utils;
 use anyhow::Context;
 use clap::{App, AppSettings, Arg, SubCommand};
 use pubgrub_dependency_provider_elm::dependency_provider::VersionStrategy;
-use std::path::PathBuf;
 
 /// Main entry point of elm-test-rs.
 fn main() -> anyhow::Result<()> {
+    // Arguments available to all subcommands.
+    let global_args = vec![
+        Arg::with_name("elm-home")
+            .long("elm-home")
+            .global(true)
+            .takes_value(true)
+            .value_name("path")
+            .env("ELM_HOME")
+            .help("Use a custom directory for elm home"),
+        Arg::with_name("project")
+            .long("project")
+            .global(true)
+            .default_value(".")
+            .value_name("path")
+            .help("Path to the root directory of the project"),
+        Arg::with_name("offline")
+            .long("offline")
+            .global(true)
+            .help("No network call made by elm-test-rs"),
+    ];
+    // Arguments shared with the "make" subcommand.
+    let make_args = vec![
+        Arg::with_name("quiet")
+            .long("quiet")
+            .help("Reduce amount of stderr logs"),
+        Arg::with_name("watch")
+            .long("watch")
+            .help("Rerun tests on file changes"),
+        Arg::with_name("compiler")
+            .long("compiler")
+            .default_value("elm")
+            .help("Use a custom path to an Elm executable"),
+        Arg::with_name("dependencies")
+            .long("dependencies")
+            .takes_value(true)
+            .value_name("strategy")
+            .possible_values(&["newest", "oldest"])
+            .conflicts_with("offline")
+            .help("Choose the newest or oldest compatible dependencies (mostly useful for package authors)"),
+        Arg::with_name("PATH or GLOB")
+            .multiple(true)
+            .help("Path to a test module, or glob pattern such as tests/*.elm")
+    ];
+    let run_args = vec![
+        Arg::with_name("seed")
+            .long("seed")
+            .takes_value(true)
+            .help("Initial random seed for fuzz tests [default: <random>]"),
+        Arg::with_name("fuzz")
+            .long("fuzz")
+            .default_value("100")
+            .value_name("N")
+            .help("Number of iterations in fuzz tests"),
+        Arg::with_name("workers")
+            .long("workers")
+            .takes_value(true)
+            .value_name("N")
+            .help("Number of worker threads [default: <number of logic cores>]"),
+        Arg::with_name("filter")
+            .long("filter")
+            .takes_value(true)
+            .value_name("string")
+            .help("Keep only tests whose description contains the given string"),
+        Arg::with_name("report")
+            .long("report")
+            .default_value("console")
+            .possible_value("console")
+            .possible_value("consoleDebug")
+            .possible_value("json")
+            .possible_value("junit")
+            .possible_value("exercism")
+            .help("Print results to stdout in the given format"),
+    ];
     let matches = App::new("elm-test-rs")
         .version(std::env!("CARGO_PKG_VERSION"))
-        .arg(
-            Arg::with_name("quiet")
-                .long("quiet")
-                .help("Reduce amount of stderr logs"),
-        )
-        .arg(
-            Arg::with_name("watch")
-                .long("watch")
-                .help("Rerun tests on file changes"),
-        )
-        .arg(
-            Arg::with_name("elm-home")
-                .long("elm-home")
-                .global(true)
-                .takes_value(true)
-                .value_name("path")
-                .env("ELM_HOME")
-                .help("Use a custom directory for elm home"),
-        )
-        .arg(
-            Arg::with_name("compiler")
-                .long("compiler")
-                .default_value("elm")
-                .help("Use a custom path to an Elm executable"),
-        )
-        .arg(
-            Arg::with_name("project")
-                .long("project")
-                .global(true)
-                .default_value(".")
-                .value_name("path")
-                .help("Path to the root directory of the project"),
-        )
-        .arg(
-            Arg::with_name("seed")
-                .long("seed")
-                .takes_value(true)
-                .help("Initial random seed for fuzz tests [default: <random>]"),
-        )
-        .arg(
-            Arg::with_name("fuzz")
-                .long("fuzz")
-                .default_value("100")
-                .value_name("N")
-                .help("Number of iterations in fuzz tests"),
-        )
-        .arg(
-            Arg::with_name("workers")
-                .long("workers")
-                .takes_value(true)
-                .value_name("N")
-                .help("Number of worker threads [default: <number of logic cores>]"),
-        )
-        .arg(
-            Arg::with_name("filter")
-                .long("filter")
-                .takes_value(true)
-                .value_name("string")
-                .help("Keep only tests whose description contains the given string"),
-        )
-        .arg(
-            Arg::with_name("report")
-                .long("report")
-                .default_value("console")
-                .possible_value("console")
-                .possible_value("consoleDebug")
-                .possible_value("consoleColor")
-                .possible_value("consoleNoColor")
-                .possible_value("json")
-                .possible_value("junit")
-                .possible_value("exercism")
-                .help("Print results to stdout in the given format"),
-        )
-        .arg(
-            Arg::with_name("offline")
-                .long("offline")
-                .global(true)
-                .help("No network call made by elm-test-rs"),
-        )
-        .arg(
-            Arg::with_name("dependencies")
-                .long("dependencies")
-                .takes_value(true)
-                .value_name("strategy")
-                .possible_values(&["newest", "oldest"])
-                .conflicts_with("offline")
-                .help("Choose the newest or oldest compatible dependencies (mostly useful for package authors)"),
-        )
-        .arg(
-            Arg::with_name("PATH or GLOB")
-                .multiple(true)
-                .help("Path to a test module, or glob pattern such as tests/*.elm")
-        )
+        .args(&global_args)
+        .args(&make_args)
+        .args(&run_args)
         .subcommand(
             SubCommand::with_name("init")
                 .about("Initialize tests dependencies and directory")
-                .setting(AppSettings::DisableVersion)
+                .setting(AppSettings::DisableVersion),
         )
         .subcommand(
             SubCommand::with_name("install")
                 .about("Install packages to \"test-dependencies\" in your elm.json")
-                .arg(Arg::with_name("PACKAGE").multiple(true).help("Package to install"))
-                .setting(AppSettings::DisableVersion)
+                .arg(
+                    Arg::with_name("PACKAGE")
+                        .multiple(true)
+                        .help("Package to install"),
+                )
+                .setting(AppSettings::DisableVersion),
+        )
+        .subcommand(
+            SubCommand::with_name("make")
+                .about("Compile tests modules")
+                .args(&make_args)
+                .setting(AppSettings::DisableVersion),
         )
         .get_matches();
 
@@ -150,53 +143,90 @@ fn main() -> anyhow::Result<()> {
                 .collect();
             install::main(packages)
         }
+        ("make", Some(sub_matches)) => {
+            make::main(&elm_home, &elm_project_root, get_make_options(sub_matches)?)
+        }
         _ => {
-            // Use nanoseconds of current time as seed.
-            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
-            let seed: u32 = match matches.value_of("seed") {
-                None => now.unwrap().as_nanos() as u32,
-                Some(str_seed) => str_seed.parse().context("Invalid --seed value")?,
-            };
-            let str_fuzz = matches.value_of("fuzz").unwrap(); // unwrap is fine since there is a default value
-            let fuzz: u32 = str_fuzz.parse().context("Invalid --fuzz value")?;
-            let workers: u32 = match matches.value_of("workers") {
-                None => num_cpus::get() as u32,
-                Some(str_workers) => str_workers.parse().context("Invalid --workers value")?,
-            };
-            let connectivity = match (
-                matches.is_present("offline"),
-                matches.value_of("dependencies"),
-            ) {
-                (false, None) => deps::ConnectivityStrategy::Progressive,
-                (true, None) => deps::ConnectivityStrategy::Offline,
-                (true, Some(_)) => anyhow::bail!("--offline is incompatible with --dependencies"),
-                (false, Some("newest")) => {
-                    deps::ConnectivityStrategy::Online(VersionStrategy::Newest)
-                }
-                (false, Some("oldest")) => {
-                    deps::ConnectivityStrategy::Online(VersionStrategy::Oldest)
-                }
-                (false, Some(_)) => anyhow::bail!("Invalid --dependencies value"),
-            };
-            let files: Vec<String> = matches
-                .values_of("PATH or GLOB")
-                .into_iter()
-                .flatten()
-                .map(|s| s.to_string())
-                .collect();
-            let options = run::Options {
-                quiet: matches.is_present("quiet"),
-                watch: matches.is_present("watch"),
-                compiler: matches.value_of("compiler").unwrap().to_string(), // unwrap is fine since compiler has a default value
-                seed,
-                fuzz,
-                workers,
-                filter: matches.value_of("filter").map(|s| s.to_string()),
-                report: matches.value_of("report").unwrap().to_string(), // unwrap is fined since there is a default value
-                connectivity,
-                files,
-            };
-            run::main(&elm_home, &elm_project_root, options)
+            let make_options = get_make_options(&matches)?;
+            let run_options = get_run_options(&matches)?;
+            run::main(&elm_home, &elm_project_root, make_options, run_options)
+        }
+    }
+}
+
+/// Retrieve options related to the make subcommand.
+fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Options> {
+    let connectivity = match (
+        arg_matches.is_present("offline"),
+        arg_matches.value_of("dependencies"),
+    ) {
+        (false, None) => deps::ConnectivityStrategy::Progressive,
+        (true, None) => deps::ConnectivityStrategy::Offline,
+        (true, Some(_)) => anyhow::bail!("--offline is incompatible with --dependencies"),
+        (false, Some("newest")) => deps::ConnectivityStrategy::Online(VersionStrategy::Newest),
+        (false, Some("oldest")) => deps::ConnectivityStrategy::Online(VersionStrategy::Oldest),
+        (false, Some(_)) => anyhow::bail!("Invalid --dependencies value"),
+    };
+    let files: Vec<String> = arg_matches
+        .values_of("PATH or GLOB")
+        .into_iter()
+        .flatten()
+        .map(|s| s.to_string())
+        .collect();
+    Ok(make::Options {
+        quiet: arg_matches.is_present("quiet"),
+        watch: arg_matches.is_present("watch"),
+        compiler: arg_matches.value_of("compiler").unwrap().to_string(), // unwrap is fine since compiler has a default value
+        connectivity,
+        files,
+    })
+}
+
+/// Retrieve options related to the main run command.
+fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Options> {
+    // Use nanoseconds of current time as seed.
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
+    let seed: u32 = match arg_matches.value_of("seed") {
+        None => now.unwrap().as_nanos() as u32,
+        Some(str_seed) => str_seed.parse().context("Invalid --seed value")?,
+    };
+    let str_fuzz = arg_matches.value_of("fuzz").unwrap(); // unwrap is fine since there is a default value
+    let fuzz: u32 = str_fuzz.parse().context("Invalid --fuzz value")?;
+    let workers: u32 = match arg_matches.value_of("workers") {
+        None => num_cpus::get() as u32,
+        Some(str_workers) => str_workers.parse().context("Invalid --workers value")?,
+    };
+
+    let report = match arg_matches.value_of("report").unwrap() {
+        // unwrap is fine since there is a default value
+        "console" => console_color_mode(),
+        r => r,
+    };
+    Ok(run::Options {
+        seed,
+        fuzz,
+        workers,
+        filter: arg_matches.value_of("filter").map(|s| s.to_string()),
+        reporter: report.to_string(),
+    })
+}
+
+/// Returns "consoleColor" or "consoleNoColor" based on the following two standards:
+///  - https://bixense.com/clicolors/
+///  - https://no-color.org/
+fn console_color_mode() -> &'static str {
+    if &std::env::var("CLICOLOR_FORCE").unwrap_or_else(|_| "0".to_string()) != "0" {
+        "consoleColor"
+    } else if std::env::var("NO_COLOR").is_ok() {
+        "consoleNoColor"
+    } else {
+        match (
+            atty::is(atty::Stream::Stdout),
+            std::env::var("CLICOLOR").as_deref(),
+        ) {
+            (false, _) => "consoleNoColor",
+            (true, Ok("0")) => "consoleNoColor",
+            (true, _) => "consoleColor",
         }
     }
 }
