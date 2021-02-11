@@ -90,6 +90,7 @@ fn main() -> anyhow::Result<()> {
         .arg(
             Arg::with_name("offline")
                 .long("offline")
+                .global(true)
                 .help("No network call made by elm-test-rs"),
         )
         .arg(
@@ -129,7 +130,11 @@ fn main() -> anyhow::Result<()> {
     let elm_project_root = utils::elm_project_root(matches.value_of("project").unwrap())?; // unwrap is fine since project has a default value
 
     match matches.subcommand() {
-        ("init", Some(_)) => init::main(elm_home, elm_project_root),
+        ("init", Some(sub_matches)) => init::main(
+            elm_home,
+            elm_project_root,
+            sub_matches.is_present("offline"),
+        ),
         ("install", Some(sub_matches)) => {
             let packages: Vec<String> = sub_matches
                 .values_of("PACKAGE")

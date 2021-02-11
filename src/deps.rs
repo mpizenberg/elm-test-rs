@@ -38,14 +38,23 @@ impl FromStr for ConnectivityStrategy {
 }
 
 /// Install elm-explorations/test to the tests dependencies.
-pub fn init<P: AsRef<Path>>(elm_home: P, config: ProjectConfig) -> anyhow::Result<ProjectConfig> {
+pub fn init<P: AsRef<Path>>(
+    elm_home: P,
+    config: ProjectConfig,
+    offline: bool,
+) -> anyhow::Result<ProjectConfig> {
+    let strategy = if offline {
+        ConnectivityStrategy::Offline
+    } else {
+        ConnectivityStrategy::Progressive
+    };
     match config {
         ProjectConfig::Application(app_config) => Ok(ProjectConfig::Application(
-            init_app(elm_home.as_ref(), app_config)
+            init_app(elm_home.as_ref(), &strategy, app_config)
                 .context("Error while setting up the app test dependencies")?,
         )),
         ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(
-            init_pkg(elm_home.as_ref(), pkg_config)
+            init_pkg(elm_home.as_ref(), &strategy, pkg_config)
                 .context("Error while setting up the package test dependencies")?,
         )),
     }
@@ -53,6 +62,7 @@ pub fn init<P: AsRef<Path>>(elm_home: P, config: ProjectConfig) -> anyhow::Resul
 
 fn init_app(
     elm_home: &Path,
+    strategy: &ConnectivityStrategy,
     mut app_config: ApplicationConfig,
 ) -> anyhow::Result<ApplicationConfig> {
     // Retrieve all direct and indirect dependencies
@@ -65,7 +75,8 @@ fn init_app(
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(elm_home, &all_deps, true).context("The app dependencies are incorrect")?;
+    solve_check(elm_home, &all_deps, strategy, true)
+        .context("The app dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -100,7 +111,7 @@ fn init_app(
     // Solve dependencies
     let solution = solve_deps(
         elm_home,
-        &ConnectivityStrategy::Progressive,
+        &strategy,
         &all_deps,
         "root".to_string(),
         SemVer::zero(),
@@ -123,7 +134,11 @@ fn init_app(
     Ok(app_config)
 }
 
-fn init_pkg(elm_home: &Path, mut pkg_config: PackageConfig) -> anyhow::Result<PackageConfig> {
+fn init_pkg(
+    elm_home: &Path,
+    strategy: &ConnectivityStrategy,
+    mut pkg_config: PackageConfig,
+) -> anyhow::Result<PackageConfig> {
     // Retrieve all dependencies
     let test_deps = pkg_config.test_dependencies.iter();
     let mut all_deps: Map<String, Range<SemVer>> = test_deps
@@ -132,7 +147,8 @@ fn init_pkg(elm_home: &Path, mut pkg_config: PackageConfig) -> anyhow::Result<Pa
         .collect();
 
     // Check that those dependencies are correct
-    solve_check(elm_home, &all_deps, false).context("The package dependencies are incorrect")?;
+    solve_check(elm_home, &all_deps, strategy, false)
+        .context("The package dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = "elm-explorations/test".to_string();
@@ -148,7 +164,7 @@ fn init_pkg(elm_home: &Path, mut pkg_config: PackageConfig) -> anyhow::Result<Pa
     // Solve dependencies to check that elm-explorations/test is compatible
     solve_deps(
         elm_home,
-        &ConnectivityStrategy::Progressive,
+        &strategy,
         &all_deps,
         pkg_config.name.clone(),
         SemVer::zero(),
@@ -263,17 +279,12 @@ fn solve_helper<P: AsRef<Path>>(
 fn solve_check(
     elm_home: &Path,
     deps: &Map<String, Range<SemVer>>,
+    strategy: &ConnectivityStrategy,
     is_app: bool,
 ) -> anyhow::Result<()> {
     let pkg_id = "root".to_string();
     let version = SemVer::zero();
-    let mut solution = solve_deps(
-        elm_home,
-        &ConnectivityStrategy::Progressive,
-        deps,
-        pkg_id.clone(),
-        version,
-    )?;
+    let mut solution = solve_deps(elm_home, strategy, deps, pkg_id.clone(), version)?;
     // Check that indirect deps are correct if this is for an application.
     // All packages in the solution must exist in the original dependencies.
     if is_app {
