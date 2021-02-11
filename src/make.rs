@@ -151,10 +151,20 @@ pub fn main_helper(
         .flatten()
         .map(|x| x.map_err(anyhow::Error::from)) // Just a type conversion trick for the compiler
         .map(|path_result| {
-            path_result.and_then(|path| {
-                path.canonicalize()
-                    .context(format!("Error in canonicalize of {}", path.display()))
-            })
+            path_result
+                // Getting absolute path.
+                .and_then(|path| {
+                    path.canonicalize()
+                        .context(format!("Error in canonicalize of {}", path.display()))
+                })
+                // Checking that it's actually an elm file.
+                .and_then(|path| {
+                    if path.is_file() && path.extension() == Some(&OsStr::new("elm")) {
+                        Ok(path)
+                    } else {
+                        anyhow::bail!("{} isn't an elm file", path.display(),)
+                    }
+                })
         })
         .collect::<Result<_, _>>()?;
     glob_pattern_err?;
@@ -376,8 +386,15 @@ fn get_module_name(
         .iter()
         .filter(|s| !is_valid_module_name(s))
         .for_each(|s| eprintln!("{}", s));
-    assert!(module_name_parts.iter().all(|s| is_valid_module_name(s)));
-    assert!(!module_name_parts.is_empty());
+    if !module_name_parts.iter().all(|s| is_valid_module_name(s)) {
+        anyhow::bail!("I could not guess the module name of {} from its trimmed path {}. It may contains invalid parts.", file.display(), trimmed.display());
+    }
+    if module_name_parts.is_empty() {
+        anyhow::bail!(
+            "There is something wrong with the file path of {}",
+            file.display()
+        );
+    }
     Ok(module_name_parts.join("."))
 }
 
