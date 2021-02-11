@@ -19,12 +19,9 @@ use crate::include_template;
 #[derive(Debug)]
 /// Options passed as arguments.
 pub struct Options {
-    pub help: bool,
-    pub version: bool,
     pub quiet: bool,
     pub watch: bool,
     pub compiler: String,
-    pub project: String,
     pub seed: u32,
     pub fuzz: u32,
     pub workers: u32,
@@ -44,17 +41,7 @@ pub struct Options {
 ///  5. Compile it into a JS file wrapped into a Node worker module.
 ///  6. Compile `Reporter.elm` into a Node module.
 ///  7. Generate and start the Node supervisor program.
-pub fn main(options: Options) -> anyhow::Result<()> {
-    // The help option is prioritary over the other options
-    if options.help {
-        crate::help::main();
-        return Ok(());
-    // The version option is the second priority
-    } else if options.version {
-        println!("{}", std::env!("CARGO_PKG_VERSION"));
-        return Ok(());
-    }
-
+pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyhow::Result<()> {
     // Prints to stderr the current version
     if !options.quiet {
         eprintln!(
@@ -63,12 +50,6 @@ pub fn main(options: Options) -> anyhow::Result<()> {
         );
         eprintln!("--------------------------------\n");
     }
-
-    // Verify that we are in an Elm project
-    let elm_project_root = crate::utils::elm_project_root(&options.project)?;
-
-    // Retrieve the elm home directory
-    let elm_home = crate::utils::elm_home().context("Elm home not found")?;
 
     // Validate reporter mode
     let reporter = match options.report.as_ref() {
@@ -88,7 +69,7 @@ pub fn main(options: Options) -> anyhow::Result<()> {
     };
 
     if options.watch {
-        let mut test_directories = main_helper(&options, &elm_home, &elm_project_root, &reporter)?;
+        let mut test_directories = main_helper(&options, elm_home, elm_project_root, &reporter)?;
         // Create a channel to receive the events.
         let (tx, rx) = channel();
         // Create a watcher object, delivering debounced events.
@@ -111,7 +92,7 @@ pub fn main(options: Options) -> anyhow::Result<()> {
                 _event => {
                     // eprintln!("{:?}", _event);
                     let new_test_directories =
-                        main_helper(&options, &elm_home, &elm_project_root, &reporter)?;
+                        main_helper(&options, elm_home, elm_project_root, &reporter)?;
                     if new_test_directories != test_directories {
                         for path in test_directories.iter() {
                             watcher
@@ -129,7 +110,7 @@ pub fn main(options: Options) -> anyhow::Result<()> {
             }
         }
     } else {
-        main_helper(&options, &elm_home, &elm_project_root, &reporter)?;
+        main_helper(&options, elm_home, elm_project_root, &reporter)?;
         Ok(())
     }
 }

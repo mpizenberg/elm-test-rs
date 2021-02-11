@@ -8,7 +8,6 @@ description = "Simple and fast Rust alternative to node-test-runner to run elm t
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pico-args = "0.4.0"
 glob = "0.3.0"
 pathdiff = "0.2.0"
 num_cpus = "1.13.0"

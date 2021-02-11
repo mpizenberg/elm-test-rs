@@ -132,7 +132,6 @@ dependencies = [
  "notify",
  "num_cpus",
  "pathdiff",
- "pico-args",
  "pubgrub",
  "pubgrub-dependency-provider-elm",
  "regex",
@@ -463,12 +462,6 @@ name = "percent-encoding"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
-
-[[package]]
-name = "pico-args"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d70072c20945e1ab871c472a285fc772aefd4f5407723c206242f2c6f94595d6"
 
 [[package]]
 name = "proc-macro2"
