@@ -167,7 +167,22 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
         (false, Some("oldest")) => deps::ConnectivityStrategy::Online(VersionStrategy::Oldest),
         (false, Some(_)) => anyhow::bail!("Invalid --dependencies value"),
     };
-    let compiler = arg_matches.value_of("compiler").unwrap().to_string(); // unwrap is fine since compiler has a default value
+
+    // Handle relative paths for --compiler
+    let mut compiler = arg_matches.value_of("compiler").unwrap().to_string(); // unwrap is fine since compiler has a default value
+    let compiler_path = std::path::Path::new(&compiler);
+    if compiler_path.components().count() > 1 {
+        compiler = compiler_path
+            .canonicalize()
+            .context(format!(
+                "Could not find {}. Is that path correct?",
+                compiler_path.display()
+            ))?
+            .to_str()
+            .context("Could not convert to &str")?
+            .to_string();
+    }
+
     let files: Vec<String> = arg_matches
         .values_of("PATH or GLOB")
         .into_iter()
