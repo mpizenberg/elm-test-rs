@@ -31,6 +31,7 @@ All notable changes to this project will be documented in this file.
 
 - All unwise usage of `.unwrap()` and `.expect()` has been replaced
   by correct error handling thanks to the `anyhow` crate.
+- Fix some Junit and JSON reports issues.
 
 
 ## [0.6.1] - (2021-01-23) [(diff)][diff-0.6.1]
