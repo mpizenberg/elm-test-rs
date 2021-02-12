@@ -2,6 +2,7 @@
 
 use anyhow::Context;
 use std::error::Error;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[macro_export]
@@ -76,4 +77,20 @@ pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
         .into_string()
         .context("Error converting the http response body to a String")?;
     Ok(response)
+}
+
+// pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
+pub fn json_write<P: AsRef<Path>, T: ?Sized + serde::Serialize>(
+    path: P,
+    value: &T,
+) -> anyhow::Result<()> {
+    let path = path.as_ref();
+    let file = std::fs::File::create(path)?;
+    let writer = std::io::BufWriter::new(file);
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
+    value.serialize(&mut serializer)?;
+    let mut writer = serializer.into_inner();
+    writeln!(&mut writer)?;
+    writer.flush().map_err(|e| e.into())
 }

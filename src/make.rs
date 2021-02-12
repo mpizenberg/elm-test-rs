@@ -236,6 +236,7 @@ pub fn main_helper(
         "Could not create tests dir {}",
         tests_root.join("src").display()
     ))?;
+    // If it has changed, update the elm.json for the tests.
     let tests_config_str = serde_json::to_string(&tests_config)
         .context("Failed to convert to JSON the string generated for the tests elm.json")?;
     match std::fs::read_to_string(&tests_config_path) {

@@ -18,12 +18,8 @@ pub fn main<P: AsRef<Path>>(elm_home: P, project_root: P, offline: bool) -> anyh
     let updated_config = crate::deps::init(elm_home, project_config, offline).context(
         "Something went wrong when installing elm-explorations/test to the tests dependencies",
     )?;
-    std::fs::write(
-        &elm_json_path,
-        serde_json::to_string_pretty(&updated_config)
-            .context("Unable to convert the config to a JSON string")?,
-    )
-    .context("Unable to write the updated elm.json")?;
+    crate::utils::json_write(&elm_json_path, &updated_config)
+        .context("Unable to write the updated elm.json")?;
 
     // Create the tests/Tests.elm template
     let init_tests_template = include_template!("Tests.elm");
