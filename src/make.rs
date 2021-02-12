@@ -169,6 +169,18 @@ pub fn main_helper(
         .collect::<Result<_, _>>()?;
     glob_pattern_err?;
 
+    // Report an error if no file was found.
+    if modules_abs_paths.is_empty() {
+        if options.files.is_empty() {
+            anyhow::bail!("No file was found in your tests/ directory. You can create one with: elm-test-rs init");
+        } else {
+            anyhow::bail!(
+                "No file was found matching your pattern: {}",
+                options.files.join(" ")
+            );
+        }
+    }
+
     // Read project elm.json
     let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
         .context("Unable to read elm.json")?;
