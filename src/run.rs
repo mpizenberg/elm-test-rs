@@ -183,6 +183,13 @@ fn main_helper(
         return Ok((test_directories, 1));
     }
 
+    // Generate a package.json specifying that all JS files follow CommonJS.
+    std::fs::write(
+        tests_root.join("js").join("package.json"),
+        "{type: 'commonjs'}",
+    )
+    .context("Could not write the commonjs guide package.json")?;
+
     // Generate the supervisor Node module
     let node_supervisor_template = include_template!("node_supervisor.js");
     let node_supervisor_js_file = tests_root.join("js").join("node_supervisor.js");
