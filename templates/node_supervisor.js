@@ -95,6 +95,7 @@ function setupWithTestsCount(runnerFile, msg) {
 
   // Send first runner job
   if (testsCount == 0) {
+    console.error("No exposed values of type Test was found. Did you forget to expose them?");
     return;
   } else {
     runners[0].postMessage({ type_: "runTest", id: todoTests.pop() });
