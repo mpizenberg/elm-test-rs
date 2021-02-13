@@ -236,13 +236,9 @@ fn solve_helper<P: AsRef<Path>>(
         Range::exact((4, 0, 2)),
     );
     // Add elm/json to the deps since it's used in Runner.elm and Reporter.elm.
-    if !deps.contains_key(&Pkg::new("elm", "json")) {
-        // TODO: maybe not the best way to handle but should work most of the time.
-        deps.insert(
-            Pkg::new("elm", "json"),
-            Range::between((1, 0, 0), (2, 0, 0)),
-        );
-    }
+    // TODO: maybe not the best way to handle but should work most of the time.
+    deps.entry(Pkg::new("elm", "json"))
+        .or_insert_with(|| Range::between((1, 0, 0), (2, 0, 0)));
     let mut solution = solve_deps(elm_home, connectivity, &deps, pkg_id.clone(), version)
         .context("Combining the project dependencies with the ones of the test runner failed")?;
     solution.remove(pkg_id);
