@@ -1,6 +1,6 @@
 [package]
 name = "elm-test-rs"
-version = "1.0.0-alpha"
+version = "1.0.0-beta"
 authors = ["Matthieu Pizenberg <matthieu.pizenberg@gmail.com>", "Harry Sarson <harry.sarson@hotmail.co.uk>"]
 edition = "2018"
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
@@ -22,12 +22,8 @@ nom = "6.1.0"
 notify = "4.0.15"
 atty = "0.2.14"
 anyhow = "1.0.38"
+clap = { version = "2.33.3", default-features = false }
 serde = { version = "1.0.123", default-features = false }
-
-[dependencies.clap]
-version = "2.33.3"
-default-features = false
-features = []
 
 [dev-dependencies]
 
