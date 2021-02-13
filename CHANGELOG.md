@@ -33,6 +33,8 @@ All notable changes to this project will be documented in this file.
   by correct error handling thanks to the `anyhow` crate.
 - Fix some Junit and JSON reports issues.
 - Fix `--compiler` error when using relative paths.
+- Fix the indentation of generated elm.json. Now uses 4 spaces.
+- Fix the order of packages in the elm.json dependencies.
 
 
 ## [0.6.1] - (2021-01-23) [(diff)][diff-0.6.1]

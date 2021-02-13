@@ -14,7 +14,7 @@ use pubgrub_dependency_provider_elm::dependency_provider::{
     ElmPackageProviderOffline, ElmPackageProviderOnline, ProjectAdapter, VersionStrategy,
 };
 use pubgrub_dependency_provider_elm::project_config::{
-    AppDependencies, ApplicationConfig, PackageConfig, ProjectConfig,
+    AppDependencies, ApplicationConfig, PackageConfig, Pkg, ProjectConfig,
 };
 
 #[derive(Debug)]
@@ -67,7 +67,7 @@ fn init_app(
 ) -> anyhow::Result<ApplicationConfig> {
     // Retrieve all direct and indirect dependencies
     let indirect_test_deps = app_config.test_dependencies.indirect.iter();
-    let mut all_deps: Map<String, Range<SemVer>> = indirect_test_deps
+    let mut all_deps: Map<Pkg, Range<SemVer>> = indirect_test_deps
         .chain(app_config.dependencies.indirect.iter())
         .chain(app_config.test_dependencies.direct.iter())
         .chain(app_config.dependencies.direct.iter())
@@ -79,7 +79,7 @@ fn init_app(
         .context("The app dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
-    let test_pkg = "elm-explorations/test".to_string();
+    let test_pkg = Pkg::new("elm-explorations", "test");
     if all_deps.contains_key(&test_pkg) {
         if app_config
             .test_dependencies
@@ -113,7 +113,7 @@ fn init_app(
         elm_home,
         &strategy,
         &all_deps,
-        "root".to_string(),
+        Pkg::new("root", ""),
         SemVer::zero(),
     )
     .context("Adding elm-explorations/test to the dependencies failed")?;
@@ -127,7 +127,7 @@ fn init_app(
 
     // Add all other new deps to indirect tests deps
     for (p, v) in solution.into_iter() {
-        if !all_deps.contains_key(&p) && &p != "root" {
+        if !all_deps.contains_key(&p) && p != Pkg::new("root", "") {
             app_config.test_dependencies.indirect.insert(p, v);
         }
     }
@@ -141,7 +141,7 @@ fn init_pkg(
 ) -> anyhow::Result<PackageConfig> {
     // Retrieve all dependencies
     let test_deps = pkg_config.test_dependencies.iter();
-    let mut all_deps: Map<String, Range<SemVer>> = test_deps
+    let mut all_deps: Map<Pkg, Range<SemVer>> = test_deps
         .chain(pkg_config.dependencies.iter())
         .map(|(p, c)| (p.clone(), c.0.clone()))
         .collect();
@@ -151,7 +151,7 @@ fn init_pkg(
         .context("The package dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
-    let test_pkg = "elm-explorations/test".to_string();
+    let test_pkg = Pkg::new("elm-explorations", "test");
     if all_deps.contains_key(&test_pkg) {
         eprintln!("elm-explorations/test is already in your dependencies.");
         return Ok(pkg_config);
@@ -188,7 +188,7 @@ pub fn solve<P: AsRef<Path>>(
     match config {
         ProjectConfig::Application(app_config) => {
             let normal_deps = app_config.dependencies.direct.iter();
-            let direct_deps: Map<String, Range<SemVer>> = normal_deps
+            let direct_deps: Map<Pkg, Range<SemVer>> = normal_deps
                 .chain(app_config.test_dependencies.direct.iter())
                 .map(|(p, v)| (p.clone(), Range::exact(*v)))
                 .collect();
@@ -197,14 +197,14 @@ pub fn solve<P: AsRef<Path>>(
                 elm_home,
                 connectivity,
                 src_dirs,
-                &"root".to_string(),
+                &Pkg::new("root", ""),
                 SemVer::zero(),
                 direct_deps,
             )
         }
         ProjectConfig::Package(pkg_config) => {
             let normal_deps = pkg_config.dependencies.iter();
-            let deps: Map<String, Range<SemVer>> = normal_deps
+            let deps: Map<Pkg, Range<SemVer>> = normal_deps
                 .chain(pkg_config.test_dependencies.iter())
                 .map(|(p, c)| (p.clone(), c.0.clone()))
                 .collect();
@@ -225,20 +225,23 @@ fn solve_helper<P: AsRef<Path>>(
     elm_home: &Path,
     connectivity: &ConnectivityStrategy,
     src_dirs: &[P],
-    pkg_id: &String,
+    pkg_id: &Pkg,
     version: SemVer,
-    direct_deps: Map<String, Range<SemVer>>,
+    direct_deps: Map<Pkg, Range<SemVer>>,
 ) -> anyhow::Result<ApplicationConfig> {
     // TODO: there might be an issue if that was already in the dependencies.
     let mut deps = direct_deps;
     deps.insert(
-        "mpizenberg/elm-test-runner".to_string(),
+        Pkg::new("mpizenberg", "elm-test-runner"),
         Range::exact((4, 0, 2)),
     );
     // Add elm/json to the deps since it's used in Runner.elm and Reporter.elm.
-    if !deps.contains_key("elm/json") {
+    if !deps.contains_key(&Pkg::new("elm", "json")) {
         // TODO: maybe not the best way to handle but should work most of the time.
-        deps.insert("elm/json".to_string(), Range::between((1, 0, 0), (2, 0, 0)));
+        deps.insert(
+            Pkg::new("elm", "json"),
+            Range::between((1, 0, 0), (2, 0, 0)),
+        );
     }
     let mut solution = solve_deps(elm_home, connectivity, &deps, pkg_id.clone(), version)
         .context("Combining the project dependencies with the ones of the test runner failed")?;
@@ -278,11 +281,11 @@ fn solve_helper<P: AsRef<Path>>(
 /// Use progressive connectivity mode.
 fn solve_check(
     elm_home: &Path,
-    deps: &Map<String, Range<SemVer>>,
+    deps: &Map<Pkg, Range<SemVer>>,
     strategy: &ConnectivityStrategy,
     is_app: bool,
 ) -> anyhow::Result<()> {
-    let pkg_id = "root".to_string();
+    let pkg_id = Pkg::new("root", "");
     let version = SemVer::zero();
     let mut solution = solve_deps(elm_home, strategy, deps, pkg_id.clone(), version)?;
     // Check that indirect deps are correct if this is for an application.
@@ -302,10 +305,10 @@ fn solve_check(
 fn solve_deps(
     elm_home: &Path,
     connectivity: &ConnectivityStrategy,
-    deps: &Map<String, Range<SemVer>>,
-    pkg_id: String,
+    deps: &Map<Pkg, Range<SemVer>>,
+    pkg_id: Pkg,
     version: SemVer,
-) -> anyhow::Result<Map<String, SemVer>> {
+) -> anyhow::Result<Map<Pkg, SemVer>> {
     let solution = |resolution| match resolution {
         Ok(sol) => Ok(sol),
         Err(PubGrubError::NoSolution(tree)) => {
