@@ -199,6 +199,7 @@ fn main_helper(
             ("{{ initialSeed }}", &run_options.seed.to_string()),
             ("{{ fuzzRuns }}", &run_options.fuzz.to_string()),
             ("{{ reporter }}", &run_options.reporter),
+            ("{{ verbosity }}", &make_options.verbosity.to_string()),
             ("{{ globs }}", &serde_json::to_string(&make_options.files).context("Failed to convert the list of tests files passed as CLI arguments to a JSON list")?),
             ("{{ paths }}", &serde_json::to_string(&modules_abs_paths).context("Failed to convert the list of actual tests files to a JSON list")?),
             ("{{ polyfills }}", polyfills),

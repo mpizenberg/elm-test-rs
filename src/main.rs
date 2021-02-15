@@ -202,6 +202,7 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
         .map(|s| s.to_string())
         .collect();
     Ok(make::Options {
+        verbosity: arg_matches.occurrences_of("verbose"),
         watch: arg_matches.is_present("watch"),
         compiler,
         connectivity,

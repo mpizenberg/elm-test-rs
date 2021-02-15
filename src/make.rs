@@ -17,6 +17,7 @@ use crate::include_template;
 #[derive(Debug)]
 /// Options passed as arguments.
 pub struct Options {
+    pub verbosity: u64,
     pub watch: bool,
     pub compiler: String,
     pub connectivity: crate::deps::ConnectivityStrategy,
