@@ -208,6 +208,9 @@ fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Option
     };
     let str_fuzz = arg_matches.value_of("fuzz").unwrap(); // unwrap is fine since there is a default value
     let fuzz: u32 = str_fuzz.parse().context("Invalid --fuzz value")?;
+    if fuzz == 0 {
+        anyhow::bail!("Invalid --fuzz argument. It must be >= 1");
+    }
     let workers: u32 = match arg_matches.value_of("workers") {
         None => num_cpus::get() as u32,
         Some(str_workers) => str_workers.parse().context("Invalid --workers value")?,

@@ -36,6 +36,7 @@ All notable changes to this project will be documented in this file.
 - Fix the indentation of generated elm.json. Now uses 4 spaces.
 - Fix the order of packages in the elm.json dependencies.
 - Add a message to stderr and fail when no test was found.
+- Validate that `--fuzz` is >= 1.
 
 
 ## [0.6.1] - (2021-01-23) [(diff)][diff-0.6.1]
