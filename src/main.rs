@@ -31,12 +31,14 @@ fn main() -> anyhow::Result<()> {
             .long("offline")
             .global(true)
             .help("No network call made by elm-test-rs"),
+        Arg::with_name("verbose")
+            .short("v")
+            .multiple(true)
+            .global(true)
+            .help("Increase verbosity. Can be used multiple times -vv"),
     ];
     // Arguments shared with the "make" subcommand.
     let make_args = vec![
-        Arg::with_name("quiet")
-            .long("quiet")
-            .help("Reduce amount of stderr logs"),
         Arg::with_name("watch")
             .long("watch")
             .help("Rerun tests on file changes"),
@@ -128,6 +130,16 @@ fn main() -> anyhow::Result<()> {
     // Retrieve the path to the project root directory.
     let elm_project_root = utils::elm_project_root(matches.value_of("project").unwrap())?; // unwrap is fine since project has a default value
 
+    // Set log verbosity.
+    let verbosity = matches.occurrences_of("verbose");
+    stderrlog::new()
+        .quiet(false)
+        .verbosity(verbosity as usize)
+        .show_level(false)
+        .color(stderrlog::ColorChoice::Never)
+        .init()
+        .context("Failed to initialize log verbosity")?;
+
     match matches.subcommand() {
         ("init", Some(sub_matches)) => init::main(
             elm_home,
@@ -190,7 +202,6 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
         .map(|s| s.to_string())
         .collect();
     Ok(make::Options {
-        quiet: arg_matches.is_present("quiet"),
         watch: arg_matches.is_present("watch"),
         compiler,
         connectivity,

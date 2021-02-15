@@ -29,7 +29,7 @@ pub fn main<P: AsRef<Path>>(elm_home: P, project_root: P, offline: bool) -> anyh
     if !new_file_path.exists() {
         std::fs::write(new_file_path, init_tests_template)
             .context("Unable to create Tests.elm template")?;
-        eprintln!("The file tests/Tests.elm was created");
+        log::warn!("The file tests/Tests.elm was created");
     }
     Ok(())
 }

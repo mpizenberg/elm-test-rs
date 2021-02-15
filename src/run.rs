@@ -32,13 +32,11 @@ pub fn main(
     run_options: Options,
 ) -> anyhow::Result<()> {
     // Prints to stderr the current version
-    if !make_options.quiet {
-        eprintln!(
-            "\nelm-test-rs {} for elm 0.19.1",
-            std::env!("CARGO_PKG_VERSION")
-        );
-        eprintln!("--------------------------------\n");
-    }
+    let title = format!(
+        "elm-test-rs {} for elm 0.19.1",
+        std::env!("CARGO_PKG_VERSION")
+    );
+    log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
 
     if make_options.watch {
         let (mut test_directories, _) =
@@ -63,7 +61,7 @@ pub fn main(
                 notify::DebouncedEvent::NoticeWrite(_) => {}
                 notify::DebouncedEvent::NoticeRemove(_) => {}
                 _event => {
-                    // eprintln!("{:?}", _event);
+                    log::debug!("{:?}", _event);
                     let (new_test_directories, _) =
                         main_helper(elm_home, elm_project_root, &make_options, &run_options)?;
                     if new_test_directories != test_directories {
@@ -125,7 +123,7 @@ fn main_helper(
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
-    // eprintln!("Kernel-patching Runner.elm.js ...");
+    log::info!("Kernel-patching Runner.elm.js ...");
     let compiled_runner_src = fs::read_to_string(&compiled_runner).context(format!(
         "Failed to read newly created file {}",
         compiled_runner.display()
@@ -164,7 +162,7 @@ fn main_helper(
     .context(format!("Failed to write {}", node_runner_path.display()))?;
 
     // Compile the Reporter.elm into Reporter.elm.js
-    // eprintln!("Compiling Reporter.elm.js ...");
+    log::info!("Compiling Reporter.elm.js ...");
     let reporter_template = include_template!("Reporter.elm");
     let reporter_elm_path = tests_root.join("src").join("Reporter.elm");
     std::fs::write(&reporter_elm_path, reporter_template)
@@ -226,7 +224,7 @@ fn main_helper(
     };
 
     // Start the tests supervisor
-    // eprintln!("Starting the supervisor ...");
+    log::info!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
         .args(experimental_arg)
         .arg(node_supervisor_js_file)
@@ -247,7 +245,7 @@ fn main_helper(
     };
 
     // Send runner module path to supervisor to start the work
-    // eprintln!("Running tests ...");
+    log::info!("Running tests ...");
     let node_runner_path_string = node_runner_path
         .to_str()
         .context(format!(
@@ -272,7 +270,7 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
             _ => None,
         },
         Err(e) => {
-            eprintln!("Error attempting to wait for child: {}", e);
+            log::error!("Error attempting to wait for child: {}", e);
             None
         }
     }

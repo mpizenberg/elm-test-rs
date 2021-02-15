@@ -86,8 +86,8 @@ fn init_app(
             .indirect
             .contains_key(&test_pkg)
         {
-            eprintln!("elm-explorations/test is already in your indirect test dependencies,");
-            eprintln!("so we just upgrade it to a direct test dependency.");
+            log::warn!("elm-explorations/test is already in your indirect test dependencies,");
+            log::warn!("so we just upgrade it to a direct test dependency.");
             let v = app_config
                 .test_dependencies
                 .indirect
@@ -95,12 +95,12 @@ fn init_app(
                 .unwrap(); // this unwrap is fine since we check existence just before.
             app_config.test_dependencies.direct.insert(test_pkg, v);
         } else if app_config.dependencies.indirect.contains_key(&test_pkg) {
-            eprintln!("elm-explorations/test is already in your indirect dependencies,");
-            eprintln!("so we copied the same version in your direct test dependencies.");
+            log::warn!("elm-explorations/test is already in your indirect dependencies,");
+            log::warn!("so we copied the same version in your direct test dependencies.");
             let v = app_config.dependencies.indirect.get(&test_pkg).unwrap(); // this unwrap is fine since we check existence just before.
             app_config.test_dependencies.direct.insert(test_pkg, *v);
         } else {
-            eprintln!("elm-explorations/test is already in your dependencies.");
+            log::warn!("elm-explorations/test is already in your dependencies.");
         }
         return Ok(app_config);
     }
@@ -153,7 +153,7 @@ fn init_pkg(
     // Check if elm-explorations/test is already in the dependencies.
     let test_pkg = Pkg::new("elm-explorations", "test");
     if all_deps.contains_key(&test_pkg) {
-        eprintln!("elm-explorations/test is already in your dependencies.");
+        log::warn!("elm-explorations/test is already in your dependencies.");
         return Ok(pkg_config);
     }
 
