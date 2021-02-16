@@ -1,15 +1,13 @@
 //! Module dealing with actually running all the tests.
 
 use crate::make::Output;
+use crate::project::Project;
 use anyhow::Context;
-use notify::{watcher, RecursiveMode, Watcher};
 use regex::Regex;
 use std::fs;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{Command, Stdio};
-use std::sync::mpsc::channel;
-use std::time::Duration;
 
 use crate::include_template;
 
@@ -40,50 +38,16 @@ pub fn main(
         eprintln!("--------------------------------\n");
     }
 
+    let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
     if make_options.watch {
-        let (mut test_directories, _) =
-            main_helper(elm_home, elm_project_root, &make_options, &run_options)?;
-        // Create a channel to receive the events.
-        let (tx, rx) = channel();
-        // Create a watcher object, delivering debounced events.
-        let mut watcher = watcher(tx, Duration::from_secs(1)).context("Failed to start watcher")?;
-        let recursive = RecursiveMode::Recursive;
-        let elm_json_path = elm_project_root.join("elm.json");
-        // Watch the elm.json and the content of source directories.
-        watcher
-            .watch(&elm_json_path, recursive)
-            .context(format!("Failed to watch {}", elm_json_path.display()))?;
-        for path in test_directories.iter() {
-            watcher
-                .watch(path, recursive)
-                .context(format!("Failed to watch {}", path.display()))?;
-        }
-        loop {
-            match rx.recv().context("Error watching files")? {
-                notify::DebouncedEvent::NoticeWrite(_) => {}
-                notify::DebouncedEvent::NoticeRemove(_) => {}
-                _event => {
-                    // eprintln!("{:?}", _event);
-                    let (new_test_directories, _) =
-                        main_helper(elm_home, elm_project_root, &make_options, &run_options)?;
-                    if new_test_directories != test_directories {
-                        for path in test_directories.iter() {
-                            watcher
-                                .unwatch(path)
-                                .context(format!("Failed to unwatch {}", path.display()))?;
-                        }
-                        for path in new_test_directories.iter() {
-                            watcher
-                                .watch(path, recursive)
-                                .context(format!("Failed to watch {}", path.display()))?;
-                        }
-                        test_directories = new_test_directories;
-                    }
-                }
-            }
-        }
+        project.watch(|project| {
+            main_helper(elm_home, project, &make_options, &run_options).map(|_| ())
+        })?;
+        Ok(())
     } else {
-        let (_, exit_code) = main_helper(elm_home, elm_project_root, &make_options, &run_options)?;
+        let exit_code = main_helper(elm_home, &project, &make_options, &run_options)?;
+        // TODO(harry): move exit out of scope so that destructors run
+        // (<https://doc.rust-lang.org/std/process/fn.exit.html>).
         std::process::exit(exit_code);
     }
 }
@@ -96,31 +60,24 @@ pub fn main(
 ///  3. Compile `Reporter.elm` into a Node module.
 ///  4. Generate and start the Node supervisor program.
 ///
-/// Returns the updated test_directories and the last exit code.
-/// (useful for watch mode).
+/// Returns the the last exit code.
 fn main_helper(
     elm_home: &Path,
-    elm_project_root: &Path,
+    project: &Project,
     make_options: &crate::make::Options,
     run_options: &Options,
-) -> anyhow::Result<(Vec<PathBuf>, i32)> {
+) -> anyhow::Result<i32> {
     // let start_time = std::time::Instant::now();
 
     // Compile the Runner.elm file.
-    let (test_directories, tests_root, modules_abs_paths, compiled_runner) =
-        match crate::make::main_helper(elm_home, elm_project_root, make_options)? {
-            Output::MakeFailure { test_directories } => return Ok((test_directories, 1)),
+    let (tests_root, modules_abs_paths, compiled_runner) =
+        match crate::make::main_helper(elm_home, project, make_options)? {
+            Output::MakeFailure => return Ok(1),
             Output::MakeSuccess {
-                test_directories,
                 tests_root,
                 modules_abs_paths,
                 compiled_runner,
-            } => (
-                test_directories,
-                tests_root,
-                modules_abs_paths,
-                compiled_runner,
-            ),
+            } => (tests_root, modules_abs_paths, compiled_runner),
         };
 
     // Add a kernel patch to the generated code in order to be able to recognize
@@ -180,7 +137,7 @@ fn main_helper(
     )?
     .success()
     {
-        return Ok((test_directories, 1));
+        return Ok(1);
     }
 
     // Generate a package.json specifying that all JS files follow CommonJS.
@@ -260,7 +217,7 @@ fn main_helper(
 
     // Wait for supervisor child process to end and terminate with same exit code
     let exit_code = wait_child(&mut supervisor);
-    Ok((test_directories, exit_code.unwrap_or(0)))
+    Ok(exit_code.unwrap_or(0))
 }
 
 /// Wait for child process to end

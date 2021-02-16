@@ -3,6 +3,7 @@ mod init;
 mod install;
 mod make;
 mod parser;
+mod project;
 mod run;
 mod utils;
 
