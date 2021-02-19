@@ -97,10 +97,10 @@ impl Project {
                                 .watch(path, recursive)
                                 .context(format!("Failed to watch {}", path.display()))?;
                         }
-
-                        // Update the current project.
-                        *self = new_project;
                     }
+
+                    // Update the current project since dependencies or source directories may have change.
+                    *self = new_project;
 
                     // Call the function to execute passed as argument.
                     f(&self).context("Subsequent run in watch mode")?;
