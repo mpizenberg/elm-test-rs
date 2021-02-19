@@ -1,11 +1,8 @@
 use anyhow::Context;
-use notify::watcher;
-use notify::RecursiveMode;
-use notify::Watcher;
+use notify::{watcher, RecursiveMode, Watcher};
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 use std::collections::BTreeSet;
-use std::iter;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use std::time::Duration;
 
@@ -17,35 +14,38 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn from_dir(elm_project_root: PathBuf) -> anyhow::Result<Project> {
+    pub fn from_dir<P: AsRef<Path>>(elm_project_root: P) -> anyhow::Result<Project> {
+        let elm_project_root = elm_project_root.as_ref();
+
         // Read project elm.json
         let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
             .context("Unable to read elm.json")?;
         let config: ProjectConfig =
             serde_json::from_str(&elm_json_str).context("Invalid elm.json")?;
 
-        let source_directories: BTreeSet<PathBuf> = match &config {
-            ProjectConfig::Application(app_config) => app_config
-                .source_directories
-                .iter()
-                .map(PathBuf::from)
-                .collect(),
-            ProjectConfig::Package(_) => iter::once("src".into()).collect(),
+        // Retrieve source directories from the project config.
+        let default_src_dir = ["src".to_string()];
+        let src_dirs = match &config {
+            ProjectConfig::Application(app) => app.source_directories.as_slice(),
+            ProjectConfig::Package(_) => &default_src_dir,
         };
 
-        // Get absolute paths for test directories
-        let mut source_or_test_directories: BTreeSet<PathBuf> = source_directories
+        // Transform source directories to absolute paths.
+        let mut src_and_test_dirs: BTreeSet<PathBuf> = src_dirs
             .iter()
-            .map(|path| elm_project_root.join(path).canonicalize())
-            .collect::<Result<_, _>>()?;
-        // Add tests/ to the list of source directories
+            .map(|src| elm_project_root.join(src).canonicalize())
+            .collect::<Result<_, _>>()
+            .context("It seems source directories do not all exist")?;
+
+        // Add tests/ to the list of source directories if it exists.
         if let Ok(path) = elm_project_root.join("tests").canonicalize() {
-            source_or_test_directories.insert(path);
+            src_and_test_dirs.insert(path);
         }
+
         Ok(Project {
             config,
-            src_and_test_dirs: source_or_test_directories,
-            elm_project_root,
+            src_and_test_dirs,
+            elm_project_root: elm_project_root.into(),
         })
     }
 
@@ -79,7 +79,7 @@ impl Project {
                     for _ in rx.try_iter() {}
 
                     // watch action
-                    let new_project = Project::from_dir(self.elm_project_root.to_path_buf())?;
+                    let new_project = Project::from_dir(&self.elm_project_root)?;
                     if self.src_and_test_dirs != new_project.src_and_test_dirs {
                         dbg!(&new_project);
                         for path in &self.src_and_test_dirs {
