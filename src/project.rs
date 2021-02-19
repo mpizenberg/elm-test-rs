@@ -57,9 +57,8 @@ impl Project {
         let mut watcher = watcher(tx, Duration::from_secs(1)).context("Failed to start watcher")?;
         let recursive = RecursiveMode::Recursive;
 
-        let elm_json_path = self.elm_project_root.join("elm.json");
-
         // Watch the elm.json and the content of source directories.
+        let elm_json_path = self.elm_project_root.join("elm.json");
         watcher
             .watch(&elm_json_path, recursive)
             .context(format!("Failed to watch {}", elm_json_path.display()))?;
@@ -69,7 +68,10 @@ impl Project {
                 .context(format!("Failed to watch {}", path.display()))?;
         }
 
+        // Call the function to execute passed as argument.
         f(self).context("Initial run in watch mode")?;
+
+        // Enter the watch loop.
         loop {
             match rx.recv().context("Error watching files")? {
                 notify::DebouncedEvent::NoticeWrite(_) => {}
@@ -78,8 +80,11 @@ impl Project {
                     // drain event queue
                     for _ in rx.try_iter() {}
 
-                    // watch action
+                    // Load the potential updated elm.json.
                     let new_project = Project::from_dir(&self.elm_project_root)?;
+
+                    // Update watched directories if they changed.
+                    // TODO: Improve by computing the sets of new and removed directories.
                     if self.src_and_test_dirs != new_project.src_and_test_dirs {
                         dbg!(&new_project);
                         for path in &self.src_and_test_dirs {
@@ -92,8 +97,12 @@ impl Project {
                                 .watch(path, recursive)
                                 .context(format!("Failed to watch {}", path.display()))?;
                         }
+
+                        // Update the current project.
                         *self = new_project;
                     }
+
+                    // Call the function to execute passed as argument.
                     f(&self).context("Subsequent run in watch mode")?;
                 }
             }
