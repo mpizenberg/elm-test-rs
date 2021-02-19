@@ -84,15 +84,16 @@ impl Project {
                     let new_project = Project::from_dir(&self.elm_project_root)?;
 
                     // Update watched directories if they changed.
-                    // TODO: Improve by computing the sets of new and removed directories.
-                    if self.src_and_test_dirs != new_project.src_and_test_dirs {
+                    let old_src_dirs = &self.src_and_test_dirs;
+                    let new_src_dirs = &new_project.src_and_test_dirs;
+                    if old_src_dirs != new_src_dirs {
                         dbg!(&new_project);
-                        for path in &self.src_and_test_dirs {
+                        for path in old_src_dirs.difference(new_src_dirs) {
                             watcher
                                 .unwatch(path)
                                 .context(format!("Failed to unwatch {}", path.display()))?;
                         }
-                        for path in &new_project.src_and_test_dirs {
+                        for path in new_src_dirs.difference(old_src_dirs) {
                             watcher
                                 .watch(path, recursive)
                                 .context(format!("Failed to watch {}", path.display()))?;
