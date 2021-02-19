@@ -49,7 +49,7 @@ impl Project {
         })
     }
 
-    pub fn watch(&mut self, f: impl Fn(&Self) -> anyhow::Result<()>) -> anyhow::Result<()> {
+    pub fn watch(&mut self, call_back: impl Fn(&Self) -> anyhow::Result<()>) -> anyhow::Result<()> {
         dbg!(&self);
         // Create a channel to receive the events.
         let (tx, rx) = channel();
@@ -69,7 +69,7 @@ impl Project {
         }
 
         // Call the function to execute passed as argument.
-        f(self).context("Initial run in watch mode")?;
+        call_back(self).context("Initial run in watch mode")?;
 
         // Enter the watch loop.
         loop {
@@ -104,7 +104,7 @@ impl Project {
                     *self = new_project;
 
                     // Call the function to execute passed as argument.
-                    f(&self).context("Subsequent run in watch mode")?;
+                    call_back(&self).context("Subsequent run in watch mode")?;
                 }
             }
         }
