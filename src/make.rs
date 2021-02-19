@@ -3,11 +3,11 @@
 use anyhow::Context;
 use glob::glob;
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::{collections::HashSet, iter};
 
 use crate::include_template;
 use crate::project::Project;
@@ -42,15 +42,16 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
 
     let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
     if options.watch {
-        project.watch(|project| main_helper(elm_home, &project, &options).map(|_| ()))?;
-        Ok(())
+        project.watch(|proj| main_helper(elm_home, proj, &options).map(|_| ()))
     } else {
         match main_helper(elm_home, &project, &options)? {
-            Output::MakeFailure { .. } => anyhow::bail!("Compilation failed"),
+            Output::MakeFailure => anyhow::bail!("Compilation failed"),
             Output::MakeSuccess { .. } => Ok(()),
         }
     }
 }
+
+/// Output of running "elm make" on all the tests files.
 pub enum Output {
     MakeFailure,
     MakeSuccess {
@@ -70,14 +71,10 @@ pub fn main_helper(
     let start_time = std::time::Instant::now();
     // Default with tests in the tests/ directory
     let module_globs = if options.files.is_empty() {
-        let root_string = project
-            .elm_project_root
-            .to_str()
-            .context(format!(
-                "Could not convert path to project directory into a String: {}",
-                project.elm_project_root.display()
-            ))?
-            .to_string();
+        let root_string = project.elm_project_root.to_str().context(format!(
+            "Could not convert path to project directory into a String: {}",
+            project.elm_project_root.display()
+        ))?;
         vec![
             format!("{}/{}", root_string, "tests/*.elm"),
             format!("{}/{}", root_string, "tests/**/*.elm"),
@@ -146,7 +143,7 @@ pub fn main_helper(
         })
         .chain(
             // Add src/ to the source directories for Runner.elm
-            iter::once(Ok("src".into())),
+            std::iter::once(Ok("src".into())),
         )
         .collect::<Result<Vec<PathBuf>, _>>()?;
 
