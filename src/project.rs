@@ -50,7 +50,6 @@ impl Project {
     }
 
     pub fn watch(&mut self, call_back: impl Fn(&Self) -> anyhow::Result<()>) -> anyhow::Result<()> {
-        dbg!(&self);
         // Create a channel to receive the events.
         let (tx, rx) = channel();
         // Create a watcher object, delivering debounced events.
@@ -87,7 +86,6 @@ impl Project {
                     let old_src_dirs = &self.src_and_test_dirs;
                     let new_src_dirs = &new_project.src_and_test_dirs;
                     if old_src_dirs != new_src_dirs {
-                        dbg!(&new_project);
                         for path in old_src_dirs.difference(new_src_dirs) {
                             watcher
                                 .unwatch(path)
