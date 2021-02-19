@@ -208,7 +208,9 @@ fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Option
         Some(str_seed) => str_seed.parse().context("Invalid --seed value")?,
     };
     let str_fuzz = arg_matches.value_of("fuzz").unwrap(); // unwrap is fine since there is a default value
-    let fuzz: NonZeroU32 = str_fuzz.parse().context("Invalid --fuzz value")?;
+    let fuzz: NonZeroU32 = str_fuzz
+        .parse()
+        .context("Invalid --fuzz value. It must be a positive integer.")?;
 
     let workers: u32 = match arg_matches.value_of("workers") {
         None => num_cpus::get() as u32,
