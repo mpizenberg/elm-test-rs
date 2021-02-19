@@ -23,12 +23,15 @@ pub struct Options {
 
 /// Wrapper for the main_helper function with "watch" functionality.
 /// This will generate, compile and run the tests.
+///
+/// TODO: For the time being, this returns the error code, but we should improve this when
+/// `std::process::Termination` lands in stable.
 pub fn main(
     elm_home: &Path,
     elm_project_root: &Path,
     make_options: crate::make::Options,
     run_options: Options,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<i32> {
     // Prints to stderr the current version
     if !make_options.quiet {
         eprintln!(
@@ -43,12 +46,9 @@ pub fn main(
         project.watch(|project| {
             main_helper(elm_home, project, &make_options, &run_options).map(|_| ())
         })?;
-        Ok(())
+        Ok(0)
     } else {
-        let exit_code = main_helper(elm_home, &project, &make_options, &run_options)?;
-        // TODO(harry): move exit out of scope so that destructors run
-        // (<https://doc.rust-lang.org/std/process/fn.exit.html>).
-        std::process::exit(exit_code);
+        main_helper(elm_home, &project, &make_options, &run_options)
     }
 }
 

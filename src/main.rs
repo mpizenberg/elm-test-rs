@@ -150,7 +150,8 @@ fn main() -> anyhow::Result<()> {
         _ => {
             let make_options = get_make_options(&matches)?;
             let run_options = get_run_options(&matches)?;
-            run::main(&elm_home, &elm_project_root, make_options, run_options)
+            let exit_code = run::main(&elm_home, &elm_project_root, make_options, run_options)?;
+            std::process::exit(exit_code);
         }
     }
 }
