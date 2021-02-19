@@ -6,6 +6,7 @@ use anyhow::Context;
 use regex::Regex;
 use std::fs;
 use std::io::Write;
+use std::num::NonZeroU32;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
@@ -15,7 +16,7 @@ use crate::include_template;
 /// Options passed as arguments.
 pub struct Options {
     pub seed: u32,
-    pub fuzz: u32,
+    pub fuzz: NonZeroU32,
     pub workers: u32,
     pub filter: Option<String>,
     pub reporter: String,
