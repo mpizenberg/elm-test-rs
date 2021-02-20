@@ -1,4 +1,4 @@
-//! Module dealing with actually running all the tests.
+//! Module dealing with compiling the test code.
 
 use anyhow::Context;
 use glob::glob;
