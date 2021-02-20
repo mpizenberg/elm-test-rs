@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
             .short("v")
             .multiple(true)
             .global(true)
-            .help("Increase verbosity. Can be used multiple times -vv"),
+            .help("Increase verbosity. Can be used multiple times -vvv"),
     ];
     // Arguments shared with the "make" subcommand.
     let make_args = vec![
