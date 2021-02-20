@@ -21,6 +21,9 @@ All notable changes to this project will be documented in this file.
 - Http timeouts are increased from 1s to 10s.
 - Updated the Elm submodule for the test runner.
 - Changed the CLI crate from pico_args to clap.
+- Replace the `--quiet` flag by a multiple verbosity one `-v`.
+  Level 0 (default) hast mostly quiet stderr, level 3 `-vvv` add debug info,
+  and levels in between add more and more info.
 
 #### Removed
 

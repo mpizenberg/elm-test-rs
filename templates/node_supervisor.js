@@ -15,6 +15,7 @@ let runners = [];
 let working = false;
 let workersCount = {{ workersCount }};
 const supervisorEvent = new EventEmitter();
+const verbosity = {{ verbosity }};
 
 // Create a long lived reporter worker
 const { Elm } = require("./Reporter.elm.js");
@@ -35,7 +36,9 @@ reporter.ports.signalFinished.subscribe(async ({ exitCode, testsCount }) => {
   await Promise.all(runners.map((runner) => runner.terminate()));
   working = false;
   supervisorEvent.emit("finishedWork");
-  console.error("Running duration (since Node.js start):", Math.round(performance.now()), "ms\n");
+  if (verbosity >= 1) {
+    console.warn("Running duration (since Node.js start):", Math.round(performance.now()), "ms\n");
+  }
   process.exit(exitCode);
 });
 

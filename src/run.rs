@@ -34,13 +34,11 @@ pub fn main(
     run_options: Options,
 ) -> anyhow::Result<i32> {
     // Prints to stderr the current version
-    if !make_options.quiet {
-        eprintln!(
-            "\nelm-test-rs {} for elm 0.19.1",
-            std::env!("CARGO_PKG_VERSION")
-        );
-        eprintln!("--------------------------------\n");
-    }
+    let title = format!(
+        "elm-test-rs {} for elm 0.19.1",
+        std::env!("CARGO_PKG_VERSION")
+    );
+    log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
 
     let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
     if make_options.watch {
@@ -83,7 +81,7 @@ fn main_helper(
 
     // Add a kernel patch to the generated code in order to be able to recognize
     // values of type Test at runtime with the `check: a -> Maybe Test` function.
-    // eprintln!("Kernel-patching Runner.elm.js ...");
+    log::info!("Kernel-patching Runner.elm.js ...");
     let compiled_runner_src = fs::read_to_string(&compiled_runner).context(format!(
         "Failed to read newly created file {}",
         compiled_runner.display()
@@ -122,7 +120,7 @@ fn main_helper(
     .context(format!("Failed to write {}", node_runner_path.display()))?;
 
     // Compile the Reporter.elm into Reporter.elm.js
-    // eprintln!("Compiling Reporter.elm.js ...");
+    log::info!("Compiling Reporter.elm.js ...");
     let reporter_template = include_template!("Reporter.elm");
     let reporter_elm_path = tests_root.join("src").join("Reporter.elm");
     std::fs::write(&reporter_elm_path, reporter_template)
@@ -159,6 +157,7 @@ fn main_helper(
             ("{{ initialSeed }}", &run_options.seed.to_string()),
             ("{{ fuzzRuns }}", &run_options.fuzz.to_string()),
             ("{{ reporter }}", &run_options.reporter),
+            ("{{ verbosity }}", &make_options.verbosity.to_string()),
             ("{{ globs }}", &serde_json::to_string(&make_options.files).context("Failed to convert the list of tests files passed as CLI arguments to a JSON list")?),
             ("{{ paths }}", &serde_json::to_string(&modules_abs_paths).context("Failed to convert the list of actual tests files to a JSON list")?),
             ("{{ polyfills }}", polyfills),
@@ -184,7 +183,7 @@ fn main_helper(
     };
 
     // Start the tests supervisor
-    // eprintln!("Starting the supervisor ...");
+    log::info!("Starting the supervisor ...");
     let mut supervisor = Command::new("node")
         .args(experimental_arg)
         .arg(node_supervisor_js_file)
@@ -205,7 +204,7 @@ fn main_helper(
     };
 
     // Send runner module path to supervisor to start the work
-    // eprintln!("Running tests ...");
+    log::info!("Running tests ...");
     let node_runner_path_string = node_runner_path
         .to_str()
         .context(format!(
@@ -230,7 +229,7 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
             _ => None,
         },
         Err(e) => {
-            eprintln!("Error attempting to wait for child: {}", e);
+            log::error!("Error attempting to wait for child: {}", e);
             None
         }
     }

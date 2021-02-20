@@ -76,6 +76,8 @@ impl Project {
                 notify::DebouncedEvent::NoticeWrite(_) => {}
                 notify::DebouncedEvent::NoticeRemove(_) => {}
                 _event => {
+                    log::debug!("{:?}", _event);
+
                     // drain event queue
                     for _ in rx.try_iter() {}
 

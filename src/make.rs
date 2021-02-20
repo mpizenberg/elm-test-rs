@@ -15,7 +15,7 @@ use crate::project::Project;
 #[derive(Debug)]
 /// Options passed as arguments.
 pub struct Options {
-    pub quiet: bool,
+    pub verbosity: u64,
     pub watch: bool,
     pub compiler: String,
     pub connectivity: crate::deps::ConnectivityStrategy,
@@ -32,13 +32,11 @@ pub struct Options {
 ///  5. Compile it.
 pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyhow::Result<()> {
     // Prints to stderr the current version
-    if !options.quiet {
-        eprintln!(
-            "\nelm-test-rs {} for elm 0.19.1",
-            std::env!("CARGO_PKG_VERSION")
-        );
-        eprintln!("--------------------------------\n");
-    }
+    let title = format!(
+        "elm-test-rs {} for elm 0.19.1",
+        std::env!("CARGO_PKG_VERSION")
+    );
+    log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
 
     let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
     if options.watch {
@@ -148,7 +146,7 @@ pub fn main_helper(
         .collect::<Result<Vec<PathBuf>, _>>()?;
 
     // Generate an elm.json for the to-be-generated Runner.elm.
-    // eprintln!("Generating the elm.json for the Runner.elm");
+    log::info!("Generating the elm.json for the Runner.elm");
     let tests_config = crate::deps::solve(
         elm_home,
         &options.connectivity,
@@ -156,14 +154,11 @@ pub fn main_helper(
         source_directories_for_runner.as_slice(),
     )
     .context("Failed to solve dependencies for tests to run")?;
-    match (options.quiet, &options.connectivity) {
-        (true, _) | (_, crate::deps::ConnectivityStrategy::Progressive) => (),
-        _ => eprintln!(
-            "The dependencies picked for your chosen connectivity are:\n{}",
-            serde_json::to_string_pretty(&tests_config.dependencies)
-                .context("Failed to convert to JSON the picked dependencies")?,
-        ),
-    };
+    log::info!(
+        "The dependencies picked to run the tests are:\n{}",
+        serde_json::to_string_pretty(&tests_config.dependencies)
+            .context("Failed to convert to JSON the picked dependencies")?,
+    );
     let tests_config = ProjectConfig::Application(tests_config);
     let tests_config_path = tests_root.join("elm.json");
     std::fs::create_dir_all(tests_root.join("src")).context(format!(
@@ -192,7 +187,7 @@ pub fn main_helper(
         .collect();
 
     // Find all potential tests
-    // eprintln!("Finding all potential tests ...");
+    log::info!("Finding all potential tests ...");
     let mut potential_tests = Vec::new();
     for (module_name, path) in module_names.iter().zip(&modules_abs_paths) {
         let source =
@@ -217,8 +212,8 @@ pub fn main_helper(
 
     // Compile the src/Runner.elm file into Runner.elm.js
     let _preparation_time = start_time.elapsed().as_secs_f32();
-    // eprintln!("Spent {}s generating Runner.elm", _preparation_time);
-    // eprintln!("Compiling the generated templated src/Runner.elm ...");
+    log::info!("Spent {}s generating Runner.elm", _preparation_time);
+    log::info!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     if compile(
         elm_home,
@@ -229,7 +224,7 @@ pub fn main_helper(
     )?
     .success()
     {
-        eprintln!("✓ Compilation of tests modules succeeded");
+        log::warn!("✓ Compilation of tests modules succeeded");
         Ok(Output::MakeSuccess {
             tests_root,
             modules_abs_paths,
@@ -299,7 +294,7 @@ fn get_module_name(
     source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
     file: impl AsRef<Path>,
 ) -> anyhow::Result<String> {
-    // eprintln!("get_module_name of: {}", file.as_ref().display());
+    log::debug!("get_module_name of: {}", file.as_ref().display());
     let file = file.as_ref();
     let matching_source_dir = {
         let mut matching = source_dirs.into_iter().filter(|dir| file.starts_with(dir));
@@ -333,7 +328,7 @@ fn get_module_name(
     module_name_parts
         .iter()
         .filter(|s| !is_valid_module_name(s))
-        .for_each(|s| eprintln!("{}", s));
+        .for_each(|s| log::debug!("This part is not valid for a module name: {}", s));
     if !module_name_parts.iter().all(|s| is_valid_module_name(s)) {
         anyhow::bail!("I could not guess the module name of {} from its trimmed path {}. It may contains invalid parts.", file.display(), trimmed.display());
     }

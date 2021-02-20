@@ -24,6 +24,8 @@ atty = "0.2.14"
 anyhow = "1.0.38"
 clap = { version = "2.33.3", default-features = false }
 serde = { version = "1.0.123", default-features = false }
+log = { version = "0.4.14", default-features = false }
+stderrlog = { version = "0.5.1", default-features = false }
 
 [dev-dependencies]
 
