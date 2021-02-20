@@ -254,16 +254,22 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
+    let context_if_fails = format!(
+        r#"
+Failed to run {}. Are you sure it's in your PATH?
+If you installed elm locally with npm, maybe try running with npx such as:
+
+    npx --no-install elm-test-rs"#,
+        compiler
+    );
+    let output = output.as_ref().to_str().context(format!(
+        "Could not convert path into a String: {}",
+        output.as_ref().display()
+    ))?;
     Command::new(compiler)
-        .arg("make")
         .env("ELM_HOME", elm_home)
-        .arg(format!(
-            "--output={}",
-            output.as_ref().to_str().context(format!(
-                "Could not convert path into a String: {}",
-                output.as_ref().display()
-            ))?
-        ))
+        .arg("make")
+        .arg(format!("--output={}", output))
         .args(src)
         .current_dir(current_dir)
         // stdio config, comment to see elm make output for debug
@@ -271,11 +277,7 @@ where
         .stdout(Stdio::null())
         .stderr(Stdio::inherit())
         .status()
-        .context(format!(r#"Failed to run {}. Are you sure it's in your PATH? If you installed elm locally with npm, maybe try running:
-
-    npx --no-install elm-test-rs
-
-since npx adds your locally installed packages to your PATH"#, compiler))
+        .context(context_if_fails)
 }
 
 /// Replace the template keys and write result to output file.
