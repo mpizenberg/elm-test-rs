@@ -1,7 +1,8 @@
 use anyhow::Context;
-use notify::{watcher, RecursiveMode, Watcher};
+use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 use std::collections::BTreeSet;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use std::time::Duration;
@@ -53,7 +54,10 @@ impl Project {
         // Create a channel to receive the events.
         let (tx, rx) = channel();
         // Create a watcher object, delivering debounced events.
-        let mut watcher = watcher(tx, Duration::from_secs(1)).context("Failed to start watcher")?;
+        // See discussion here for the debouncing duration.
+        // https://users.rust-lang.org/t/how-to-make-good-usage-of-the-notify-crate-for-responsive-events/55891
+        let mut watcher =
+            watcher(tx, Duration::from_millis(100)).context("Failed to start watcher")?;
         let recursive = RecursiveMode::Recursive;
 
         // Watch the elm.json and the content of source directories.
@@ -73,10 +77,33 @@ impl Project {
         // Enter the watch loop.
         loop {
             match rx.recv().context("Error watching files")? {
-                notify::DebouncedEvent::NoticeWrite(_) => {}
-                notify::DebouncedEvent::NoticeRemove(_) => {}
-                _event => {
-                    log::debug!("{:?}", _event);
+                DebouncedEvent::NoticeWrite(_) => {}
+                DebouncedEvent::NoticeRemove(_) => {}
+                event => {
+                    log::debug!("{:?}", event);
+                    // Get the path of the file that triggered the event.
+                    let path = match &event {
+                        DebouncedEvent::Create(p) => Some(p.as_path()),
+                        DebouncedEvent::Write(p) => Some(p.as_path()),
+                        DebouncedEvent::Chmod(p) => Some(p.as_path()),
+                        DebouncedEvent::Remove(p) => Some(p.as_path()),
+                        DebouncedEvent::Rename(_p1, p2) => Some(p2.as_path()), // TODO: Improve that
+                        _ => None,
+                    };
+
+                    // We only process that event if it is of interest to us,
+                    // meaning the path is and elm file or elm.json or a directory.
+                    // If there was no path associated to the event we also might have
+                    // to process it so we that's what we do.
+                    let is_of_interest = |p: &Path| {
+                        p.extension() == Some(&OsStr::new("elm")) // this is an elm file
+                            || p.ends_with("elm.json") // elm.json changed
+                            || p.is_dir() // a directory changed
+                    };
+                    match path {
+                        Some(p) if !is_of_interest(p) => continue,
+                        _ => (),
+                    };
 
                     // drain event queue
                     for _ in rx.try_iter() {}
