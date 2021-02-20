@@ -178,9 +178,9 @@ fn main_helper(
     // Node supports worker_threads as experimental feature since 10.5,
     // but it is unknown whether all versions since 10.5 actually work with elm-test-rs.
     let experimental_arg = if node_version.starts_with(b"v10.") {
-        vec!["--experimental-worker"]
+        Some("--experimental-worker")
     } else {
-        vec![]
+        None
     };
 
     // Start the tests supervisor
