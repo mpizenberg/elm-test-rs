@@ -2,17 +2,15 @@
 
 use anyhow::Context;
 use glob::glob;
-use notify::{watcher, RecursiveMode, Watcher};
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::mpsc::channel;
-use std::time::Duration;
 
 use crate::include_template;
+use crate::project::Project;
 
 #[derive(Debug)]
 /// Options passed as arguments.
@@ -42,71 +40,21 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
         eprintln!("--------------------------------\n");
     }
 
+    let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
     if options.watch {
-        let mut test_directories = match main_helper(elm_home, elm_project_root, &options)? {
-            Output::MakeFailure { test_directories } => test_directories,
-            Output::MakeSuccess {
-                test_directories, ..
-            } => test_directories,
-        };
-        // Create a channel to receive the events.
-        let (tx, rx) = channel();
-        // Create a watcher object, delivering debounced events.
-        let mut watcher = watcher(tx, Duration::from_secs(1)).context("Failed to start watcher")?;
-        let recursive = RecursiveMode::Recursive;
-        let elm_json_path = elm_project_root.join("elm.json");
-        // Watch the elm.json and the content of source directories.
-        watcher
-            .watch(&elm_json_path, recursive)
-            .context(format!("Failed to watch {}", elm_json_path.display()))?;
-        for path in test_directories.iter() {
-            watcher
-                .watch(path, recursive)
-                .context(format!("Failed to watch {}", path.display()))?;
-        }
-        loop {
-            match rx.recv().context("Error watching files")? {
-                notify::DebouncedEvent::NoticeWrite(_) => {}
-                notify::DebouncedEvent::NoticeRemove(_) => {}
-                _event => {
-                    // eprintln!("{:?}", _event);
-                    let new_test_directories =
-                        match main_helper(elm_home, elm_project_root, &options)? {
-                            Output::MakeFailure { test_directories } => test_directories,
-                            Output::MakeSuccess {
-                                test_directories, ..
-                            } => test_directories,
-                        };
-                    if new_test_directories != test_directories {
-                        for path in test_directories.iter() {
-                            watcher
-                                .unwatch(path)
-                                .context(format!("Failed to unwatch {}", path.display()))?;
-                        }
-                        for path in new_test_directories.iter() {
-                            watcher
-                                .watch(path, recursive)
-                                .context(format!("Failed to watch {}", path.display()))?;
-                        }
-                        test_directories = new_test_directories;
-                    }
-                }
-            }
-        }
+        project.watch(|proj| main_helper(elm_home, proj, &options).map(|_| ()))
     } else {
-        match main_helper(elm_home, elm_project_root, &options)? {
-            Output::MakeFailure { .. } => anyhow::bail!("Compilation failed"),
+        match main_helper(elm_home, &project, &options)? {
+            Output::MakeFailure => anyhow::bail!("Compilation failed"),
             Output::MakeSuccess { .. } => Ok(()),
         }
     }
 }
 
+/// Output of running "elm make" on all the tests files.
 pub enum Output {
-    MakeFailure {
-        test_directories: Vec<PathBuf>,
-    },
+    MakeFailure,
     MakeSuccess {
-        test_directories: Vec<PathBuf>,
         tests_root: PathBuf,
         modules_abs_paths: HashSet<PathBuf>,
         compiled_runner: PathBuf,
@@ -117,19 +65,16 @@ pub enum Output {
 /// (useful for watch mode).
 pub fn main_helper(
     elm_home: &Path,
-    elm_project_root: &Path,
+    project: &Project,
     options: &Options,
 ) -> anyhow::Result<Output> {
     let start_time = std::time::Instant::now();
     // Default with tests in the tests/ directory
     let module_globs = if options.files.is_empty() {
-        let root_string = elm_project_root
-            .to_str()
-            .context(format!(
-                "Could not convert path to project directory into a String: {}",
-                elm_project_root.display()
-            ))?
-            .to_string();
+        let root_string = project.elm_project_root.to_str().context(format!(
+            "Could not convert path to project directory into a String: {}",
+            project.elm_project_root.display()
+        ))?;
         vec![
             format!("{}/{}", root_string, "tests/*.elm"),
             format!("{}/{}", root_string, "tests/**/*.elm"),
@@ -181,44 +126,33 @@ pub fn main_helper(
         }
     }
 
-    // Read project elm.json
-    let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
-        .context("Unable to read elm.json")?;
-    let info: ProjectConfig = serde_json::from_str(&elm_json_str).context("Invalid elm.json")?;
-    let source_directories = match &info {
-        ProjectConfig::Application(app_config) => app_config.source_directories.clone(),
-        ProjectConfig::Package(_) => vec!["src".to_string()],
-    };
-
-    // Get absolute paths for test directories
-    let tests_root = elm_project_root.join("elm-stuff").join("tests-0.19.1");
-    let mut test_directories: Vec<PathBuf> = source_directories
-        .iter()
-        .map(|path| elm_project_root.join(path).canonicalize())
-        .collect::<Result<_, _>>()?;
-    // Add tests/ to the list of source directories
-    if let Ok(path) = elm_project_root.join("tests").canonicalize() {
-        test_directories.push(path);
-    }
+    let tests_root = project
+        .elm_project_root
+        .join("elm-stuff")
+        .join("tests-0.19.1");
     // Make src dirs relative to the generated tests root
-    let mut source_directories_for_runner = Vec::new();
-    for path in test_directories.iter() {
-        let relative_path = pathdiff::diff_paths(&path, &tests_root).context(format!(
-            "Could not get path {} relative to path {}",
-            path.display(),
-            tests_root.display()
-        ))?;
-        source_directories_for_runner.push(relative_path);
-    }
-    // Add src/ to the source directories for Runner.elm
-    source_directories_for_runner.push("src".into());
+    let source_directories_for_runner = project
+        .src_and_test_dirs
+        .iter()
+        .map(|path| {
+            pathdiff::diff_paths(&path, &tests_root).context(format!(
+                "Could not get path {} relative to path {}",
+                path.display(),
+                tests_root.display()
+            ))
+        })
+        .chain(
+            // Add src/ to the source directories for Runner.elm
+            std::iter::once(Ok("src".into())),
+        )
+        .collect::<Result<Vec<PathBuf>, _>>()?;
 
     // Generate an elm.json for the to-be-generated Runner.elm.
     // eprintln!("Generating the elm.json for the Runner.elm");
     let tests_config = crate::deps::solve(
         elm_home,
         &options.connectivity,
-        &info,
+        &project.config,
         source_directories_for_runner.as_slice(),
     )
     .context("Failed to solve dependencies for tests to run")?;
@@ -248,7 +182,7 @@ pub fn main_helper(
     // Find module names
     let mut module_names = Vec::new();
     for p in modules_abs_paths.iter() {
-        module_names.push(get_module_name(&test_directories, p)?);
+        module_names.push(get_module_name(&project.src_and_test_dirs, p)?);
     }
 
     // Runner.elm imports of tests modules
@@ -297,13 +231,12 @@ pub fn main_helper(
     {
         eprintln!("✓ Compilation of tests modules succeeded");
         Ok(Output::MakeSuccess {
-            test_directories,
             tests_root,
             modules_abs_paths,
             compiled_runner,
         })
     } else {
-        Ok(Output::MakeFailure { test_directories })
+        Ok(Output::MakeFailure)
     }
 }
 
