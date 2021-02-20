@@ -293,8 +293,8 @@ pub fn create_templated<P: AsRef<Path>>(
     std::fs::write(output, output_str)
 }
 
-// By finding the module name from the file path we can import it even if
-// the file is full of errors. Elm will then report what’s wrong.
+/// By finding the module name from the file path we can import it even if
+/// the file is full of errors. Elm will then report what’s wrong.
 fn get_module_name(
     source_dirs: impl IntoIterator<Item = impl AsRef<Path>>,
     file: impl AsRef<Path>,
