@@ -10,15 +10,15 @@ use std::time::Duration;
 pub struct Project {
     pub config: ProjectConfig,
     pub src_and_test_dirs: BTreeSet<PathBuf>,
-    pub elm_project_root: PathBuf,
+    pub root_directory: PathBuf,
 }
 
 impl Project {
-    pub fn from_dir<P: AsRef<Path>>(elm_project_root: P) -> anyhow::Result<Project> {
-        let elm_project_root = elm_project_root.as_ref();
+    pub fn from_dir<P: AsRef<Path>>(root_directory: P) -> anyhow::Result<Project> {
+        let root_directory = root_directory.as_ref();
 
         // Read project elm.json
-        let elm_json_str = std::fs::read_to_string(elm_project_root.join("elm.json"))
+        let elm_json_str = std::fs::read_to_string(root_directory.join("elm.json"))
             .context("Unable to read elm.json")?;
         let config: ProjectConfig =
             serde_json::from_str(&elm_json_str).context("Invalid elm.json")?;
@@ -33,19 +33,19 @@ impl Project {
         // Transform source directories to absolute paths.
         let mut src_and_test_dirs: BTreeSet<PathBuf> = src_dirs
             .iter()
-            .map(|src| elm_project_root.join(src).canonicalize())
+            .map(|src| root_directory.join(src).canonicalize())
             .collect::<Result<_, _>>()
             .context("It seems source directories do not all exist")?;
 
         // Add tests/ to the list of source directories if it exists.
-        if let Ok(path) = elm_project_root.join("tests").canonicalize() {
+        if let Ok(path) = root_directory.join("tests").canonicalize() {
             src_and_test_dirs.insert(path);
         }
 
         Ok(Project {
             config,
             src_and_test_dirs,
-            elm_project_root: elm_project_root.into(),
+            root_directory: root_directory.into(),
         })
     }
 
@@ -57,7 +57,7 @@ impl Project {
         let recursive = RecursiveMode::Recursive;
 
         // Watch the elm.json and the content of source directories.
-        let elm_json_path = self.elm_project_root.join("elm.json");
+        let elm_json_path = self.root_directory.join("elm.json");
         watcher
             .watch(&elm_json_path, recursive)
             .context(format!("Failed to watch {}", elm_json_path.display()))?;
@@ -80,7 +80,7 @@ impl Project {
                     for _ in rx.try_iter() {}
 
                     // Load the potential updated elm.json.
-                    let new_project = Project::from_dir(&self.elm_project_root)?;
+                    let new_project = Project::from_dir(&self.root_directory)?;
 
                     // Update watched directories if they changed.
                     let old_src_dirs = &self.src_and_test_dirs;

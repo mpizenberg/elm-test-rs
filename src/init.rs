@@ -13,12 +13,12 @@ pub fn main<P: AsRef<Path>>(elm_home: P, project_root: P, offline: bool) -> anyh
     let updated_config = crate::deps::init(elm_home, project.config, offline).context(
         "Something went wrong when installing elm-explorations/test to the tests dependencies",
     )?;
-    crate::utils::json_write(project.elm_project_root.join("elm.json"), &updated_config)
+    crate::utils::json_write(project.root_directory.join("elm.json"), &updated_config)
         .context("Unable to write the updated elm.json")?;
 
     // Create the tests/Tests.elm template
     let init_tests_template = include_template!("Tests.elm");
-    let tests_dir = project.elm_project_root.join("tests");
+    let tests_dir = project.root_directory.join("tests");
     std::fs::create_dir_all(&tests_dir).context("Impossible to create directory tests/")?;
     let new_file_path = tests_dir.join("Tests.elm");
     if !new_file_path.exists() {

@@ -71,9 +71,9 @@ pub fn main_helper(
     let start_time = std::time::Instant::now();
     // Default with tests in the tests/ directory
     let module_globs = if options.files.is_empty() {
-        let root_string = project.elm_project_root.to_str().context(format!(
+        let root_string = project.root_directory.to_str().context(format!(
             "Could not convert path to project directory into a String: {}",
-            project.elm_project_root.display()
+            project.root_directory.display()
         ))?;
         vec![
             format!("{}/{}", root_string, "tests/*.elm"),
@@ -127,7 +127,7 @@ pub fn main_helper(
     }
 
     let tests_root = project
-        .elm_project_root
+        .root_directory
         .join("elm-stuff")
         .join("tests-0.19.1");
     // Make src dirs relative to the generated tests root
