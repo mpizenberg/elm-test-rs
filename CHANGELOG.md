@@ -37,6 +37,7 @@ All notable changes to this project will be documented in this file.
 - Fix the order of packages in the elm.json dependencies.
 - Add a message to stderr and fail when no test was found.
 - Validate that `--fuzz` is >= 1.
+- Fix race condition in `--watch` mode preventing a re-run if files change while running tests.
 
 
 ## [0.6.1] - (2021-01-23) [(diff)][diff-0.6.1]
