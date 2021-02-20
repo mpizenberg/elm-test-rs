@@ -7,7 +7,6 @@ use pubgrub::type_aliases::Map;
 use pubgrub::version::SemanticVersion as SemVer;
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::str::FromStr;
 
 use pubgrub_dependency_provider_elm::constraint::Constraint;
 use pubgrub_dependency_provider_elm::dependency_provider::{
@@ -22,19 +21,6 @@ pub enum ConnectivityStrategy {
     Progressive,
     Offline,
     Online(VersionStrategy),
-}
-
-impl FromStr for ConnectivityStrategy {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "progressive" => Ok(Self::Progressive),
-            "offline" => Ok(Self::Offline),
-            "online-newest" => Ok(Self::Online(VersionStrategy::Newest)),
-            "online-oldest" => Ok(Self::Online(VersionStrategy::Oldest)),
-            _ => Err(format!("Invalid connectivity option: {}", s)),
-        }
-    }
 }
 
 /// Install elm-explorations/test to the tests dependencies.
