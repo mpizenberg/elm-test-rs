@@ -54,7 +54,10 @@ impl Project {
         // Create a channel to receive the events.
         let (tx, rx) = channel();
         // Create a watcher object, delivering debounced events.
-        let mut watcher = watcher(tx, Duration::from_secs(1)).context("Failed to start watcher")?;
+        // See discussion here for the debouncing duration.
+        // https://users.rust-lang.org/t/how-to-make-good-usage-of-the-notify-crate-for-responsive-events/55891
+        let mut watcher =
+            watcher(tx, Duration::from_millis(100)).context("Failed to start watcher")?;
         let recursive = RecursiveMode::Recursive;
 
         // Watch the elm.json and the content of source directories.
