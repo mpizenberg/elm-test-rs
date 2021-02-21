@@ -145,10 +145,11 @@ jobs:
 
       - name: Install Elm
         run: |
-          curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
-          gunzip elm.gz
-          chmod +x elm
-          echo "." >> $GITHUB_PATH
+          mkdir -p bin
+          curl -L -o bin/elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
+          gunzip bin/elm.gz
+          chmod +x bin/elm
+          echo "bin" >> $GITHUB_PATH
 
       - name: Run end-to-end tests
         run: ./tests-example-projects/check_all_examples.sh
