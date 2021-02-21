@@ -142,6 +142,9 @@ jobs:
           command: build
           args: --release
 
+      - name: Setup Elm
+        uses: justgook/setup-elm@1.2.0
+
       - name: Run end-to-end tests
         run: ./tests-example-projects/check_all_examples.sh
 
