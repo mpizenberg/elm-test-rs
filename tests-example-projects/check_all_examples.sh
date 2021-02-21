@@ -13,7 +13,7 @@ export PATH="$(pwd)/target/release:$PATH"
 for example_dir in tests-example-projects/passing/*
 do
   echo "checking ${example_dir}"
-  elm-test-rs --project ${example_dir} > /dev/null
+  elm-test-rs --project ${example_dir} > /dev/null 2>&1
 done
 
 # Checking erroring tests
