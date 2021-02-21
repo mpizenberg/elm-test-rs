@@ -88,10 +88,13 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: mpizenberg/elm-install-cache-action@b94577bd43ebb22f71f730c394e3e34caa21b363
+      - uses: mpizenberg/elm-tooling-action@b6665b9d55111b51d09574b4338883ab572d100f
         with:
-          install-dir: ${{ github.workspace }}/bin
-          cache-key: elm-home
+          cache-key: elm-home-${{ matrix.os }}
+          elm: '0.19.1'
+          # elm-format: '0.8.5'
+          # elm-json: '0.2.10'
+
 
       - uses: actions-rs/toolchain@v1
         with:
