@@ -28,6 +28,7 @@ log = { version = "0.4.14", default-features = false }
 stderrlog = { version = "0.5.1", default-features = false }
 
 [dev-dependencies]
+assert_cmd = "1.0.3"
 
 [build-dependencies]
 fs_extra = "1.2.0"
