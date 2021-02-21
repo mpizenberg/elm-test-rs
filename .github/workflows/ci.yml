@@ -113,6 +113,38 @@ jobs:
         with:
           command: test
 
+  end-to-end-tests:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Download cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/
+            target/
+          key: end-to-end-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            end-to-end-
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+
+      - name: Run end-to-end tests
+        run: ./tests-example-projects/check_all_examples.sh
+
   check_formatting:
     name: Check formatting
     runs-on: ubuntu-latest
