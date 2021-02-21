@@ -127,12 +127,10 @@ jobs:
           curl -L -o bin/elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
           gunzip bin/elm.gz
           chmod +x bin/elm
-          echo "bin" >> $GITHUB_PATH
+          echo "$(pwd)/bin" >> $GITHUB_PATH
 
-      - name: try elm
-        run: elm --version
-
-      - uses: actions-rs/toolchain@v1
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
@@ -154,8 +152,8 @@ jobs:
           command: build
           args: --release
 
-      # - name: Run end-to-end tests
-      #   run: ./tests-example-projects/check_all_examples.sh
+      - name: Run end-to-end tests
+        run: ./tests-example-projects/check_all_examples.sh
 
   # check_formatting:
   #   name: Check formatting
