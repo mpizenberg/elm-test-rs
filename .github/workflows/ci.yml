@@ -3,115 +3,115 @@ name: CI
 on: [pull_request]
 
 jobs:
-  build:
-    name: Build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            # target: aarch64-unknown-linux-gnu
-
-    steps:
-      - name: install musl-tools if musl target
-        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
-        run: sudo apt install musl-tools
-
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
-
-      - name: Download cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/
-            target/
-          key: ${{ matrix.target }}-build-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.target }}-build-
-            ${{ matrix.target }}-
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }}
-
-      - name: Compress compiled binary
-        if: ${{ !startsWith(matrix.os, 'windows') }}
-        run: |
-          cd target/${{ matrix.target }}/release
-          tar czf elm-test-rs_${{ matrix.target }}.tar.gz elm-test-rs
-
-      - uses: actions/upload-artifact@v2
-        if: ${{ !startsWith(matrix.os, 'windows') }}
-        with:
-          name: elm-test-rs_${{ matrix.target }}.tar.gz
-          path: target/${{ matrix.target }}/release/elm-test-rs_${{ matrix.target }}.tar.gz
-
-      - uses: actions/upload-artifact@v2
-        if: ${{ startsWith(matrix.os, 'windows') }}
-        with:
-          name: elm-test-rs_${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/elm-test-rs.exe
-
-  test:
-    name: Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-        toolchain:
-          - stable
-          - beta
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.toolchain }}
-          override: true
-
-      - name: Download cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/
-            target/
-          key: test-${{ matrix.os }}-${{ matrix.toolchain }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            test-${{ matrix.os }}-${{ matrix.toolchain }}-
-            test-${{ matrix.os }}-
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+  # build:
+  #   name: Build
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - os: ubuntu-latest
+  #           target: x86_64-unknown-linux-gnu
+  #
+  #         - os: ubuntu-latest
+  #           target: x86_64-unknown-linux-musl
+  #
+  #         - os: windows-latest
+  #           target: x86_64-pc-windows-msvc
+  #
+  #         - os: macos-latest
+  #           target: x86_64-apple-darwin
+  #           # target: aarch64-unknown-linux-gnu
+  #
+  #   steps:
+  #     - name: install musl-tools if musl target
+  #       if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+  #       run: sudo apt install musl-tools
+  #
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: stable
+  #         target: ${{ matrix.target }}
+  #         override: true
+  #
+  #     - name: Download cache
+  #       uses: actions/cache@v2
+  #       with:
+  #         path: |
+  #           ~/.cargo/
+  #           target/
+  #         key: ${{ matrix.target }}-build-${{ hashFiles('Cargo.lock') }}
+  #         restore-keys: |
+  #           ${{ matrix.target }}-build-
+  #           ${{ matrix.target }}-
+  #
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: build
+  #         args: --release --target ${{ matrix.target }}
+  #
+  #     - name: Compress compiled binary
+  #       if: ${{ !startsWith(matrix.os, 'windows') }}
+  #       run: |
+  #         cd target/${{ matrix.target }}/release
+  #         tar czf elm-test-rs_${{ matrix.target }}.tar.gz elm-test-rs
+  #
+  #     - uses: actions/upload-artifact@v2
+  #       if: ${{ !startsWith(matrix.os, 'windows') }}
+  #       with:
+  #         name: elm-test-rs_${{ matrix.target }}.tar.gz
+  #         path: target/${{ matrix.target }}/release/elm-test-rs_${{ matrix.target }}.tar.gz
+  #
+  #     - uses: actions/upload-artifact@v2
+  #       if: ${{ startsWith(matrix.os, 'windows') }}
+  #       with:
+  #         name: elm-test-rs_${{ matrix.target }}
+  #         path: target/${{ matrix.target }}/release/elm-test-rs.exe
+  #
+  # test:
+  #   name: Test
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os:
+  #         - ubuntu-latest
+  #         - windows-latest
+  #         - macos-latest
+  #       toolchain:
+  #         - stable
+  #         - beta
+  #
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: ${{ matrix.toolchain }}
+  #         override: true
+  #
+  #     - name: Download cache
+  #       uses: actions/cache@v2
+  #       with:
+  #         path: |
+  #           ~/.cargo/
+  #           target/
+  #         key: test-${{ matrix.os }}-${{ matrix.toolchain }}-${{ hashFiles('Cargo.lock') }}
+  #         restore-keys: |
+  #           test-${{ matrix.os }}-${{ matrix.toolchain }}-
+  #           test-${{ matrix.os }}-
+  #
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: test
 
   end-to-end-tests:
     name: End-to-end tests
@@ -120,6 +120,17 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+
+      - name: Install Elm
+        run: |
+          mkdir -p bin
+          curl -L -o bin/elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
+          gunzip bin/elm.gz
+          chmod +x bin/elm
+          echo "bin" >> $GITHUB_PATH
+
+      - name: try elm
+        run: elm --version
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -143,54 +154,46 @@ jobs:
           command: build
           args: --release
 
-      - name: Install Elm
-        run: |
-          mkdir -p bin
-          curl -L -o bin/elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
-          gunzip bin/elm.gz
-          chmod +x bin/elm
-          echo "bin" >> $GITHUB_PATH
-
       - name: Run end-to-end tests
         run: ./tests-example-projects/check_all_examples.sh
 
-  check_formatting:
-    name: Check formatting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          components: rustfmt
-          override: true
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  clippy:
-    name: Check clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          components: clippy
-          override: true
-
-      - uses: actions-rs/cargo@v1
-        env:
-          RUSTFLAGS: -D warnings
-        with:
-          command: clippy
+  # check_formatting:
+  #   name: Check formatting
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: stable
+  #         components: rustfmt
+  #         override: true
+  #
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: fmt
+  #         args: --all -- --check
+  #
+  # clippy:
+  #   name: Check clippy
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: stable
+  #         components: clippy
+  #         override: true
+  #
+  #     - uses: actions-rs/cargo@v1
+  #       env:
+  #         RUSTFLAGS: -D warnings
+  #       with:
+  #         command: clippy
