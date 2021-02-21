@@ -154,8 +154,8 @@ jobs:
           command: build
           args: --release
 
-      - name: Run end-to-end tests
-        run: ./tests-example-projects/check_all_examples.sh
+      # - name: Run end-to-end tests
+      #   run: ./tests-example-projects/check_all_examples.sh
 
   # check_formatting:
   #   name: Check formatting
