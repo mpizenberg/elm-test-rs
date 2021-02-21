@@ -131,6 +131,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
+            ~/.elm/
             ~/.cargo/
             target/
           key: end-to-end-${{ hashFiles('Cargo.lock') }}
@@ -142,8 +143,12 @@ jobs:
           command: build
           args: --release
 
-      - name: Setup Elm
-        uses: justgook/setup-elm@1.2.0
+      - name: Install Elm
+        run: |
+          curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
+          gunzip elm.gz
+          chmod +x elm
+          echo "." >> $GITHUB_PATH
 
       - name: Run end-to-end tests
         run: ./tests-example-projects/check_all_examples.sh
