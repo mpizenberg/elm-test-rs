@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e # Make script exit when a command fail.
 set -u # Exit on usage of undeclared variable.
