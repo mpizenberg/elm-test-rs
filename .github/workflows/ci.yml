@@ -88,7 +88,7 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: mpizenberg/elm-install-cache-action@b94577b
+      - uses: mpizenberg/elm-install-cache-action@b94577bd43ebb22f71f730c394e3e34caa21b363
         with:
           install-dir: ${{ github.workspace }}/bin
           cache-key: elm-home
