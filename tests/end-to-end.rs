@@ -39,6 +39,6 @@ fn check_all_failing() {
 
 fn check_example(project_dir: &Path, exit_code: i32) {
     let mut cmd = Command::cargo_bin("elm-test-rs").unwrap();
-    let assert = cmd.arg("--project").arg(project_dir).arg("-vvv").assert();
+    let assert = cmd.current_dir(project_dir).arg("-vvv").assert();
     assert.code(exit_code);
 }
