@@ -80,6 +80,7 @@ pub fn main_helper(
     } else {
         options.files.clone()
     };
+    log::debug!("module_globs: {:?}", module_globs);
 
     // Get file paths of all modules in canonical form (absolute path)
     let mut glob_pattern_err = Ok(());
@@ -97,6 +98,7 @@ pub fn main_helper(
             path_result
                 // Getting absolute path.
                 .and_then(|path| {
+                    log::debug!("Found: {}", path.display());
                     path.canonicalize()
                         .context(format!("Error in canonicalize of {}", path.display()))
                 })
