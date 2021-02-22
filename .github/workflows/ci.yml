@@ -115,7 +115,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --release --jobs 1
+          # args: --release --jobs 1
+          args: --release
 
   # check_formatting:
   #   name: Check formatting

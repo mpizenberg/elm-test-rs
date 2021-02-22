@@ -51,7 +51,7 @@ fn check_example(project_dir: &Path, exit_code: i32) {
 // Testing that the --project CLI argument works as expected
 // -------------------------------------------------------------------
 
-#[test]
+// #[test]
 fn check_arg_project() {
     let passing = Path::new("tests").join("example-projects").join("passing");
     let app = passing.join("app");
