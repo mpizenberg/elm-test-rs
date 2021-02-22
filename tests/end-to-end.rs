@@ -3,7 +3,9 @@ use std::path::Path;
 
 #[test]
 fn check_all_passing() {
-    for entry in std::fs::read_dir(Path::new("tests/example-projects").join("passing")).unwrap() {
+    for entry in
+        std::fs::read_dir(Path::new("tests").join("example-projects").join("passing")).unwrap()
+    {
         let path = entry.unwrap().path();
         if path.is_dir() {
             check_example(&path, 0);
@@ -13,7 +15,9 @@ fn check_all_passing() {
 
 #[test]
 fn check_all_erroring() {
-    for entry in std::fs::read_dir(Path::new("tests/example-projects").join("erroring")).unwrap() {
+    for entry in
+        std::fs::read_dir(Path::new("tests").join("example-projects").join("erroring")).unwrap()
+    {
         let path = entry.unwrap().path();
         if path.is_dir() {
             check_example(&path, 1);
@@ -23,7 +27,9 @@ fn check_all_erroring() {
 
 #[test]
 fn check_all_failing() {
-    for entry in std::fs::read_dir(Path::new("tests/example-projects").join("failing")).unwrap() {
+    for entry in
+        std::fs::read_dir(Path::new("tests").join("example-projects").join("failing")).unwrap()
+    {
         let path = entry.unwrap().path();
         if path.is_dir() {
             check_example(&path, 2);
