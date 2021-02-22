@@ -69,13 +69,18 @@ pub fn main_helper(
     let start_time = std::time::Instant::now();
     // Default with tests in the tests/ directory
     let module_globs = if options.files.is_empty() {
-        let root_string = project.root_directory.to_str().context(format!(
-            "Could not convert path to project directory into a String: {}",
-            project.root_directory.display()
-        ))?;
+        let to_string = |p: PathBuf| {
+            p.to_str()
+                .context(format!(
+                    "Could not convert this path into a String: {}",
+                    p.display()
+                ))
+                .map(|s| s.to_string())
+        };
+        let tests_root = project.root_directory.join("tests");
         vec![
-            format!("{}/{}", root_string, "tests/*.elm"),
-            format!("{}/{}", root_string, "tests/**/*.elm"),
+            to_string(tests_root.join("*.elm"))?,
+            to_string(tests_root.join("**").join("*.elm"))?,
         ]
     } else {
         options.files.clone()
