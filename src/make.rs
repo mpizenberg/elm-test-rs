@@ -282,6 +282,11 @@ If you installed elm locally with npm, maybe try running with npx such as:
         "Could not convert path into a String: {}",
         output.as_ref().display()
     ))?;
+    log::debug!(
+        "Running \"{}\" with current_dir set to \"{}\"",
+        compiler,
+        current_dir.as_ref().display()
+    );
     Command::new(compiler)
         .env("ELM_HOME", elm_home)
         .arg("make")
