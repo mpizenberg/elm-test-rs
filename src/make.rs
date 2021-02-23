@@ -72,7 +72,7 @@ pub fn main_helper(
     let modules_abs_paths = if options.files.is_empty() {
         // Default with elm modules in the tests/ directory
         elm_files_within(project.root_directory.join("tests"))
-            .map(|p| crate::utils::absolute_path(p))
+            .map(crate::utils::absolute_path)
             .collect::<Result<_, _>>()?
     } else {
         // Get file paths of all modules in canonical form (absolute path)
@@ -206,7 +206,7 @@ pub fn main_helper(
 fn elm_files_within<P: AsRef<Path>>(directory: P) -> impl Iterator<Item = PathBuf> {
     let walker = WalkDir::new(directory).follow_links(true);
     let entries = walker.into_iter().filter_map(|e| e.ok());
-    entries.map(|e| e.into_path()).filter(|p| is_elm_file(p))
+    entries.map(|e| e.into_path()).filter(|p| is_elm_file(&p))
 }
 
 fn is_elm_file<P: AsRef<Path>>(p: P) -> bool {
