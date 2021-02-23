@@ -72,7 +72,7 @@ pub fn main_helper(
     let modules_abs_paths = if options.files.is_empty() {
         // Default with elm modules in the tests/ directory
         elm_files_within(project.root_directory.join("tests"))
-            .map(|p| absolute_path(p))
+            .map(|p| crate::utils::absolute_path(p))
             .collect::<Result<_, _>>()?
     } else {
         // Get file paths of all modules in canonical form (absolute path)
@@ -250,16 +250,10 @@ fn resolve_glob_pattern(pattern: &str) -> anyhow::Result<impl Iterator<Item = Pa
 /// Transform path into an absolute path and check that it is an elm file.
 fn absolute_elm_path(path: &Path) -> anyhow::Result<PathBuf> {
     if is_elm_file(path) {
-        absolute_path(path)
+        crate::utils::absolute_path(path)
     } else {
         anyhow::bail!("{} isn't an elm file", path.display())
     }
-}
-
-fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    let path = path.as_ref();
-    path.canonicalize()
-        .context(format!("Error in canonicalize of {}", path.display()))
 }
 
 /// Compile an Elm module into a JS file (without --optimized)

@@ -16,7 +16,7 @@ pub struct Project {
 
 impl Project {
     pub fn from_dir<P: AsRef<Path>>(root_directory: P) -> anyhow::Result<Project> {
-        let root_directory = root_directory.as_ref();
+        let root_directory = crate::utils::absolute_path(root_directory)?;
 
         // Read project elm.json
         let elm_json_str = std::fs::read_to_string(root_directory.join("elm.json"))
@@ -46,7 +46,7 @@ impl Project {
         Ok(Project {
             config,
             src_and_test_dirs,
-            root_directory: root_directory.into(),
+            root_directory,
         })
     }
 

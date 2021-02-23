@@ -94,3 +94,10 @@ pub fn json_write<P: AsRef<Path>, T: ?Sized + serde::Serialize>(
     writeln!(&mut writer)?;
     writer.flush().map_err(|e| e.into())
 }
+
+/// Returns the absolute path with a useful error message if not possible.
+pub fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
+    let path = path.as_ref();
+    path.canonicalize()
+        .context(format!("Error in canonicalize of {}", path.display()))
+}
