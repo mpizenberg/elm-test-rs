@@ -116,7 +116,7 @@ jobs:
         with:
           command: test
           # args: --release --jobs 1
-          args: --release
+          args: --release parser
 
   check_formatting:
     name: Check formatting

@@ -287,7 +287,8 @@ If you installed elm locally with npm, maybe try running with npx such as:
         compiler,
         current_dir.as_ref().display()
     );
-    Command::new(compiler)
+    let executable_path = which::CanonicalPath::new(compiler)?;
+    Command::new(executable_path.as_path())
         .env("ELM_HOME", elm_home)
         .arg("make")
         .arg(format!("--output={}", output))
