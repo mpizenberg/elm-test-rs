@@ -124,8 +124,7 @@ fn main() -> anyhow::Result<()> {
             // Create the path to make sure it exists.
             std::fs::create_dir_all(str_path)
                 .context(format!("{} does not exist and is not writable", str_path))?;
-            std::fs::canonicalize(str_path)
-                .context(format!("Error getting absolute path of {}", str_path))?
+            utils::absolute_path(str_path)?
         }
     };
 
@@ -187,12 +186,7 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
     let mut compiler = arg_matches.value_of("compiler").unwrap().to_string(); // unwrap is fine since compiler has a default value
     let compiler_path = std::path::Path::new(&compiler);
     if compiler_path.components().count() > 1 {
-        compiler = compiler_path
-            .canonicalize()
-            .context(format!(
-                "Could not find {}. Is that path correct?",
-                compiler_path.display()
-            ))?
+        compiler = utils::absolute_path(compiler_path)?
             .to_str()
             .context("Could not convert to &str")?
             .to_string();

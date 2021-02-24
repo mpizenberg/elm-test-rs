@@ -23,8 +23,8 @@ macro_rules! include_template {
 
 /// Find the root of the elm project (of current dir).
 pub fn elm_project_root(root: &str) -> anyhow::Result<PathBuf> {
-    let current_dir = std::fs::canonicalize(root)
-        .context("Could not retrieve the path of the project directory")?;
+    let current_dir =
+        absolute_path(root).context("Could not retrieve the path of the project directory")?;
     parent_traversal("elm.json", &current_dir)
         .context("I didn't find any elm.json. Are you in an Elm project?")
 }
@@ -33,7 +33,10 @@ pub fn elm_project_root(root: &str) -> anyhow::Result<PathBuf> {
 /// Return the path of the directory containing the file or an error if not found.
 pub fn parent_traversal(file_to_find: &str, current_dir: &Path) -> anyhow::Result<PathBuf> {
     if std::fs::read_dir(current_dir)
-        .context("Impossible to list files in current directory")?
+        .context(format!(
+            "Impossible to list files in directory: {}",
+            current_dir.display()
+        ))?
         .filter_map(|f| f.ok())
         .any(|f| f.file_name() == file_to_find)
     {
@@ -98,6 +101,8 @@ pub fn json_write<P: AsRef<Path>, T: ?Sized + serde::Serialize>(
 /// Returns the absolute path with a useful error message if not possible.
 pub fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     let path = path.as_ref();
-    path.canonicalize()
-        .context(format!("Error in canonicalize of {}", path.display()))
+    path.canonicalize().context(format!(
+        "Error trying to get absolute path of: {}",
+        path.display()
+    ))
 }

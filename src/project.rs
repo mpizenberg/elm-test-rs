@@ -34,13 +34,14 @@ impl Project {
         // Transform source directories to absolute paths.
         let mut src_and_test_dirs: BTreeSet<PathBuf> = src_dirs
             .iter()
-            .map(|src| root_directory.join(src).canonicalize())
+            .map(|src| crate::utils::absolute_path(root_directory.join(src)))
             .collect::<Result<_, _>>()
             .context("It seems source directories do not all exist")?;
 
         // Add tests/ to the list of source directories if it exists.
-        if let Ok(path) = root_directory.join("tests").canonicalize() {
-            src_and_test_dirs.insert(path);
+        let tests_dir = root_directory.join("tests");
+        if tests_dir.exists() {
+            src_and_test_dirs.insert(tests_dir);
         }
 
         Ok(Project {
