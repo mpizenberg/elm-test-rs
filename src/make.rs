@@ -287,9 +287,48 @@ If you installed elm locally with npm, maybe try running with npx such as:
         compiler,
         current_dir.as_ref().display()
     );
-    let executable_path = which::CanonicalPath::new(compiler)?;
-    Command::new(executable_path.as_path())
+    let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
+    let executable = executable.as_path();
+    log::debug!("We found an executable: {}", executable.display());
+    if executable.extension() == Some(&OsStr::new("cmd")) {
+        shell_command(elm_home, compiler, src, output, current_dir.as_ref())
+            .context(context_if_fails)
+    } else {
+        Command::new(executable)
+            .env("ELM_HOME", elm_home)
+            .arg("make")
+            .arg(format!("--output={}", output))
+            .args(src)
+            .current_dir(current_dir)
+            // stdio config, comment to see elm make output for debug
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::inherit())
+            .status()
+            .context(context_if_fails)
+    }
+}
+
+/// Uses cmd to execute a command on Windows
+#[cfg(windows)]
+fn shell_command<I, S>(
+    elm_home: &Path,
+    compiler: &str,
+    src: I,
+    output: &str,
+    current_dir: &Path,
+) -> Result<std::process::ExitStatus, std::io::Error>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    log::debug!("Trying with a cmd shell");
+    Command::new("cmd")
         .env("ELM_HOME", elm_home)
+        .arg("/D")
+        .arg("/Q")
+        .arg("/C")
+        .arg(compiler)
         .arg("make")
         .arg(format!("--output={}", output))
         .args(src)
@@ -299,7 +338,23 @@ If you installed elm locally with npm, maybe try running with npx such as:
         .stdout(Stdio::null())
         .stderr(Stdio::inherit())
         .status()
-        .context(context_if_fails)
+}
+
+/// Fails on unix
+#[cfg(unix)]
+#[allow(unused_variables)]
+fn shell_command<I, S>(
+    elm_home: &Path,
+    compiler: &str,
+    src: I,
+    output: &str,
+    current_dir: &Path,
+) -> Result<std::process::ExitStatus, std::io::Error>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    Command::new(compiler).status()
 }
 
 /// Replace the template keys and write result to output file.
