@@ -288,24 +288,18 @@ If you installed elm locally with npm, maybe try running with npx such as:
         current_dir.as_ref().display()
     );
     let executable_path = which::CanonicalPath::new(compiler)?;
-    let actual_current_dir =
-        std::env::current_dir().context("Unable to get the current directory")?;
-    std::env::set_current_dir(current_dir).context("Unable to change current directory")?;
-    let exit_status = Command::new(executable_path.as_path())
+    Command::new(executable_path.as_path())
         .env("ELM_HOME", elm_home)
         .arg("make")
         .arg(format!("--output={}", output))
         .args(src)
-        // .current_dir(current_dir)
+        .current_dir(current_dir)
         // stdio config, comment to see elm make output for debug
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::inherit())
         .status()
-        .context(context_if_fails);
-    std::env::set_current_dir(actual_current_dir)
-        .context("Unable to reset initial current directory")?;
-    exit_status
+        .context(context_if_fails)
 }
 
 /// Replace the template keys and write result to output file.
