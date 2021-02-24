@@ -16,7 +16,7 @@ pub struct Project {
 
 impl Project {
     pub fn from_dir<P: AsRef<Path>>(root_directory: P) -> anyhow::Result<Project> {
-        let root_directory = root_directory.as_ref();
+        let root_directory = crate::utils::absolute_path(root_directory)?;
 
         // Read project elm.json
         let elm_json_str = std::fs::read_to_string(root_directory.join("elm.json"))
@@ -34,19 +34,20 @@ impl Project {
         // Transform source directories to absolute paths.
         let mut src_and_test_dirs: BTreeSet<PathBuf> = src_dirs
             .iter()
-            .map(|src| root_directory.join(src).canonicalize())
+            .map(|src| crate::utils::absolute_path(root_directory.join(src)))
             .collect::<Result<_, _>>()
             .context("It seems source directories do not all exist")?;
 
         // Add tests/ to the list of source directories if it exists.
-        if let Ok(path) = root_directory.join("tests").canonicalize() {
-            src_and_test_dirs.insert(path);
+        let tests_dir = root_directory.join("tests");
+        if tests_dir.exists() {
+            src_and_test_dirs.insert(tests_dir);
         }
 
         Ok(Project {
             config,
             src_and_test_dirs,
-            root_directory: root_directory.into(),
+            root_directory,
         })
     }
 

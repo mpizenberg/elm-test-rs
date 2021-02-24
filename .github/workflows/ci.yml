@@ -4,15 +4,12 @@ on: [pull_request]
 
 jobs:
   build:
-    name: Build
+    name: Build artifacts
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
 
@@ -83,19 +80,30 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
-        toolchain:
-          - stable
-          - beta
+    env:
+      ELM_HOME: '${{ github.workspace }}/elm-home'
 
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
 
+      - uses: mpizenberg/elm-tooling-action@b6665b9d55111b51d09574b4338883ab572d100f
+        with:
+          cache-key: elm-home-${{ matrix.os }}
+          elm: '0.19.1'
+          # elm-format: '0.8.5'
+          # elm-json: '0.2.10'
+
+      - name: Temporary clear windows elm cache
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        run: rm -rf $ELM_HOME/0.19.1
+        shell: bash
+
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: stable
           override: true
 
       - name: Download cache
@@ -104,14 +112,15 @@ jobs:
           path: |
             ~/.cargo/
             target/
-          key: test-${{ matrix.os }}-${{ matrix.toolchain }}-${{ hashFiles('Cargo.lock') }}
+          key: test-${{ matrix.os }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            test-${{ matrix.os }}-${{ matrix.toolchain }}-
             test-${{ matrix.os }}-
 
       - uses: actions-rs/cargo@v1
         with:
           command: test
+          # args: --release --jobs 1
+          args: --release
 
   check_formatting:
     name: Check formatting

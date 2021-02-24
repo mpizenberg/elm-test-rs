@@ -8,6 +8,7 @@ use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use walkdir::WalkDir;
 
 use crate::include_template;
 use crate::project::Project;
@@ -67,50 +68,16 @@ pub fn main_helper(
     options: &Options,
 ) -> anyhow::Result<Output> {
     let start_time = std::time::Instant::now();
-    // Default with tests in the tests/ directory
-    let module_globs = if options.files.is_empty() {
-        let root_string = project.root_directory.to_str().context(format!(
-            "Could not convert path to project directory into a String: {}",
-            project.root_directory.display()
-        ))?;
-        vec![
-            format!("{}/{}", root_string, "tests/*.elm"),
-            format!("{}/{}", root_string, "tests/**/*.elm"),
-        ]
-    } else {
-        options.files.clone()
-    };
 
-    // Get file paths of all modules in canonical form (absolute path)
-    let mut glob_pattern_err = Ok(());
-    let modules_abs_paths: HashSet<PathBuf> = module_globs
-        .iter()
-        .map(|pattern| (pattern, glob(pattern)))
-        // Stop at first glob error
-        .scan(&mut glob_pattern_err, |err, (p, gp)| {
-            gp.map_err(|e| **err = Err(e).context(format!("Failed to read glob pattern {}", p)))
-                .ok()
-        })
-        .flatten()
-        .map(|x| x.map_err(anyhow::Error::from)) // Just a type conversion trick for the compiler
-        .map(|path_result| {
-            path_result
-                // Getting absolute path.
-                .and_then(|path| {
-                    path.canonicalize()
-                        .context(format!("Error in canonicalize of {}", path.display()))
-                })
-                // Checking that it's actually an elm file.
-                .and_then(|path| {
-                    if path.is_file() && path.extension() == Some(&OsStr::new("elm")) {
-                        Ok(path)
-                    } else {
-                        anyhow::bail!("{} isn't an elm file", path.display(),)
-                    }
-                })
-        })
-        .collect::<Result<_, _>>()?;
-    glob_pattern_err?;
+    let modules_abs_paths = if options.files.is_empty() {
+        // Default with elm modules in the tests/ directory
+        elm_files_within(project.root_directory.join("tests"))
+            .map(crate::utils::absolute_path)
+            .collect::<Result<_, _>>()?
+    } else {
+        // Get file paths of all modules in canonical form (absolute path)
+        get_elm_modules_abs_paths(&options.files)?
+    };
 
     // Report an error if no file was found.
     if modules_abs_paths.is_empty() {
@@ -235,6 +202,60 @@ pub fn main_helper(
     }
 }
 
+/// List recursively all elm files within a given directory.
+fn elm_files_within<P: AsRef<Path>>(directory: P) -> impl Iterator<Item = PathBuf> {
+    let walker = WalkDir::new(directory).follow_links(true);
+    let entries = walker.into_iter().filter_map(|e| e.ok());
+    entries.map(|e| e.into_path()).filter(|p| is_elm_file(&p))
+}
+
+fn is_elm_file<P: AsRef<Path>>(p: P) -> bool {
+    p.as_ref().extension() == Some(&OsStr::new("elm"))
+}
+
+/// Collect absolute paths of all elm files matching the patterns given as arguments.
+fn get_elm_modules_abs_paths(args: &[String]) -> anyhow::Result<HashSet<PathBuf>> {
+    let mut glob_err = Ok(());
+    let abs_paths: HashSet<PathBuf> = args
+        .iter()
+        .map(|arg| resolve_glob_arg(arg))
+        .scan(&mut glob_err, |err, res| {
+            res.map_err(|e| **err = Err(e)).ok()
+        })
+        .flatten()
+        .map(|path| absolute_elm_path(&path))
+        .collect::<Result<_, _>>()?;
+    glob_err.map_err(anyhow::Error::from)?;
+    Ok(abs_paths)
+}
+
+/// If the argument is a path to an existing file,
+/// return an iterator with just this file.
+/// Otherwise, interpret it as a glob pattern and resolve it into a file iterator.
+fn resolve_glob_arg(arg: &str) -> anyhow::Result<impl Iterator<Item = PathBuf>> {
+    let path = PathBuf::from(arg);
+    if path.exists() {
+        Ok(either::Left(std::iter::once(path)))
+    } else {
+        resolve_glob_pattern(arg).map(either::Right)
+    }
+}
+
+fn resolve_glob_pattern(pattern: &str) -> anyhow::Result<impl Iterator<Item = PathBuf>> {
+    Ok(glob(pattern)
+        .context(format!("Failed to read glob pattern {}", pattern))?
+        .filter_map(|gr| gr.ok()))
+}
+
+/// Transform path into an absolute path and check that it is an elm file.
+fn absolute_elm_path(path: &Path) -> anyhow::Result<PathBuf> {
+    if is_elm_file(path) {
+        crate::utils::absolute_path(path)
+    } else {
+        anyhow::bail!("{} isn't an elm file", path.display())
+    }
+}
+
 /// Compile an Elm module into a JS file (without --optimized)
 pub fn compile<P1, P2, I, S>(
     elm_home: &Path,
@@ -261,7 +282,13 @@ If you installed elm locally with npm, maybe try running with npx such as:
         "Could not convert path into a String: {}",
         output.as_ref().display()
     ))?;
-    Command::new(compiler)
+    log::debug!(
+        "Running \"{}\" with current_dir set to \"{}\"",
+        compiler,
+        current_dir.as_ref().display()
+    );
+    let executable_path = which::CanonicalPath::new(compiler)?;
+    Command::new(executable_path.as_path())
         .env("ELM_HOME", elm_home)
         .arg("make")
         .arg(format!("--output={}", output))
