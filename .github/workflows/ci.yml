@@ -95,6 +95,10 @@ jobs:
           # elm-format: '0.8.5'
           # elm-json: '0.2.10'
 
+      - name: Temporary clear windows elm cache
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        run: rm -rf $ELM_HOME/0.19.1
+        shell: bash
 
       - uses: actions-rs/toolchain@v1
         with:
