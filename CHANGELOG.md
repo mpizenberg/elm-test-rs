@@ -41,6 +41,8 @@ All notable changes to this project will be documented in this file.
 - Add a message to stderr and fail when no test was found.
 - Validate that `--fuzz` is >= 1.
 - Fix race condition in `--watch` mode preventing a re-run if files change while running tests.
+- Fix Windows paths issues due to UNC paths.
+- Fix elm command for Windows when installed via npm.
 
 
 ## [0.6.1] - (2021-01-23) [(diff)][diff-0.6.1]
