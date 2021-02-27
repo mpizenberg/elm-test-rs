@@ -123,7 +123,7 @@ but this is already super useful for unit tests.
 
 By default, elm-test-rs just prints to stdout the output of the tests runner,
 which are dependent on the `--report` option chosen (defaults to console report).
-But if you are interesting in gaining more insight on what is happening inside,
+But if you are interested in gaining more insight on what is happening inside,
 you can add a verbosity level to the command.
 
 - `elm-test-rs -v`: Slightly verbose. This will print to stderr some additional info
@@ -254,13 +254,13 @@ tests = describe "TestModule" [ a, b, c ]
 ### Globs are treated slightly differently
 
 Whith elm-test, globs support directories so you can call `elm-test tests/` and all elm files
-withing the `test/` directory will be used.
+within the `tests/` directory will be used.
 With elm-test-rs the arguments must be elm files,
 so you would call `elm-test-rs tests/**/*.elm` instead.
 
-## Minimum supported version
+## Minimum supported version
 
-- elm 0.19.1
+- Elm 0.19.1
 - Node 10.5
 
 ## Design goals
