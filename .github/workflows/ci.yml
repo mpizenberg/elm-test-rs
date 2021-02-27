@@ -1,6 +1,9 @@
 name: CI
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches: [ master, main ]
 
 jobs:
   build:
@@ -88,16 +91,14 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: mpizenberg/elm-tooling-action@b6665b9d55111b51d09574b4338883ab572d100f
+      - uses: mpizenberg/elm-tooling-action@746bbdcd1ed901364e4c8380058da4c22ebfbb92
         with:
-          cache-key: elm-home-${{ matrix.os }}
-          elm: '0.19.1'
-          # elm-format: '0.8.5'
-          # elm-json: '0.2.10'
+          cache-key: elm-home-${{ matrix.os }}-0
+          cache-restore-key: elm-home-${{ matrix.os }}
+          elm-tooling-dir: tests
 
-      - name: Temporary clear windows elm cache
-        if: ${{ startsWith(matrix.os, 'windows') }}
-        run: rm -rf $ELM_HOME/0.19.1
+      - name: Clear elm-test-runner package in cache
+        run: rm -rf $ELM_HOME/0.19.1/packages/mpizenberg/elm-test-runner
         shell: bash
 
       - uses: actions-rs/toolchain@v1

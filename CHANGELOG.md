@@ -7,6 +7,17 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+#### Changed
+
+#### Removed
+
+#### Fixed
+
+
+## [1.0.0] - (2021-02-27) [(diff)][diff-1.0.0]
+
+#### Added
+
 - New `--project` CLI option to be able to pass as argument the path to the root
   of the elm project, containing the `elm.json`.
 - The globs CLI arguments and resulting found tests modules paths
@@ -15,20 +26,21 @@ All notable changes to this project will be documented in this file.
 - New `--dependencies [newest|oldest]` argument.
 - New `make` subcommand that stops after compilation of the tests modules.
 - New `--elm-home` argument also able to pick up the env variable `ELM_HOME`.
+- New multiple verbosity flag `-v` to replace the previous `--quiet` flag.
+  Level 0 (default) has mostly quiet stderr, level 3 `-vvv` add debug info,
+  and levels in between add more and more info.
 
 #### Changed
 
 - Http timeouts are increased from 1s to 10s.
 - Updated the Elm submodule for the test runner.
 - Changed the CLI crate from pico_args to clap.
-- Replace the `--quiet` flag by a multiple verbosity one `-v`.
-  Level 0 (default) hast mostly quiet stderr, level 3 `-vvv` add debug info,
-  and levels in between add more and more info.
 
 #### Removed
 
 - The `--connectivity` argument is no more.
   Replaced by a combination of `--offline` and `--dependencies <strategy>`.
+- The `--quiet` flag, replaced by verbosity `-vvv`.
 
 #### Fixed
 
@@ -41,6 +53,8 @@ All notable changes to this project will be documented in this file.
 - Add a message to stderr and fail when no test was found.
 - Validate that `--fuzz` is >= 1.
 - Fix race condition in `--watch` mode preventing a re-run if files change while running tests.
+- Fix Windows paths issues due to UNC paths.
+- Fix elm command for Windows when installed via npm.
 
 
 ## [0.6.1] - (2021-01-23) [(diff)][diff-0.6.1]
@@ -181,6 +195,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[1.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.0
 [0.6.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.6.1
 [0.6.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.6
 [0.5.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.5.1
@@ -191,7 +206,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v0.6.1...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v1.0...master
+[diff-1.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.6.1...v1.0
 [diff-0.6.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.6...v0.6.1
 [diff-0.6.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5.1...v0.6
 [diff-0.5.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5...v0.5.1
