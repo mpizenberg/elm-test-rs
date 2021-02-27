@@ -4,6 +4,7 @@ version = "1.0.0"
 authors = ["Matthieu Pizenberg <matthieu.pizenberg@gmail.com>", "Harry Sarson <harry.sarson@hotmail.co.uk>"]
 edition = "2018"
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
+license = "BSD-3-Clause"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
