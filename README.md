@@ -4,17 +4,21 @@ Fast and portable executable to run your Elm tests.
 
 ## Install
 
-To install it **globally**, simply download the executable for your system
+To install elm-test-rs **globally**, simply download the executable for your system
 from the [latest release](https://github.com/mpizenberg/elm-test-rs/releases),
-and put it in a directory in your PATH environment variable
+and put it in a directory in your `PATH` environment variable
 so that you can call `elm-test-rs` from anywhere.
 
-(WIP) Alternatively, you can specify a version of elm-test-rs **locally** per project,
-in an `elm-tooling.json` config file and install it locally for that project
-with [`elm-tooling install`][elm-tooling].
+To install elm-test-rs **locally** per project,
+add elm-test-rs in your `elm-tooling.json` config file
+and use [`elm-tooling install`][elm-tooling].
 In such case, you'll have to run it via npx: `npx elm-test-rs`.
 
+To install elm-test-rs **in your CI**,
+as well as elm and other tools, use this [GitHub action][action].
+
 [elm-tooling]: https://elm-tooling.github.io/elm-tooling-cli/
+[action]: https://github.com/mpizenberg/elm-tooling-action
 
 ## Usage
 
