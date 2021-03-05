@@ -35,6 +35,6 @@ in pkgs.rustPlatform.buildRustPackage {
 
   buildInputs = pkgs.lib.optionals pkgs.stdenv.isDarwin macosDeps;
 
-  cargoSha256 = "01llzqwg9whn1ggka0lnx0wj5bzjndzb4r1p7463vqz9izcq0hp1";
+  cargoSha256 = "00g8bnc9fbzmbia6cmgdg5g25g9yccwq2hldww8k2870r6dcz49m";
   verifyCargoDeps = true;
 }
