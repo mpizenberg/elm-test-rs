@@ -37,4 +37,8 @@ in pkgs.rustPlatform.buildRustPackage {
 
   cargoSha256 = "00g8bnc9fbzmbia6cmgdg5g25g9yccwq2hldww8k2870r6dcz49m";
   verifyCargoDeps = true;
+
+  # Nix disallows connecting to the internet in these tests, so we can't run them
+  # as part of the build
+  doCheck = false;
 }
