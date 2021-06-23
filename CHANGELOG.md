@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [1.1.0] - (2021-06-23) [(diff)][diff-1.1.0]
+
+#### Added
+
+- Added a `task_id` field in the exercism report.
+
+
 ## [1.0.0] - (2021-02-27) [(diff)][diff-1.0.0]
 
 #### Added
@@ -195,6 +202,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[1.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.1
 [1.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.0
 [0.6.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.6.1
 [0.6.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.6
