@@ -13,7 +13,7 @@ enum Exposing<'a> {
 pub fn potential_tests(src: &str) -> Vec<&str> {
     alt((parse_file, parse_content))(src)
         .map(|x| x.1)
-        .unwrap_or_else(|_| vec![])
+        .unwrap_or_default()
 }
 
 fn parse_file(input: &str) -> IResult<&str, Vec<&str>> {
