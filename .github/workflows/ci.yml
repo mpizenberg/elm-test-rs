@@ -17,6 +17,7 @@ jobs:
           - windows
           - macos
           - linux-arm-64
+          - linux-arm-32
         include:
           - build: linux-musl
             os: ubuntu-latest
@@ -37,6 +38,12 @@ jobs:
             os: ubuntu-latest
             toolchain: nightly
             target: aarch64-unknown-linux-gnu
+            cross: true
+
+          - build: linux-arm-32
+            os: ubuntu-latest
+            toolchain: nightly
+            target: arm-unknown-linux-gnueabihf
             cross: true
 
     steps:
