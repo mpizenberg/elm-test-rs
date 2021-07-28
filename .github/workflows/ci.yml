@@ -16,6 +16,7 @@ jobs:
           - linux-musl
           - windows
           - macos
+          - macos-arm-64
           - linux-arm-64
           - linux-arm-32
         include:
@@ -33,6 +34,12 @@ jobs:
             os: macos-latest
             toolchain: stable
             target: x86_64-apple-darwin
+
+          - build: macos-arm-64
+            os: macos-latest
+            toolchain: nightly
+            target: aarch64-apple-darwin
+            cross: true
 
           - build: linux-arm-64
             os: ubuntu-latest
