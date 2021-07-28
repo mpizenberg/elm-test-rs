@@ -12,14 +12,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        build:
+          - linux-musl
+          - windows
+          - macos
         include:
-          - os: ubuntu-latest
+          - build: linux-musl
+            os: ubuntu-latest
+            toolchain: stable
             target: x86_64-unknown-linux-musl
 
-          - os: windows-latest
+          - build: windows
+            os: windows-latest
+            toolchain: stable
             target: x86_64-pc-windows-msvc
 
-          - os: macos-latest
+          - build: macos
+            os: macos-latest
+            toolchain: stable
             target: x86_64-apple-darwin
             # target: aarch64-unknown-linux-gnu
 
@@ -35,7 +45,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
           override: true
 
