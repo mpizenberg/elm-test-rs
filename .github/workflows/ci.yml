@@ -95,7 +95,7 @@ jobs:
 
       - name: Specific cross compilation for macos aarch64
         if: ${{ matrix.cross && matrix.target == 'aarch64-apple-darwin' }}
-        run: SDKROOT=$(xcrun -sdk macosx11.0 --show-sdk-path) MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.0 --show-sdk-platform-version) cross build --release --target ${{ matrix.target }}
+        run: SDKROOT=$(xcrun -sdk macosx11.1 --show-sdk-path) MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.1 --show-sdk-platform-version) cross build --release --target ${{ matrix.target }}
 
       - name: Use cross instead of cargo for cross compilation
         if: ${{ matrix.cross && matrix.target != 'aarch64-apple-darwin' }}
