@@ -50,12 +50,12 @@ jobs:
           - build: linux-arm-32
             os: ubuntu-latest
             toolchain: nightly
-            target: arm-unknown-linux-gnueabihf
+            target: arm-unknown-linux-musleabihf
             cross: true
 
     steps:
       - name: install musl-tools if musl target
-        if: ${{ endsWith(matrix.target, 'musl') }}
+        if: ${{ contains(matrix.target, 'musl') }}
         run: sudo apt install musl-tools
 
       - uses: actions/checkout@v2
