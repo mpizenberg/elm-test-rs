@@ -16,6 +16,7 @@ jobs:
           - linux-musl
           - windows
           - macos
+          - linux-arm-64
         include:
           - build: linux-musl
             os: ubuntu-latest
@@ -31,7 +32,12 @@ jobs:
             os: macos-latest
             toolchain: stable
             target: x86_64-apple-darwin
-            # target: aarch64-unknown-linux-gnu
+
+          - build: linux-arm-64
+            os: ubuntu-latest
+            toolchain: nightly
+            target: aarch64-unknown-linux-gnu
+            cross: true
 
     steps:
       - name: install musl-tools if musl target
@@ -60,10 +66,22 @@ jobs:
             ${{ matrix.target }}-build-
             ${{ matrix.target }}-
 
+      - name: Install cross compiler
+        if: ${{ matrix.cross }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cross
+
       - uses: actions-rs/cargo@v1
+        if: ${{ !matrix.cross }}
         with:
           command: build
           args: --release --target ${{ matrix.target }}
+
+      - name: Use cross instead of cargo for cross compilation
+        if: ${{ matrix.cross }}
+        run: cross build --release --target ${{ matrix.target }}
 
       - name: Compress compiled binary
         if: ${{ !startsWith(matrix.os, 'windows') }}
