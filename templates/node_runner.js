@@ -37,11 +37,11 @@ app.ports.sendResult.subscribe((msg) => {
   msg.duration = performance.now() - startTime;
   msg.logs = logs;
   parentPort.postMessage(msg);
-  logs = [];
+  logs.length = 0;
 });
 app.ports.sendTestsCount.subscribe((msg) => {
   msg.type_ = "testsCount";
   msg.logs = logs;
   parentPort.postMessage(msg);
-  logs = [];
+  logs.length = 0;
 });
