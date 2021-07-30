@@ -101,7 +101,7 @@ function setupWithTestsCount(runnerFile, msg) {
   // Create and send work to all other workers.
   let max_workers = Math.min(workersCount, testsCount);
   for (let i = 1; i < max_workers; i++) {
-    let runner = new Worker(runnerFile, { type: "module" });
+    let runner = new Worker(new URL(runnerFile, import.meta.url).href, { type: "module" });
     runners[i] = runner;
     runner.onmessage = (msg) => handleRunnerMsg(runner, runnerFile, msg.data);
     dispatchWork(runner, todoTests.pop());
