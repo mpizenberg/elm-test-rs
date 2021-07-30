@@ -203,11 +203,14 @@ fn main_helper(
         supervisor_js_file.display()
     ))?;
 
-    // For a Deno runtime, make deno_linereader.mjs available.
+    // For a Deno runtime, make deno_linereader.mjs and deno_logger.mjs available.
     if let Runtime::Deno = run_options.runtime {
         let linereader_template = include_template!("deno_linereader.mjs");
         let linereader_path = tests_root.join("js").join("deno_linereader.mjs");
         std::fs::write(linereader_path, linereader_template)?;
+        let logger_template = include_template!("deno_logger.mjs");
+        let logger_path = tests_root.join("js").join("deno_logger.mjs");
+        std::fs::write(logger_path, logger_template)?;
     }
 
     // Start the tests supervisor

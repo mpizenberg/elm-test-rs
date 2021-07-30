@@ -3,8 +3,7 @@
 
 // Capture Debug.log from elm code
 // which has been kernel-switched to "console.elmlog"
-let logs = [];
-console.elmlog = (str) => logs.push(str);
+import { logs } from "./deno_logger.mjs";
 
 // Compiled by elm-test-rs from templates/Runner.elm
 import { Elm } from "./Runner.elm.js";
@@ -35,11 +34,11 @@ app.ports.sendResult.subscribe((msg) => {
   msg.duration = performance.now() - startTime;
   msg.logs = logs;
   self.postMessage(msg);
-  logs = [];
+  logs.length = 0;
 });
 app.ports.sendTestsCount.subscribe((msg) => {
   msg.type_ = "testsCount";
   msg.logs = logs;
   self.postMessage(msg);
-  logs = [];
+  logs.length = 0;
 });
