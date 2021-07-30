@@ -1,13 +1,13 @@
 // From templates/polyfills.js
 {{ polyfills }}
 
-// Compiled by elm-test-rs from templates/Runner.elm
-import { Elm } from "./Runner.elm.js";
-
 // Capture Debug.log from elm code
 // which has been kernel-switched to "console.elmlog"
 let logs = [];
 console.elmlog = (str) => logs.push(str);
+
+// Compiled by elm-test-rs from templates/Runner.elm
+import { Elm } from "./Runner.elm.js";
 
 // Start the Elm app
 const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }}, filter: {{ filter }} };
