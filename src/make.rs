@@ -210,7 +210,7 @@ fn elm_files_within<P: AsRef<Path>>(directory: P) -> impl Iterator<Item = PathBu
 }
 
 fn is_elm_file<P: AsRef<Path>>(p: P) -> bool {
-    p.as_ref().extension() == Some(&OsStr::new("elm"))
+    p.as_ref().extension() == Some(OsStr::new("elm"))
 }
 
 /// Collect absolute paths of all elm files matching the patterns given as arguments.
@@ -290,7 +290,7 @@ If you installed elm locally with npm, maybe try running with npx such as:
     let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
     let executable = executable.as_path();
     log::debug!("We found an executable: {}", executable.display());
-    if executable.extension() == Some(&OsStr::new("cmd")) {
+    if executable.extension() == Some(OsStr::new("cmd")) {
         shell_command(elm_home, compiler, src, output, current_dir.as_ref())
             .context(context_if_fails)
     } else {
