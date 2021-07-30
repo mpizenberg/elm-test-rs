@@ -5,7 +5,6 @@ process.chdir(__dirname);
 
 const { Worker } = require("worker_threads");
 const readline = require("readline");
-const EventEmitter = require("events");
 const { performance } = require("perf_hooks");
 
 // Global variables
@@ -14,7 +13,7 @@ let reporter;
 let runners = [];
 let working = false;
 let workersCount = {{ workersCount }};
-const supervisorEvent = new EventEmitter();
+let startWorkCallback = function(){};
 const verbosity = {{ verbosity }};
 
 // Create a long lived reporter worker
@@ -35,7 +34,7 @@ reporter.ports.stdout.subscribe((str) => process.stdout.write(str));
 reporter.ports.signalFinished.subscribe(async ({ exitCode, testsCount }) => {
   await Promise.all(runners.map((runner) => runner.terminate()));
   working = false;
-  supervisorEvent.emit("finishedWork");
+  startWorkCallback();
   if (verbosity >= 1) {
     console.warn("Running duration (since Node.js start):", Math.round(performance.now()), "ms\n");
   }
@@ -50,11 +49,11 @@ rl.on("line", (runnerFile) => {
 });
 
 function registerWork(runnerFile) {
-  supervisorEvent.removeAllListeners(["finishedWork"]);
-  supervisorEvent.once("finishedWork", () => startWork(runnerFile));
+  startWorkCallback = () => startWork(runnerFile);
 }
 
 function startWork(runnerFile) {
+  startWorkCallback = function(){};
   working = true;
   // Start first runner worker and prevent piped stdout and sdterr
   runners[0] = new Worker(runnerFile, { stdout: true }); //, stderr: true });
