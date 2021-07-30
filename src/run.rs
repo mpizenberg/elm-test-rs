@@ -159,7 +159,10 @@ fn main_helper(
     // For a Deno runtime, convert the compiled Reporter.elm.js into an ES module.
     if let Runtime::Deno = run_options.runtime {
         let compiled_reporter_code = fs::read_to_string(&compiled_reporter)?;
-        fs::write(&compiled_reporter, into_es_module(&compiled_reporter_code))?;
+        fs::write(
+            &compiled_reporter,
+            into_es_module(&replace_console_log(&compiled_reporter_code)),
+        )?;
     }
 
     // Generate a package.json specifying that all JS files follow CommonJS.
@@ -318,6 +321,16 @@ fn kernel_patch_tests(elm_js: &str, esmodule: bool) -> anyhow::Result<String> {
 
     let elm_js = ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n");
 
+    // If an ES module is asked, the following transformation is applied.
+    if esmodule {
+        Ok(into_es_module(&replace_console_log(&elm_js)))
+    } else {
+        Ok(replace_console_log(&elm_js))
+    }
+}
+
+/// Replace console.log with console.elmlog and remove console.warn.
+fn replace_console_log(elm_js: &str) -> String {
     // WARNING: this may fail if a user has this as a string somewhere
     // and it is located before its definition by elm in the file.
     let elm_js = elm_js.replacen(
@@ -325,13 +338,8 @@ fn kernel_patch_tests(elm_js: &str, esmodule: bool) -> anyhow::Result<String> {
         "console.elmlog(tag + ': ' + _Debug_toString(value));",
         1,
     );
-
-    // If an ES module is asked, the following transformation is applied.
-    if esmodule {
-        Ok(into_es_module(&elm_js))
-    } else {
-        Ok(elm_js)
-    }
+    // Remove the console.warn() at the begining due to not compiling with --optimize
+    elm_js.replacen("console.warn", "", 1)
 }
 
 /// Convert an JS file resulting from an Elm compilation into an ES module.

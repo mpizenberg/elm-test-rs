@@ -53,9 +53,7 @@ function startWork(runnerFile) {
   startWorkCallback = function(){};
   working = true;
   // Start first runner worker
-  console.warn("runnerFile", runnerFile);
   runners[0] = new Worker(new URL(runnerFile, import.meta.url).href, { type: "module" });
-  // runners[0] = new Worker(runnerFile, { type: "module" });
   runners[0].onmessage = (msg) => handleRunnerMsg(runners[0], runnerFile, msg.data);
   runners[0].postMessage({ type_: "askTestsCount" });
 }

@@ -25,6 +25,16 @@ var document = {
   location: location,
 };
 
+var oldConsoleWarn = console.warn;
+console.warn = function () {
+  if (
+    arguments.length === 1 &&
+    arguments[0].indexOf("Compiled in DEV mode") === 0
+  )
+    return;
+  return oldConsoleWarn.apply(console, arguments);
+};
+
 if (typeof FileList === "undefined") {
   var FileList = function () {};
 }
@@ -40,16 +50,6 @@ if (typeof XMLHttpRequest === "undefined") {
       open: function () {},
       send: function () {},
     };
-  };
-
-  var oldConsoleWarn = console.warn;
-  console.warn = function () {
-    if (
-      arguments.length === 1 &&
-      arguments[0].indexOf("Compiled in DEV mode") === 0
-    )
-      return;
-    return oldConsoleWarn.apply(console, arguments);
   };
 }
 
