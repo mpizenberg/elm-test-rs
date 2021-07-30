@@ -58,14 +58,16 @@ function startWork(runnerFile) {
   runners[0].postMessage({ type_: "askTestsCount" });
 }
 
+function stderrLog(str) {
+    Deno.writeAllSync(Deno.stderr, new TextEncoder().encode(str));
+}
+
 // Handle a test result
 function handleRunnerMsg(runner, runnerFile, msg) {
   if (msg.type_ == "testsCount") {
     if (msg.logs.length > 0) {
       console.warn("Debug logs captured when setting up tests: -----------\n");
-      msg.logs.forEach((str) => {
-        Deno.writeAll(Deno.stderr, new TextEncoder().encode(str));
-	  });
+      msg.logs.forEach(stderrLog);
       console.warn("\n------------------------------------------------------\n");
     }
     setupWithTestsCount(runnerFile, msg);
