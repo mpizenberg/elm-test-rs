@@ -26,15 +26,15 @@ var document = {
 };
 
 if (typeof FileList === "undefined") {
-  FileList = function () {};
+  var FileList = function () {};
 }
 
 if (typeof File === "undefined") {
-  File = function () {};
+  var File = function () {};
 }
 
 if (typeof XMLHttpRequest === "undefined") {
-  XMLHttpRequest = function () {
+  var XMLHttpRequest = function () {
     return {
       addEventListener: function () {},
       open: function () {},
@@ -54,7 +54,7 @@ if (typeof XMLHttpRequest === "undefined") {
 }
 
 if (typeof FormData === "undefined") {
-  FormData = function () {
+  var FormData = function () {
     this._data = [];
   };
   FormData.prototype.append = function () {

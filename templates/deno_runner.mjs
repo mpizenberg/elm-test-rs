@@ -2,7 +2,7 @@
 {{ polyfills }}
 
 // Compiled by elm-test-rs from templates/Runner.elm
-import { Elm } from "./Runner.elm.mjs";
+import { Elm } from "./Runner.elm.js";
 
 // Capture Debug.log from elm code
 // which has been kernel-switched to "console.elmlog"
@@ -17,7 +17,7 @@ const app = Elm.Runner.init({ flags: flags });
 let startTime;
 
 // Communication from Supervisor to Elm runner via port
-self.onmessage((msg) => {
+self.onmessage = (msg) => {
   if (msg.data.type_ == "askTestsCount") {
     app.ports.askTestsCount.send();
   } else if (msg.data.type_ == "runTest") {
@@ -26,7 +26,7 @@ self.onmessage((msg) => {
   } else {
     console.error("Invalid supervisor msg.type_:", msg.data.type_);
   }
-});
+};
 
 // Communication from Elm runner to Supervisor via port
 // Subscribe to outgoing Elm ports defined in templates/Runner.elm

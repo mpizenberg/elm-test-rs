@@ -2,7 +2,7 @@
 {{ polyfills }}
 
 import { readLine } from "./deno_linereader.mjs";
-import { Elm } from "./Reporter.elm.mjs";
+import { Elm } from "./Reporter.elm.js";
 
 // Global variables
 let testsCount, todoTests;
@@ -53,11 +53,10 @@ function startWork(runnerFile) {
   startWorkCallback = function(){};
   working = true;
   // Start first runner worker
-  // runners[0] = new Worker(new URL(runnerFile, import.meta.url).href, { type: "module" });
-  runners[0] = new Worker(runnerFile, { type: "module" });
-  runners[0].onmessage((msg) =>
-    handleRunnerMsg(runners[0], runnerFile, msg.data)
-  );
+  console.warn("runnerFile", runnerFile);
+  runners[0] = new Worker(new URL(runnerFile, import.meta.url).href, { type: "module" });
+  // runners[0] = new Worker(runnerFile, { type: "module" });
+  runners[0].onmessage = (msg) => handleRunnerMsg(runners[0], runnerFile, msg.data);
   runners[0].postMessage({ type_: "askTestsCount" });
 }
 
@@ -106,9 +105,7 @@ function setupWithTestsCount(runnerFile, msg) {
   for (let i = 1; i < max_workers; i++) {
     let runner = new Worker(runnerFile, { type: "module" });
     runners[i] = runner;
-    runner.onmessage((msg) =>
-      handleRunnerMsg(runner, runnerFile, msg.data)
-    );
+    runner.onmessage = (msg) => handleRunnerMsg(runner, runnerFile, msg.data);
     dispatchWork(runner, todoTests.pop());
   }
 }

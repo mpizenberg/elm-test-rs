@@ -6,7 +6,7 @@ const { performance } = require("perf_hooks");
 
 // Capture Debug.log from elm code
 let logs = [];
-process.stdout.write = (str) => logs.push(str);
+console.elmlog = (str) => logs.push(str);
 
 // Compiled by elm-test-rs from templates/Runner.elm
 const { Elm } = require("./Runner.elm.js");
