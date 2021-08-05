@@ -42,6 +42,7 @@ reporter.ports.signalFinished.subscribe(async ({ exitCode, testsCount }) => {
 // When receiving a CLI message, start test workers
 // The message is a string containing "/path/to/node_runner.js"
 for await (let runnerFile of await readLine(Deno.stdin)) {
+  runnerFile = "file:" + runnerFile;
   working ? registerWork(runnerFile) : startWork(runnerFile);
 }
 
