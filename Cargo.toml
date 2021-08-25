@@ -30,7 +30,7 @@ stderrlog = { version = "0.5.1", default-features = false }
 walkdir = "2.3.1" # to find all elm files in a given directory
 either = { version = "1.6.1", default-features = false } # for iterators on two branches
 which = "4.0.2" # to find the path of the elm executable
-dunce = "1.0.1" # to convert Windows UNC paths back to simple absolute paths
+path-absolutize = "3.0.10" # to convert Windows UNC paths back to simple absolute paths
 
 [dev-dependencies]
 assert_cmd = "1.0.3"
