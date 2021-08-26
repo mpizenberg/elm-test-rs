@@ -102,10 +102,8 @@ pub fn json_write<P: AsRef<Path>, T: ?Sized + serde::Serialize>(
 /// Returns the absolute path with a useful error message if not possible.
 pub fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     let path = path.as_ref();
-    path.absolutize()
-        .map(PathBuf::from)
-        .context(format!(
-            "Error trying to get absolute path of: {}",
-            path.display()
-        ))
+    path.absolutize().map(PathBuf::from).context(format!(
+        "Error trying to get absolute path of: {}",
+        path.display()
+    ))
 }
