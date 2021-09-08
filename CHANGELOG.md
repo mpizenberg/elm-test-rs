@@ -14,6 +14,20 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [1.2.0] - (2021-09-08) [(diff)][diff-1.2.0]
+
+#### Added
+
+- Added arm precompiled binaries to the GitHub action.
+- Added a Deno runtime available via the `--deno` CLI argument.
+  This also results in a slight change in the way calls to `Debug.log` are captured, but that should be transparent to the user.
+
+#### Fixed
+
+- Better support for situations with symlinks.
+  There was an issue when elm files were symlinks to directories outside of the source directories of the elm project.
+
+
 ## [1.1.0] - (2021-06-23) [(diff)][diff-1.1.0]
 
 #### Added
@@ -202,6 +216,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[1.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2
 [1.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.1
 [1.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.0
 [0.6.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.6.1
@@ -214,7 +229,9 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v1.0...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2...master
+[diff-1.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.1...v1.2
+[diff-1.1.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.0...v1.1
 [diff-1.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.6.1...v1.0
 [diff-0.6.1]: https://github.com/mpizenberg/elm-test-rs/compare/v0.6...v0.6.1
 [diff-0.6.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.5.1...v0.6
