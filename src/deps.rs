@@ -97,7 +97,7 @@ fn init_app(
     // Solve dependencies
     let solution = solve_deps(
         elm_home,
-        &strategy,
+        strategy,
         &all_deps,
         Pkg::new("root", ""),
         SemVer::zero(),
@@ -150,7 +150,7 @@ fn init_pkg(
     // Solve dependencies to check that elm-explorations/test is compatible
     solve_deps(
         elm_home,
-        &strategy,
+        strategy,
         &all_deps,
         pkg_config.name.clone(),
         SemVer::zero(),

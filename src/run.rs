@@ -212,7 +212,7 @@ fn main_helper(
             node_runner_path.display()
         ))?
         .to_string();
-    writeln(&node_runner_path_string.as_bytes())
+    writeln(node_runner_path_string.as_bytes())
         .context("Failed to write node runner path to Node supervisor stdin")?;
 
     // Wait for supervisor child process to end and terminate with same exit code
@@ -258,7 +258,7 @@ fn kernel_patch_tests(elm_js: &str) -> anyhow::Result<String> {
     )?;
 
     let elm_js =
-        test_variant_definition.replace_all(&elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
+        test_variant_definition.replace_all(elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
     let elm_js = check_definition.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
 
     Ok(["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n"))
