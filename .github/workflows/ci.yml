@@ -12,20 +12,50 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        build:
+          - linux-musl
+          - windows
+          - macos
+          - macos-arm-64
+          - linux-arm-64
+          - linux-arm-32
         include:
-          - os: ubuntu-latest
+          - build: linux-musl
+            os: ubuntu-latest
+            toolchain: stable
             target: x86_64-unknown-linux-musl
 
-          - os: windows-latest
+          - build: windows
+            os: windows-latest
+            toolchain: stable
             target: x86_64-pc-windows-msvc
 
-          - os: macos-latest
+          - build: macos
+            os: macos-latest
+            toolchain: stable
             target: x86_64-apple-darwin
-            # target: aarch64-unknown-linux-gnu
+
+          - build: macos-arm-64
+            os: macos-latest
+            toolchain: nightly
+            target: aarch64-apple-darwin
+            cross: true
+
+          - build: linux-arm-64
+            os: ubuntu-latest
+            toolchain: nightly
+            target: aarch64-unknown-linux-musl
+            cross: true
+
+          - build: linux-arm-32
+            os: ubuntu-latest
+            toolchain: nightly
+            target: arm-unknown-linux-musleabihf
+            cross: true
 
     steps:
       - name: install musl-tools if musl target
-        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+        if: ${{ contains(matrix.target, 'musl') }}
         run: sudo apt install musl-tools
 
       - uses: actions/checkout@v2
@@ -35,7 +65,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
           override: true
 
@@ -50,10 +80,26 @@ jobs:
             ${{ matrix.target }}-build-
             ${{ matrix.target }}-
 
+      - name: Install cross compiler
+        if: ${{ matrix.cross }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cross
+
       - uses: actions-rs/cargo@v1
+        if: ${{ !matrix.cross }}
         with:
           command: build
           args: --release --target ${{ matrix.target }}
+
+      - name: Specific cross compilation for macos aarch64
+        if: ${{ matrix.cross && matrix.target == 'aarch64-apple-darwin' }}
+        run: SDKROOT=$(xcrun -sdk macosx11.1 --show-sdk-path) MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.1 --show-sdk-platform-version) cross build --release --target ${{ matrix.target }}
+
+      - name: Use cross instead of cargo for cross compilation
+        if: ${{ matrix.cross && matrix.target != 'aarch64-apple-darwin' }}
+        run: cross build --release --target ${{ matrix.target }}
 
       - name: Compress compiled binary
         if: ${{ !startsWith(matrix.os, 'windows') }}
