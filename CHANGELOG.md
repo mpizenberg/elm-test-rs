@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [1.2.1] - (2021-09-08) [(diff)][diff-1.2.1]
+
+#### Fixed
+
+- Actually changed the version indicator of the program to 1.2.1.
+  I had forgotten it before so version 1.2 indicates 1.1 with `--version`.
+
 ## [1.2.0] - (2021-09-08) [(diff)][diff-1.2.0]
 
 #### Added
@@ -216,6 +223,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[1.2.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2.1
 [1.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2
 [1.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.1
 [1.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.0
@@ -229,7 +237,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.1...master
+[diff-1.2.1]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2...v1.2.1
 [diff-1.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.1...v1.2
 [diff-1.1.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.0...v1.1
 [diff-1.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v0.6.1...v1.0
