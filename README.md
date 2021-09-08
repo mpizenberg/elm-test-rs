@@ -123,6 +123,14 @@ There are still improvements to be made since fuzz tests will report
 all their logs instead of just the simplest one,
 but this is already super useful for unit tests.
 
+### Deno runtime
+
+By default, `elm-test-rs` runs the tests with Node.
+It is possible however to run the tests with [Deno][deno] instead of Node with `elm-test-rs --deno`.
+This makes testing more accessible in places where Node is tedious to install.
+
+[deno]: https://deno.land/
+
 ### Verbosity
 
 By default, elm-test-rs just prints to stdout the output of the tests runner,
