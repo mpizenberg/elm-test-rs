@@ -1,7 +1,7 @@
 //! Utility functions for the other modules.
 
 use anyhow::Context;
-use path_absolutize::*;
+use path_absolutize::Absolutize;
 use std::error::Error;
 use std::io::Write;
 use std::path::{Path, PathBuf};
