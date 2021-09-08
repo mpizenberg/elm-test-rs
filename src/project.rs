@@ -97,7 +97,7 @@ impl Project {
                     // If there was no path associated to the event we also might have
                     // to process it so we that's what we do.
                     let is_of_interest = |p: &Path| {
-                        p.extension() == Some(&OsStr::new("elm")) // this is an elm file
+                        p.extension() == Some(OsStr::new("elm")) // this is an elm file
                             || p.ends_with("elm.json") // elm.json changed
                             || p.is_dir() // a directory changed
                     };
@@ -132,7 +132,7 @@ impl Project {
                     *self = new_project;
 
                     // Call the function to execute passed as argument.
-                    call_back(&self).context("Subsequent run in watch mode")?;
+                    call_back(self).context("Subsequent run in watch mode")?;
                 }
             }
         }
