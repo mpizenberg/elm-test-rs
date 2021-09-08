@@ -38,3 +38,8 @@ assert_cmd = "1.0.3"
 [build-dependencies]
 fs_extra = "1.2.0"
 dirs-next = "2.0.0"
+
+[features]
+# Feature to run the tests with the Deno runtime
+# cargo test --release --features deno
+deno = []

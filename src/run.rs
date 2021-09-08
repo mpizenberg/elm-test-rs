@@ -20,6 +20,16 @@ pub struct Options {
     pub workers: u32,
     pub filter: Option<String>,
     pub reporter: String,
+    pub runtime: Runtime,
+}
+
+#[derive(Debug)]
+/// The runtime to be used.
+pub enum Runtime {
+    /// Node is the default runtime.
+    Node,
+    /// Deno is an alternative runtime.
+    Deno,
 }
 
 /// Wrapper for the main_helper function with "watch" functionality.
@@ -86,9 +96,13 @@ fn main_helper(
         "Failed to read newly created file {}",
         compiled_runner.display()
     ))?;
+    let es_module = match run_options.runtime {
+        Runtime::Node => false,
+        Runtime::Deno => true,
+    };
     fs::write(
         &compiled_runner,
-        &kernel_patch_tests(&compiled_runner_src).context(format!(
+        &kernel_patch_tests(&compiled_runner_src, es_module).context(format!(
             "Failed to patch the file {}",
             compiled_runner.display()
         ))?,
@@ -100,16 +114,19 @@ fn main_helper(
 
     // Generate the node_runner.js node module embedding the Elm runner
 
+    let (runner_name, runner_template) = match run_options.runtime {
+        Runtime::Node => ("node_runner.js", include_template!("node_runner.js")),
+        Runtime::Deno => ("deno_runner.mjs", include_template!("deno_runner.mjs")),
+    };
     let polyfills = include_template!("node_polyfills.js");
-    let node_runner_template = include_template!("node_runner.js");
-    let node_runner_path = tests_root.join("js").join("node_runner.js");
+    let runner_path = tests_root.join("js").join(runner_name);
     let filter = match &run_options.filter {
         None => "null".to_string(),
         Some(s) => format!("\"{}\"", s),
     };
     crate::make::create_templated(
-        node_runner_template, // template
-        &node_runner_path,    // output
+        runner_template, // template
+        &runner_path,    // output
         &[
             ("{{ initialSeed }}", &run_options.seed.to_string()),
             ("{{ fuzzRuns }}", &run_options.fuzz.to_string()),
@@ -117,7 +134,7 @@ fn main_helper(
             ("{{ polyfills }}", polyfills),
         ],
     )
-    .context(format!("Failed to write {}", node_runner_path.display()))?;
+    .context(format!("Failed to write {}", runner_path.display()))?;
 
     // Compile the Reporter.elm into Reporter.elm.js
     log::info!("Compiling Reporter.elm.js ...");
@@ -139,6 +156,15 @@ fn main_helper(
         return Ok(1);
     }
 
+    // For a Deno runtime, convert the compiled Reporter.elm.js into an ES module.
+    if let Runtime::Deno = run_options.runtime {
+        let compiled_reporter_code = fs::read_to_string(&compiled_reporter)?;
+        fs::write(
+            &compiled_reporter,
+            into_es_module(&replace_console_log(&compiled_reporter_code)),
+        )?;
+    }
+
     // Generate a package.json specifying that all JS files follow CommonJS.
     std::fs::write(
         tests_root.join("js").join("package.json"),
@@ -147,11 +173,20 @@ fn main_helper(
     .context("Could not write the commonjs guide package.json")?;
 
     // Generate the supervisor Node module
-    let node_supervisor_template = include_template!("node_supervisor.js");
-    let node_supervisor_js_file = tests_root.join("js").join("node_supervisor.js");
+    let (supervisor_name, supervisor_template) = match run_options.runtime {
+        Runtime::Node => (
+            "node_supervisor.js",
+            include_template!("node_supervisor.js"),
+        ),
+        Runtime::Deno => (
+            "deno_supervisor.mjs",
+            include_template!("deno_supervisor.mjs"),
+        ),
+    };
+    let supervisor_js_file = tests_root.join("js").join(supervisor_name);
     crate::make::create_templated(
-        node_supervisor_template, // template
-        &node_supervisor_js_file, // output
+        supervisor_template, // template
+        &supervisor_js_file, // output
         &[
             ("{{ workersCount }}", &run_options.workers.to_string()),
             ("{{ initialSeed }}", &run_options.seed.to_string()),
@@ -165,32 +200,53 @@ fn main_helper(
     )
     .context(format!(
         "Failed to write {}",
-        node_supervisor_js_file.display()
+        supervisor_js_file.display()
     ))?;
 
-    let node_version = Command::new("node")
-        .arg("--version")
-        .output()
-        .context("\"node --version\" failed to start")?
-        .stdout;
-
-    // Node supports worker_threads as experimental feature since 10.5,
-    // but it is unknown whether all versions since 10.5 actually work with elm-test-rs.
-    let experimental_arg = if node_version.starts_with(b"v10.") {
-        Some("--experimental-worker")
-    } else {
-        None
-    };
+    // For a Deno runtime, make deno_linereader.mjs and deno_logger.mjs available.
+    if let Runtime::Deno = run_options.runtime {
+        let linereader_template = include_template!("deno_linereader.mjs");
+        let linereader_path = tests_root.join("js").join("deno_linereader.mjs");
+        std::fs::write(linereader_path, linereader_template)?;
+        let logger_template = include_template!("deno_logger.mjs");
+        let logger_path = tests_root.join("js").join("deno_logger.mjs");
+        std::fs::write(logger_path, logger_template)?;
+    }
 
     // Start the tests supervisor
     log::info!("Starting the supervisor ...");
-    let mut supervisor = Command::new("node")
-        .args(experimental_arg)
-        .arg(node_supervisor_js_file)
-        .current_dir(tests_root)
-        .stdin(Stdio::piped())
-        .spawn()
-        .context("Node supervisor failed to start")?;
+    let mut supervisor = match run_options.runtime {
+        Runtime::Node => {
+            let node_version = Command::new("node")
+                .arg("--version")
+                .output()
+                .context("\"node --version\" failed to start")?
+                .stdout;
+
+            // Node supports worker_threads as experimental feature since 10.5,
+            // but it is unknown whether all versions since 10.5 actually work with elm-test-rs.
+            let experimental_arg = if node_version.starts_with(b"v10.") {
+                Some("--experimental-worker")
+            } else {
+                None
+            };
+
+            Command::new("node")
+                .args(experimental_arg)
+                .arg(supervisor_js_file)
+                .current_dir(tests_root)
+                .stdin(Stdio::piped())
+                .spawn()
+                .context("Node supervisor failed to start")?
+        }
+        Runtime::Deno => Command::new("deno")
+            .args(["run", "--allow-read", "--allow-hrtime"])
+            .arg(supervisor_js_file)
+            .current_dir(tests_root)
+            .stdin(Stdio::piped())
+            .spawn()
+            .context("Deno supervisor failed to start")?,
+    };
 
     // Helper closure to write to supervisor
     let stdin = supervisor
@@ -205,15 +261,15 @@ fn main_helper(
 
     // Send runner module path to supervisor to start the work
     log::info!("Running tests ...");
-    let node_runner_path_string = node_runner_path
+    let runner_path_string = runner_path
         .to_str()
         .context(format!(
             "Could not convert path into a String: {}",
-            node_runner_path.display()
+            runner_path.display()
         ))?
         .to_string();
-    writeln(node_runner_path_string.as_bytes())
-        .context("Failed to write node runner path to Node supervisor stdin")?;
+    writeln(runner_path_string.as_bytes())
+        .context("Failed to write runner path to supervisor stdin")?;
 
     // Wait for supervisor child process to end and terminate with same exit code
     let exit_code = wait_child(&mut supervisor);
@@ -237,7 +293,12 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
 
 /// Add a kernel patch to the generated code in order to be able to recognize
 /// values of type Test at runtime with the `check: a -> Maybe Test` function.
-fn kernel_patch_tests(elm_js: &str) -> anyhow::Result<String> {
+///
+/// Also replace the unique call to console.log in Debug.log
+/// by a call to the "yet-to-be-defined" console.elmlog
+///
+/// Transformation to an esmodule is also possible.
+fn kernel_patch_tests(elm_js: &str, esmodule: bool) -> anyhow::Result<String> {
     // For older versions of elm-explorations/test we need to list every single
     // variant of the `Test` type. To avoid having to update this regex if a new
     // variant is added, newer versions of elm-explorations/test have prefixed all
@@ -261,5 +322,38 @@ fn kernel_patch_tests(elm_js: &str) -> anyhow::Result<String> {
         test_variant_definition.replace_all(elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
     let elm_js = check_definition.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
 
-    Ok(["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n"))
+    let elm_js = ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n");
+
+    // If an ES module is asked, the following transformation is applied.
+    if esmodule {
+        Ok(into_es_module(&replace_console_log(&elm_js)))
+    } else {
+        Ok(replace_console_log(&elm_js))
+    }
+}
+
+/// Replace console.log with console.elmlog and remove console.warn.
+fn replace_console_log(elm_js: &str) -> String {
+    // WARNING: this may fail if a user has this as a string somewhere
+    // and it is located before its definition by elm in the file.
+    let elm_js = elm_js.replacen(
+        "console.log(tag + ': ' + _Debug_toString(value));",
+        "console.elmlog(tag + ': ' + _Debug_toString(value));",
+        1,
+    );
+    // Remove the console.warn() at the begining due to not compiling with --optimize
+    elm_js.replacen("console.warn", "", 1)
+}
+
+/// Convert an JS file resulting from an Elm compilation into an ES module.
+fn into_es_module(elm_js: &str) -> String {
+    // replace '}(this));' by '}(scope));' at the end.
+    let last_this_offset = elm_js.rfind("this").unwrap();
+    [
+        "const scope = {};",
+        &elm_js[..last_this_offset],
+        "scope));",
+        "export const { Elm } = scope;",
+    ]
+    .join("\n")
 }

@@ -88,6 +88,9 @@ fn main() -> anyhow::Result<()> {
             .possible_value("junit")
             .possible_value("exercism")
             .help("Print results to stdout in the given format"),
+        Arg::with_name("deno")
+            .long("deno")
+            .help("Rerun tests with Deno instead of Node"),
     ];
     let matches = App::new("elm-test-rs")
         .version(std::env!("CARGO_PKG_VERSION"))
@@ -230,12 +233,19 @@ fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Option
         "console" => console_color_mode(),
         r => r,
     };
+
+    let runtime = if arg_matches.is_present("deno") {
+        run::Runtime::Deno
+    } else {
+        run::Runtime::Node
+    };
     Ok(run::Options {
         seed,
         fuzz,
         workers,
         filter: arg_matches.value_of("filter").map(|s| s.to_string()),
         reporter: report.to_string(),
+        runtime,
     })
 }
 

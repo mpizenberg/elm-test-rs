@@ -1,15 +1,12 @@
-const { parentPort } = require("worker_threads");
-const { performance } = require("perf_hooks");
-
 // From templates/polyfills.js
 {{ polyfills }}
 
 // Capture Debug.log from elm code
-let logs = [];
-console.elmlog = (str) => logs.push(str);
+// which has been kernel-switched to "console.elmlog"
+import { logs } from "./deno_logger.mjs";
 
 // Compiled by elm-test-rs from templates/Runner.elm
-const { Elm } = require("./Runner.elm.js");
+import { Elm } from "./Runner.elm.js";
 
 // Start the Elm app
 const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }}, filter: {{ filter }} };
@@ -19,16 +16,16 @@ const app = Elm.Runner.init({ flags: flags });
 let startTime;
 
 // Communication from Supervisor to Elm runner via port
-parentPort.on("message", (msg) => {
-  if (msg.type_ == "askTestsCount") {
+self.onmessage = (msg) => {
+  if (msg.data.type_ == "askTestsCount") {
     app.ports.askTestsCount.send();
-  } else if (msg.type_ == "runTest") {
+  } else if (msg.data.type_ == "runTest") {
     startTime = performance.now();
-    app.ports.receiveRunTest.send(msg.id);
+    app.ports.receiveRunTest.send(msg.data.id);
   } else {
-    console.error("Invalid supervisor msg.type_:", msg.type_);
+    console.error("Invalid supervisor msg.type_:", msg.data.type_);
   }
-});
+};
 
 // Communication from Elm runner to Supervisor via port
 // Subscribe to outgoing Elm ports defined in templates/Runner.elm
@@ -36,12 +33,12 @@ app.ports.sendResult.subscribe((msg) => {
   msg.type_ = "testResult";
   msg.duration = performance.now() - startTime;
   msg.logs = logs;
-  parentPort.postMessage(msg);
+  self.postMessage(msg);
   logs.length = 0;
 });
 app.ports.sendTestsCount.subscribe((msg) => {
   msg.type_ = "testsCount";
   msg.logs = logs;
-  parentPort.postMessage(msg);
+  self.postMessage(msg);
   logs.length = 0;
 });

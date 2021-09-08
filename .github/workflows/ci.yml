@@ -169,6 +169,15 @@ jobs:
           # args: --release --jobs 1
           args: --release
 
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --features deno
+
   check_formatting:
     name: Check formatting
     runs-on: ubuntu-latest

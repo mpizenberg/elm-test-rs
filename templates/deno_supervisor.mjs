@@ -1,11 +1,8 @@
-process.chdir(__dirname);
-
 // From templates/polyfills.js
 {{ polyfills }}
 
-const { Worker } = require("worker_threads");
-const readline = require("readline");
-const { performance } = require("perf_hooks");
+import { readLine } from "./deno_linereader.mjs";
+import { Elm } from "./Reporter.elm.js";
 
 // Global variables
 let testsCount, todoTests;
@@ -17,7 +14,6 @@ let startWorkCallback = function(){};
 const verbosity = {{ verbosity }};
 
 // Create a long lived reporter worker
-const { Elm } = require("./Reporter.elm.js");
 const flags = {
   initialSeed: {{ initialSeed }},
   fuzzRuns: {{ fuzzRuns }},
@@ -28,25 +24,27 @@ const flags = {
 reporter = Elm.Reporter.init({ flags: flags });
 
 // Pipe the Elm stdout port to stdout
-reporter.ports.stdout.subscribe((str) => process.stdout.write(str));
+reporter.ports.stdout.subscribe(
+  (str) => Deno.writeAll(Deno.stdout, new TextEncoder().encode(str))
+);
 
 // When the reporter has finished clean runners
 reporter.ports.signalFinished.subscribe(async ({ exitCode, testsCount }) => {
-  await Promise.all(runners.map((runner) => runner.terminate()));
+  runners.map((runner) => runner.terminate());
   working = false;
   startWorkCallback();
   if (verbosity >= 1) {
     console.warn("Running duration (since Node.js start):", Math.round(performance.now()), "ms\n");
   }
-  process.exit(exitCode);
+  Deno.exit(exitCode);
 });
 
 // When receiving a CLI message, start test workers
 // The message is a string containing "/path/to/node_runner.js"
-const rl = readline.createInterface({ input: process.stdin });
-rl.on("line", (runnerFile) => {
+for await (let runnerFile of await readLine(Deno.stdin)) {
+  runnerFile = "file:" + runnerFile;
   working ? registerWork(runnerFile) : startWork(runnerFile);
-});
+}
 
 function registerWork(runnerFile) {
   startWorkCallback = () => startWork(runnerFile);
@@ -55,14 +53,14 @@ function registerWork(runnerFile) {
 function startWork(runnerFile) {
   startWorkCallback = function(){};
   working = true;
-  // Start first runner worker and prevent piped stdout and sdterr
-  runners[0] = new Worker(runnerFile, { stdout: true }); //, stderr: true });
-  runners[0].on("message", (msg) =>
-    handleRunnerMsg(runners[0], runnerFile, msg)
-  );
-  runners[0].on("online", () =>
-    runners[0].postMessage({ type_: "askTestsCount" })
-  );
+  // Start first runner worker
+  runners[0] = new Worker(new URL(runnerFile, import.meta.url).href, { type: "module" });
+  runners[0].onmessage = (msg) => handleRunnerMsg(runners[0], runnerFile, msg.data);
+  runners[0].postMessage({ type_: "askTestsCount" });
+}
+
+function stderrLog(str) {
+    Deno.writeAllSync(Deno.stderr, new TextEncoder().encode(str));
 }
 
 // Handle a test result
@@ -70,7 +68,7 @@ function handleRunnerMsg(runner, runnerFile, msg) {
   if (msg.type_ == "testsCount") {
     if (msg.logs.length > 0) {
       console.warn("Debug logs captured when setting up tests: -----------\n");
-      msg.logs.forEach((str) => process.stderr.write(str));
+      msg.logs.forEach(stderrLog);
       console.warn("\n------------------------------------------------------\n");
     }
     setupWithTestsCount(runnerFile, msg);
@@ -106,12 +104,10 @@ function setupWithTestsCount(runnerFile, msg) {
   // Create and send work to all other workers.
   let max_workers = Math.min(workersCount, testsCount);
   for (let i = 1; i < max_workers; i++) {
-    let runner = new Worker(runnerFile); //, { stdout: true, stderr: true });
+    let runner = new Worker(new URL(runnerFile, import.meta.url).href, { type: "module" });
     runners[i] = runner;
-    runner.on("message", (msg) =>
-      handleRunnerMsg(runner, runnerFile, msg)
-    );
-    runner.on("online", () => dispatchWork(runner, todoTests.pop()));
+    runner.onmessage = (msg) => handleRunnerMsg(runner, runnerFile, msg.data);
+    dispatchWork(runner, todoTests.pop());
   }
 }
 
