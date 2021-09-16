@@ -131,6 +131,29 @@ impl Project {
                     // Update the current project since dependencies or source directories may have change.
                     *self = new_project;
 
+                    // Log to stderr that a change was detected.
+                    let relative_path = match path {
+                        None => None,
+                        Some(p) => Some(pathdiff::diff_paths(p, &self.root_directory).context(
+                            format!(
+                                "Could not get path {} relative to path {}",
+                                p.display(),
+                                self.root_directory.display()
+                            ),
+                        )?),
+                    };
+                    let detection_msg = format!(
+                        "Change detected in {}",
+                        relative_path
+                            .unwrap_or_else(|| PathBuf::from("unknown file"))
+                            .display()
+                    );
+                    log::error!(
+                        "\n\n\n\n{}\n{}\n\n\n\n",
+                        detection_msg,
+                        "=".repeat(detection_msg.len())
+                    );
+
                     // Call the function to execute passed as argument.
                     call_back(self).context("Subsequent run in watch mode")?;
                 }
