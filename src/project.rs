@@ -145,7 +145,7 @@ impl Project {
                     let detection_msg = format!(
                         "Change detected in {}",
                         relative_path
-                            .unwrap_or(PathBuf::from("unknown file"))
+                            .unwrap_or_else(|| PathBuf::from("unknown file"))
                             .display()
                     );
                     log::error!(
