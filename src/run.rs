@@ -149,6 +149,7 @@ fn main_helper(
         &tests_root,            // current_dir
         &make_options.compiler, // compiler
         &compiled_reporter,     // output
+        &make_options.report,   // report
         &[&reporter_elm_path],
     )?
     .success()
