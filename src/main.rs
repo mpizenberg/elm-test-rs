@@ -55,6 +55,15 @@ fn main() -> anyhow::Result<()> {
             .possible_values(&["newest", "oldest"])
             .conflicts_with("offline")
             .help("Choose the newest or oldest compatible dependencies (mostly useful for package authors)"),
+        Arg::with_name("report")
+            .long("report")
+            .default_value("console")
+            .possible_value("console")
+            .possible_value("consoleDebug")
+            .possible_value("json")
+            .possible_value("junit")
+            .possible_value("exercism")
+            .help("Print results to stdout in the given format"),
         Arg::with_name("PATH or GLOB")
             .multiple(true)
             .help("Path to a test module, or glob pattern such as tests/*.elm")
@@ -79,15 +88,6 @@ fn main() -> anyhow::Result<()> {
             .takes_value(true)
             .value_name("string")
             .help("Keep only tests whose description contains the given string"),
-        Arg::with_name("report")
-            .long("report")
-            .default_value("console")
-            .possible_value("console")
-            .possible_value("consoleDebug")
-            .possible_value("json")
-            .possible_value("junit")
-            .possible_value("exercism")
-            .help("Print results to stdout in the given format"),
         Arg::with_name("deno")
             .long("deno")
             .help("Rerun tests with Deno instead of Node"),
@@ -195,6 +195,12 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
             .to_string();
     }
 
+    let report = match arg_matches.value_of("report").unwrap() {
+        // unwrap is fine since there is a default value
+        "json" => String::from("json"),
+        _ => String::from("console"),
+    };
+
     let files: Vec<String> = arg_matches
         .values_of("PATH or GLOB")
         .into_iter()
@@ -207,6 +213,7 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
         compiler,
         connectivity,
         files,
+        report,
     })
 }
 
@@ -228,10 +235,10 @@ fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Option
         Some(str_workers) => str_workers.parse().context("Invalid --workers value")?,
     };
 
-    let report = match arg_matches.value_of("report").unwrap() {
+    let reporter = match arg_matches.value_of("report").unwrap() {
         // unwrap is fine since there is a default value
-        "console" => console_color_mode(),
-        r => r,
+        "console" => String::from(console_color_mode()),
+        r => String::from(r),
     };
 
     let runtime = if arg_matches.is_present("deno") {
@@ -244,7 +251,7 @@ fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Option
         fuzz,
         workers,
         filter: arg_matches.value_of("filter").map(|s| s.to_string()),
-        reporter: report.to_string(),
+        reporter,
         runtime,
     })
 }

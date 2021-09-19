@@ -21,6 +21,7 @@ pub struct Options {
     pub compiler: String,
     pub connectivity: crate::deps::ConnectivityStrategy,
     pub files: Vec<String>,
+    pub report: String,
 }
 
 /// Main function, generating and compiling a Runner.elm file.
@@ -187,6 +188,7 @@ pub fn main_helper(
         &tests_root,       // current_dir
         &options.compiler, // compiler
         &compiled_runner,  // output
+        &options.report,   // report
         &[Path::new("src").join("Runner.elm")],
     )?
     .success()
@@ -262,6 +264,7 @@ pub fn compile<P1, P2, I, S>(
     current_dir: P1,
     compiler: &str,
     output: P2,
+    report: &str,
     src: I,
 ) -> anyhow::Result<std::process::ExitStatus>
 where
@@ -287,17 +290,30 @@ If you installed elm locally with npm, maybe try running with npx such as:
         compiler,
         current_dir.as_ref().display()
     );
+    // Transform the --report argument into an argument for the elm compiler.
+    let report_arg = match report {
+        "json" => Some("--report=json"),
+        _ => None,
+    };
     let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
     let executable = executable.as_path();
     log::debug!("We found an executable: {}", executable.display());
     if executable.extension() == Some(OsStr::new("cmd")) {
-        shell_command(elm_home, compiler, src, output, current_dir.as_ref())
-            .context(context_if_fails)
+        shell_command(
+            elm_home,
+            compiler,
+            src,
+            output,
+            current_dir.as_ref(),
+            report_arg,
+        )
+        .context(context_if_fails)
     } else {
         Command::new(executable)
             .env("ELM_HOME", elm_home)
             .arg("make")
             .arg(format!("--output={}", output))
+            .args(report_arg)
             .args(src)
             .current_dir(current_dir)
             // stdio config, comment to see elm make output for debug
@@ -317,6 +333,7 @@ fn shell_command<I, S>(
     src: I,
     output: &str,
     current_dir: &Path,
+    report_arg: Option<&str>,
 ) -> Result<std::process::ExitStatus, std::io::Error>
 where
     I: IntoIterator<Item = S>,
@@ -331,6 +348,7 @@ where
         .arg(compiler)
         .arg("make")
         .arg(format!("--output={}", output))
+        .args(report_arg)
         .args(src)
         .current_dir(current_dir)
         // stdio config, comment to see elm make output for debug
@@ -349,6 +367,7 @@ fn shell_command<I, S>(
     src: I,
     output: &str,
     current_dir: &Path,
+    report_arg: Option<&str>,
 ) -> Result<std::process::ExitStatus, std::io::Error>
 where
     I: IntoIterator<Item = S>,
