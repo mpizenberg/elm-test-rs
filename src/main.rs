@@ -64,6 +64,12 @@ fn main() -> anyhow::Result<()> {
             .possible_value("junit")
             .possible_value("exercism")
             .help("Print results to stdout in the given format"),
+        Arg::with_name("output")
+            .long("output")
+            .takes_value(true)
+            .value_name("output_path")
+            .possible_values(&["/dev/null"])
+            .help("This argument is ignored, and only present for compatibility with `elm make --output=/dev/null` for the make subcommand"),
         Arg::with_name("PATH or GLOB")
             .multiple(true)
             .help("Path to a test module, or glob pattern such as tests/*.elm")
