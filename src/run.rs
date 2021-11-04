@@ -169,7 +169,7 @@ fn main_helper(
     // Generate a package.json specifying that all JS files follow CommonJS.
     std::fs::write(
         tests_root.join("js").join("package.json"),
-        "{type: 'commonjs'}",
+        "{\"type\": \"commonjs\"}",
     )
     .context("Could not write the commonjs guide package.json")?;
 
