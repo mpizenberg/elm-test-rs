@@ -233,7 +233,11 @@ Some are small differences:
 - the `console` output isn't exactly the same
 - the `install` command isn't implemented yet (use elm-json for that)
 
-Some might make your tests crash with elm-test-rs.
+Some might make your tests crash with elm-test-rs:
+
+- there is no automatic module description prepended to tests descriptions
+- globs are treated slightly differently
+- the `json` report goes to stdout instead of stderr when erroring.
 
 ### No automatic module description
 
@@ -269,6 +273,13 @@ Whith elm-test, globs support directories so you can call `elm-test tests/` and 
 within the `tests/` directory will be used.
 With elm-test-rs the arguments must be elm files,
 so you would call `elm-test-rs tests/**/*.elm` instead.
+
+### Json report goes to stdout
+
+Since `elm-test-rs` enables multiple levels of verbosity, that additional logging goes to stderr.
+Therefore, to avoid mixing the report output stream and logs, reports go to stdout.
+This applies to reports of running tests as well as potential error reports of compilation.
+In contrast, `elm-test` json report outputs to stdout when running tests, but stderr when compilation fails since it forwards the compiler json output, itself in stderr.
 
 ## Minimum supported version
 
