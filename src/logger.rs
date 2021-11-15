@@ -10,7 +10,7 @@ impl log::Log for SimpleLogger {
     }
 
     fn log(&self, record: &Record) {
-        println!("{}", record.args());
+        eprintln!("{}", record.args());
     }
 
     fn flush(&self) {}
