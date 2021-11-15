@@ -372,6 +372,7 @@ fn solve_deps(
             version,
         )
         .or_else(|_| {
+            log::info!("Solving dependencies in offline mode failed, switching to online mode");
             solve_deps(
                 elm_home,
                 &ConnectivityStrategy::Online(VersionStrategy::Newest),
