@@ -352,6 +352,12 @@ fn solve_deps(
                 Ok(provider) => provider,
                 Err(e) => anyhow::bail!("Failed to initialize the online provider.\n{}", e,),
             };
+            online_provider.save_cache().map_err(|err| {
+                anyhow::anyhow!(
+                    "Failed to save downloaded cache from package website\n{}",
+                    err
+                )
+            })?;
             // TODO: Improve the pubgrub_dependency_provider_elm package to have
             // correctly implemented errors with thiserror.
             let deps_provider =
@@ -366,6 +372,7 @@ fn solve_deps(
             version,
         )
         .or_else(|_| {
+            log::info!("Solving dependencies in offline mode failed, switching to online mode");
             solve_deps(
                 elm_home,
                 &ConnectivityStrategy::Online(VersionStrategy::Newest),

@@ -15,7 +15,7 @@ num_cpus = "1.13.0" # to get the number of logic cores
 regex = "1.4.3" # to path the elm kernel code
 pubgrub = { version = "0.2", features = ["serde"] } # for dependency solving
 # pubgrub-dependency-provider-elm = { path = "../pubgrub-dependency-provider-elm" }
-pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub-dependency-provider-elm", branch = "master" }
+pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub-dependency-provider-elm", rev = "a20a795f0" }
 serde_json = "1.0.61" # for JSON serialization
 serde = { version = "1.0.123", default-features = false }
 ureq = "2.0.1" # for https requests to the package website
