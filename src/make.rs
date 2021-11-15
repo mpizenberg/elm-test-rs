@@ -297,11 +297,6 @@ If you installed elm locally with npm, maybe try running with npx such as:
         compiler,
         current_dir.as_ref().display()
     );
-    // Transform the --report argument into an argument for the elm compiler.
-    let report_arg = match report {
-        "json" => Some("--report=json"),
-        _ => None,
-    };
     let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
     let executable = executable.as_path();
     log::debug!("We found an executable: {}", executable.display());
@@ -312,10 +307,15 @@ If you installed elm locally with npm, maybe try running with npx such as:
             src,
             output,
             current_dir.as_ref(),
-            report_arg,
+            report,
         )
         .context(context_if_fails)
     } else {
+        // Transform the --report argument into an argument for the elm compiler.
+        let report_arg = match report {
+            "json" => Some("--report=json"),
+            _ => None,
+        };
         // Capture compiler output if --report=json.
         let stderr = match report {
             "json" => Stdio::piped(),
@@ -345,13 +345,18 @@ fn shell_command<I, S>(
     src: I,
     output: &str,
     current_dir: &Path,
-    report_arg: Option<&str>,
+    report: &str,
 ) -> Result<std::process::Output, std::io::Error>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
     log::debug!("Trying with a cmd shell");
+    // Transform the --report argument into an argument for the elm compiler.
+    let report_arg = match report {
+        "json" => Some("--report=json"),
+        _ => None,
+    };
     // Capture compiler output if --report=json.
     let stderr = match report {
         "json" => Stdio::piped(),
@@ -384,7 +389,7 @@ fn shell_command<I, S>(
     src: I,
     output: &str,
     current_dir: &Path,
-    report_arg: Option<&str>,
+    report: &str,
 ) -> Result<std::process::Output, std::io::Error>
 where
     I: IntoIterator<Item = S>,
