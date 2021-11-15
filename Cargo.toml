@@ -25,8 +25,7 @@ notify = "4.0.15" # for --watch mode
 atty = "0.2.14" # to handle color correctly in pipes
 anyhow = "1.0.38" # for error handling
 clap = { version = "2.33.3", default-features = false } # for CLI argument parsing
-log = { version = "0.4.14", default-features = false } # for debug logs with -vvv
-stderrlog = { version = "0.5.1", default-features = false }
+log = { version = "0.4.14", default-features = false, features = ["std"] } # for debug logs with -vvv
 walkdir = "2.3.1" # to find all elm files in a given directory
 either = { version = "1.6.1", default-features = false } # for iterators on two branches
 which = "4.0.2" # to find the path of the elm executable

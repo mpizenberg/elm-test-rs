@@ -1,6 +1,7 @@
 mod deps;
 mod init;
 mod install;
+mod logger;
 mod make;
 mod parser;
 mod project;
@@ -142,13 +143,7 @@ fn main() -> anyhow::Result<()> {
 
     // Set log verbosity.
     let verbosity = matches.occurrences_of("verbose");
-    stderrlog::new()
-        .quiet(false)
-        .verbosity(verbosity as usize)
-        .show_level(false)
-        .color(stderrlog::ColorChoice::Never)
-        .init()
-        .context("Failed to initialize log verbosity")?;
+    logger::init(verbosity).context("Failed to initialize logger")?;
 
     match matches.subcommand() {
         ("init", Some(sub_matches)) => init::main(
