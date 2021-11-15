@@ -144,16 +144,15 @@ fn main_helper(
         .context("Error writing Reporter.elm to test folder")?;
     let compiled_reporter = tests_root.join("js").join("Reporter.elm.js");
     // let compile_time = std::time::Instant::now();
-    if !crate::make::compile(
+    let command = crate::make::compile(
         elm_home,
         &tests_root,            // current_dir
         &make_options.compiler, // compiler
         &compiled_reporter,     // output
         &make_options.report,   // report
         &[&reporter_elm_path],
-    )?
-    .success()
-    {
+    )?;
+    if !command.status.success() {
         return Ok(1);
     }
 

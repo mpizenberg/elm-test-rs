@@ -166,7 +166,9 @@ fn main() -> anyhow::Result<()> {
             install::main(packages)
         }
         ("make", Some(sub_matches)) => {
-            make::main(&elm_home, &elm_project_root, get_make_options(sub_matches)?)
+            let exit_code =
+                make::main(&elm_home, &elm_project_root, get_make_options(sub_matches)?)?;
+            std::process::exit(exit_code);
         }
         _ => {
             let make_options = get_make_options(&matches)?;
