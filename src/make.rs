@@ -6,6 +6,7 @@ use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use walkdir::WalkDir;
@@ -32,7 +33,7 @@ pub struct Options {
 ///  3. Find all tests.
 ///  4. Generate `Runner.elm` with a master test concatenating all found exposed tests.
 ///  5. Compile it.
-pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyhow::Result<()> {
+pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyhow::Result<i32> {
     // Prints to stderr the current version
     let title = format!(
         "elm-test-rs {} for elm 0.19.1",
@@ -42,11 +43,12 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
 
     let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
     if options.watch {
-        project.watch(|proj| main_helper(elm_home, proj, &options).map(|_| ()))
+        project.watch(|proj| main_helper(elm_home, proj, &options).map(|_| ()))?;
+        Ok(0)
     } else {
         match main_helper(elm_home, &project, &options)? {
-            Output::MakeFailure => anyhow::bail!("Compilation failed"),
-            Output::MakeSuccess { .. } => Ok(()),
+            Output::MakeFailure => Ok(1),
+            Output::MakeSuccess { .. } => Ok(0),
         }
     }
 }
@@ -183,16 +185,15 @@ pub fn main_helper(
     log::info!("Spent {}s generating Runner.elm", _preparation_time);
     log::info!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
-    if compile(
+    let command = compile(
         elm_home,
         &tests_root,       // current_dir
         &options.compiler, // compiler
         &compiled_runner,  // output
         &options.report,   // report
         &[Path::new("src").join("Runner.elm")],
-    )?
-    .success()
-    {
+    )?;
+    if command.status.success() {
         log::warn!("✓ Compilation of tests modules succeeded");
         Ok(Output::MakeSuccess {
             tests_root,
@@ -200,6 +201,12 @@ pub fn main_helper(
             compiled_runner,
         })
     } else {
+        // Always put the json output of `elm make` to stdout to be consistent
+        // with the fact that the tests runner output also goes to stdout.
+        match options.report.as_str() {
+            "json" => std::io::stdout().write_all(&command.stderr),
+            _ => std::io::stderr().write_all(&command.stderr),
+        }?;
         Ok(Output::MakeFailure)
     }
 }
@@ -266,7 +273,7 @@ pub fn compile<P1, P2, I, S>(
     output: P2,
     report: &str,
     src: I,
-) -> anyhow::Result<std::process::ExitStatus>
+) -> anyhow::Result<std::process::Output>
 where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
@@ -290,11 +297,6 @@ If you installed elm locally with npm, maybe try running with npx such as:
         compiler,
         current_dir.as_ref().display()
     );
-    // Transform the --report argument into an argument for the elm compiler.
-    let report_arg = match report {
-        "json" => Some("--report=json"),
-        _ => None,
-    };
     let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
     let executable = executable.as_path();
     log::debug!("We found an executable: {}", executable.display());
@@ -305,10 +307,20 @@ If you installed elm locally with npm, maybe try running with npx such as:
             src,
             output,
             current_dir.as_ref(),
-            report_arg,
+            report,
         )
         .context(context_if_fails)
     } else {
+        // Transform the --report argument into an argument for the elm compiler.
+        let report_arg = match report {
+            "json" => Some("--report=json"),
+            _ => None,
+        };
+        // Capture compiler output if --report=json.
+        let stderr = match report {
+            "json" => Stdio::piped(),
+            _ => Stdio::inherit(),
+        };
         Command::new(executable)
             .env("ELM_HOME", elm_home)
             .arg("make")
@@ -319,8 +331,8 @@ If you installed elm locally with npm, maybe try running with npx such as:
             // stdio config, comment to see elm make output for debug
             .stdin(Stdio::null())
             .stdout(Stdio::null())
-            .stderr(Stdio::inherit())
-            .status()
+            .stderr(stderr)
+            .output()
             .context(context_if_fails)
     }
 }
@@ -333,13 +345,23 @@ fn shell_command<I, S>(
     src: I,
     output: &str,
     current_dir: &Path,
-    report_arg: Option<&str>,
-) -> Result<std::process::ExitStatus, std::io::Error>
+    report: &str,
+) -> Result<std::process::Output, std::io::Error>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
     log::debug!("Trying with a cmd shell");
+    // Transform the --report argument into an argument for the elm compiler.
+    let report_arg = match report {
+        "json" => Some("--report=json"),
+        _ => None,
+    };
+    // Capture compiler output if --report=json.
+    let stderr = match report {
+        "json" => Stdio::piped(),
+        _ => Stdio::inherit(),
+    };
     Command::new("cmd")
         .env("ELM_HOME", elm_home)
         .arg("/D")
@@ -354,8 +376,8 @@ where
         // stdio config, comment to see elm make output for debug
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::inherit())
-        .status()
+        .stderr(stderr)
+        .output()
 }
 
 /// Fails on unix
@@ -367,13 +389,13 @@ fn shell_command<I, S>(
     src: I,
     output: &str,
     current_dir: &Path,
-    report_arg: Option<&str>,
-) -> Result<std::process::ExitStatus, std::io::Error>
+    report: &str,
+) -> Result<std::process::Output, std::io::Error>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    Command::new(compiler).status()
+    Command::new(compiler).output()
 }
 
 /// Replace the template keys and write result to output file.
