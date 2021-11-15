@@ -36,7 +36,7 @@ jobs:
             target: x86_64-apple-darwin
 
           - build: macos-arm-64
-            os: macos-latest
+            os: macos-11
             toolchain: nightly
             target: aarch64-apple-darwin
             cross: true
@@ -87,19 +87,15 @@ jobs:
           command: install
           args: cross
 
+      - name: Use cross instead of cargo for cross compilation
+        if: ${{ matrix.cross }}
+        run: cross build --release --target ${{ matrix.target }}
+
       - uses: actions-rs/cargo@v1
         if: ${{ !matrix.cross }}
         with:
           command: build
           args: --release --target ${{ matrix.target }}
-
-      - name: Specific cross compilation for macos aarch64
-        if: ${{ matrix.cross && matrix.target == 'aarch64-apple-darwin' }}
-        run: SDKROOT=$(xcrun -sdk macosx11.1 --show-sdk-path) MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.1 --show-sdk-platform-version) cross build --release --target ${{ matrix.target }}
-
-      - name: Use cross instead of cargo for cross compilation
-        if: ${{ matrix.cross && matrix.target != 'aarch64-apple-darwin' }}
-        run: cross build --release --target ${{ matrix.target }}
 
       - name: Compress compiled binary
         if: ${{ !startsWith(matrix.os, 'windows') }}
