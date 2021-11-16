@@ -237,7 +237,8 @@ Some might make your tests crash with elm-test-rs:
 
 - there is no automatic module description prepended to tests descriptions
 - globs are treated slightly differently
-- the `json` report goes to stdout instead of stderr when erroring.
+- the `json` report goes to stdout instead of stderr when erroring
+- elm-test-rs does not add `elm/random` and `elm/time` to direct dependencies
 
 ### No automatic module description
 
@@ -280,6 +281,16 @@ Since `elm-test-rs` enables multiple levels of verbosity, that additional loggin
 Therefore, to avoid mixing the report output stream and logs, reports go to stdout.
 This applies to reports of running tests as well as potential error reports of compilation.
 In contrast, `elm-test` json report outputs to stdout when running tests, but stderr when compilation fails since it forwards the compiler json output, itself in stderr.
+
+### No `elm/time` and `elm/random` dependencies added by default
+
+Both `elm-test` and `elm-test-rs` add some dependencies when generating and compiling a tests runner.
+In the case of `elm-test`, those dependencies are `elm/json`, `elm/time` and `elm/random`.
+In the case of `elm-test-rs`, they are `elm/json` and `mpizenberg/elm-test-runner`.
+Concretely, this means that a programmer can use a module from those packages and their tests will compile even if they forget to add those dependencies to their direct tests dependencies.
+This is for example the case of `elm-units 2.9.0`, which [uses the `Random` module in its tests](https://github.com/ianmackenzie/elm-units/blob/2.9.0/tests/Tests.elm#L62), but has forgotten to put `elm/random` in [its dependencies](https://github.com/ianmackenzie/elm-units/blob/2.9.0/elm.json#L45).
+In practice this means that `elm-units` can compile and run its tests with `elm-test` but not with `elm-test-rs`, which will fail at compilation.
+It's an easy fix though, just update your test dependencies in the `elm.json`.
 
 ## Minimum supported version
 
