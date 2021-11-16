@@ -7,12 +7,24 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+- Added support for the `--report` flag in the `elm-test-rs make` subcommand.
+  The stderr stream of the json report is redirected to stdout for consistency in elm-test-rs.
+- Accept (and ignore) the `--output=/dev/null` flag to ease integration with tooling and editors.
+- Improved compatibility with Lamdera.
+
 #### Changed
+
+- Upgrade `assert_cmd` dependency to replace an unmaintained indirect dependency.
 
 #### Removed
 
+- Removed dependency to stderrlog due to RUSTSEC-2020-0071.
+
 #### Fixed
 
+- (BREAKING) Fix an error in the json report: `testsCompleted` -> `testCompleted`.
+- Fix an error in the `package.json` specifying that the generated code is commonjs.
+- Fix CI cross compilation to generate the Apple M1 executable of `elm-test-rs`.
 
 ## [1.2.2] - (2021-09-18) [(diff)][diff-1.2.2]
 
