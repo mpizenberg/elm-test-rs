@@ -86,7 +86,7 @@ fn parse_content(input: &str) -> IResult<&str, Vec<&str>> {
     // Parse and ignore all imports
     let (input, _) = ignore_not_code(input)?;
     let ignore_import = terminated(parse_import, ignore_not_code);
-    let (input, _) = fold_many0(ignore_import, (), |_, _| ())(input)?;
+    let (input, _) = fold_many0(ignore_import, || (), |_, _| ())(input)?;
 
     // Parse definitions
     let parse_declaration = alt((
@@ -97,7 +97,7 @@ fn parse_content(input: &str) -> IResult<&str, Vec<&str>> {
     ));
     fold_many0(
         terminated(parse_declaration, ignore_not_code),
-        Vec::new(),
+        Vec::new,
         |mut acc: Vec<&str>, item| {
             if let Some(decl) = item {
                 acc.push(decl);
@@ -167,7 +167,7 @@ fn take_identifier(input: &str) -> IResult<&str, &str> {
 // Things to ignore
 
 fn ignore_not_code(input: &str) -> IResult<&str, ()> {
-    fold_many0(space_or_comment, (), |_, _| ())(input)
+    fold_many0(space_or_comment, || (), |_, _| ())(input)
 }
 
 fn space_or_comment(input: &str) -> IResult<&str, &str> {
@@ -277,13 +277,13 @@ fn take_till_escape_or_string_end(input: &str) -> IResult<&str, &str> {
 // ------------------
 
 fn take_body(input: &str) -> IResult<&str, ()> {
-    fold_many0(body_element, (), |_, _| ())(input)
+    fold_many0(body_element, || (), |_, _| ())(input)
 }
 
 fn body_element(input: &str) -> IResult<&str, &str> {
     let forbidden_chars = "'-\"{";
     alt((
-        preceded(fold_many0(line_ending, (), |_, _| ()), space1),
+        preceded(fold_many0(line_ending, || (), |_, _| ()), space1),
         block_comment,
         line_comment,
         char_literal,

@@ -10,26 +10,26 @@ license = "BSD-3-Clause"
 
 [dependencies]
 glob = "0.3.0" # to interpret CLI glob patterns
-pathdiff = "0.2.0" # to compute a path relative to another path
+pathdiff = "0.2.1" # to compute a path relative to another path
 num_cpus = "1.13.0" # to get the number of logic cores
-regex = "1.4.3" # to path the elm kernel code
-pubgrub = { version = "0.2", features = ["serde"] } # for dependency solving
+regex = "1.5.4" # to path the elm kernel code
+pubgrub = { version = "0.2.1", features = ["serde"] } # for dependency solving
 # pubgrub-dependency-provider-elm = { path = "../pubgrub-dependency-provider-elm" }
 pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub-dependency-provider-elm", rev = "a20a795f0" }
-serde_json = "1.0.61" # for JSON serialization
-serde = { version = "1.0.123", default-features = false }
-ureq = "2.0.1" # for https requests to the package website
+serde_json = "1.0.72" # for JSON serialization
+serde = { version = "1.0.130", default-features = false }
+ureq = "2.3.1" # for https requests to the package website
 dirs-next = "2.0.0" # to handle ELM_HOME
-nom = "6.1.0" # to parse the tests files and extract potential tests
-notify = "4.0.15" # for --watch mode
+nom = "7.1.0" # to parse the tests files and extract potential tests
+notify = "4.0.17" # for --watch mode
 atty = "0.2.14" # to handle color correctly in pipes
-anyhow = "1.0.38" # for error handling
-clap = { version = "2.33.3", default-features = false } # for CLI argument parsing
+anyhow = "1.0.51" # for error handling
+clap = { version = "2.34.0", default-features = false } # for CLI argument parsing
 log = { version = "0.4.14", default-features = false, features = ["std"] } # for debug logs with -vvv
-walkdir = "2.3.1" # to find all elm files in a given directory
+walkdir = "2.3.2" # to find all elm files in a given directory
 either = { version = "1.6.1", default-features = false } # for iterators on two branches
-which = "4.0.2" # to find the path of the elm executable
-path-absolutize = "3.0.10" # simple absolute paths (no Windows UNC)
+which = "4.2.2" # to find the path of the elm executable
+path-absolutize = "3.0.11" # simple absolute paths (no Windows UNC)
 
 [dev-dependencies]
 assert_cmd = "2.0.2"
