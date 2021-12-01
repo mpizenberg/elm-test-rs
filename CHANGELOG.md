@@ -7,6 +7,17 @@ All notable changes to this project will be documented in this file.
 
 #### Added
 
+#### Changed
+
+#### Removed
+
+#### Fixed
+
+
+## [2.0.0] - (2021-12-01) [(diff)][diff-2.0.0]
+
+#### Added
+
 - Added support for the `--report` flag in the `elm-test-rs make` subcommand.
   The stderr stream of the json report is redirected to stdout for consistency in elm-test-rs.
 - Accept (and ignore) the `--output=/dev/null` flag to ease integration with tooling and editors.
@@ -245,6 +256,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[2.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0
 [1.2.2]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2.2
 [1.2.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2.1
 [1.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2
@@ -260,7 +272,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.2...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0...master
+[diff-2.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.2...v2.0
 [diff-1.2.2]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.1...v1.2.2
 [diff-1.2.1]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2...v1.2.1
 [diff-1.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.1...v1.2
