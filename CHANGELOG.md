@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
-## [2.0.0] - (2021-12-01) [(diff)][diff-2.0.0]
+## [2.0.0] - (2021-12-02) [(diff)][diff-2.0.0]
 
 #### Added
 
