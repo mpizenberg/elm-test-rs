@@ -120,7 +120,7 @@ Failed:   1
 ```
 
 There are still improvements to be made since fuzz tests will report
-all their logs instead of just the simplest one,
+all their logs instead of just the logs for the reduced case,
 but this is already super useful for unit tests.
 
 ### Deno runtime
@@ -134,7 +134,7 @@ This makes testing more accessible in places where Node is tedious to install.
 ### Verbosity
 
 By default, elm-test-rs just prints to stdout the output of the tests runner,
-which are dependent on the `--report` option chosen (defaults to console report).
+which is dependent on the `--report` option chosen (defaults to console report).
 But if you are interested in gaining more insight on what is happening inside,
 you can add a verbosity level to the command.
 
@@ -212,11 +212,11 @@ without asking the package site which version exist.
 ### Other useful features
 
 - `--workers N` lets you specify the amount of worker threads spawn to run the tests.
-  Sometimes when you processor reports more threads than cores, like 2 cores and 4 threads,
+  Sometimes when your processor reports more threads than cores, like 2 cores and 4 threads,
   you actually get slightly better performance by specifying `--workers 2` instead
   of its default that will be 4.
   You might also want to limit it to 1 worker for some reasons.
-- `--filter substring` lets you only run tests whose description contain
+- `--filter substring` lets you run only the tests whose description contain
   the given string passed as argument.
   This can be more convenient than to add `Test.only` in your tests.
   It also makes it easy to run a group of tests identifiable by their descriptions.
@@ -270,7 +270,7 @@ tests = describe "TestModule" [ a, b, c ]
 
 ### Globs are treated slightly differently
 
-Whith elm-test, globs support directories so you can call `elm-test tests/` and all elm files
+With elm-test, globs support directories so you can call `elm-test tests/` and all elm files
 within the `tests/` directory will be used.
 With elm-test-rs the arguments must be elm files,
 so you would call `elm-test-rs tests/**/*.elm` instead.
@@ -329,9 +329,9 @@ with inter-process-communication (IPC) going through named pipes.
 The CLI program, if asked to run the tests, performs the following actions.
 
  1. Generate the list of test modules and their file paths.
- 1. Generate a correct `elm.json` for the to-be-generated `Runner.elm`.
- 1. Find all tests.
- 1. Generate `Runner.elm` with a master test concatenating all found exposed tests.
+ 1. Generate an `elm.json` with the correct dependencies for the to-be-generated `Runner.elm`.
+ 1. Find all exposed tests.
+ 1. Generate `Runner.elm` with a main test concatenating all found exposed tests.
  1. Compile it into a JS file wrapped into a Node worker module.
  1. Compile `Reporter.elm` into a Node module.
  1. Generate and start the Node supervisor program.
@@ -358,7 +358,7 @@ The patch consists in modifying all variants constructors of the `Test` type
 to embed a marker, and modifying the `check` function to look for that marker.
 
 Once all the JavaScript code has been generated, it is time to start
-the supervisor Node file, which will organize tests runners.
+the supervisor Node file, which will orchestrate tests runners.
 The supervisor and the runners communicate through child and parent worker messages.
 The reporter is just loaded from its compiled elm code by the supervisor.
 Communication between the Elm and JS parts are done through ports, as usual.
@@ -401,8 +401,8 @@ rustup component add clippy rustfmt
 and then before committing run
 
 ```bash
-cargo fmt -- --check
-touch src/main.rs && cargo clippy
+cargo fmt --all -- --check
+cargo clippy
 ```
 
 PS: clippy is a rapidly evolving tool so if there are lint errors on CI
