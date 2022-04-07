@@ -14,6 +14,21 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [2.0.1] - (2022-04-07) [(diff)][diff-2.0.1]
+
+#### Added
+
+- The `-v / --verbose` flag now also outputs a listing of all tests for the console report.
+
+#### Changed
+
+- Updated regex crate to v1.5.5 due to RUSTSEC-2022-0013.
+
+#### Fixed
+
+- The name field of exercism reports are now unique again.
+
+
 ## [2.0.0] - (2021-12-02) [(diff)][diff-2.0.0]
 
 #### Added
@@ -36,6 +51,7 @@ All notable changes to this project will be documented in this file.
 - (BREAKING) Fix an error in the json report: `testsCompleted` -> `testCompleted`.
 - Fix an error in the `package.json` specifying that the generated code is commonjs.
 - Fix CI cross compilation to generate the Apple M1 executable of `elm-test-rs`.
+
 
 ## [1.2.2] - (2021-09-18) [(diff)][diff-1.2.2]
 
@@ -256,6 +272,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[2.0.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0.1
 [2.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0
 [1.2.2]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2.2
 [1.2.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2.1
@@ -272,7 +289,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.1...master
+[diff-2.0.1]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0...v2.0.1
 [diff-2.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.2...v2.0
 [diff-1.2.2]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.1...v1.2.2
 [diff-1.2.1]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2...v1.2.1
