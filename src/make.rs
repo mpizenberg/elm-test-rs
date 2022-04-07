@@ -41,7 +41,7 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
     );
     log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
 
-    let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
+    let mut project = Project::from_dir(elm_project_root)?;
     if options.watch {
         project.watch(|proj| main_helper(elm_home, proj, &options).map(|_| ()))?;
         Ok(0)

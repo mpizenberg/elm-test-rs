@@ -50,7 +50,7 @@ pub fn main(
     );
     log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
 
-    let mut project = Project::from_dir(elm_project_root.to_path_buf())?;
+    let mut project = Project::from_dir(elm_project_root)?;
     if make_options.watch {
         project.watch(|project| {
             main_helper(elm_home, project, &make_options, &run_options).map(|_| ())
