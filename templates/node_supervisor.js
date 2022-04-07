@@ -22,6 +22,7 @@ const flags = {
   initialSeed: {{ initialSeed }},
   fuzzRuns: {{ fuzzRuns }},
   mode: "{{ reporter }}",
+  verbosity: verbosity,
   globs: {{ globs }},
   paths: {{ paths }},
 };
