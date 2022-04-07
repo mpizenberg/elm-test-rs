@@ -141,16 +141,11 @@ you can add a verbosity level to the command.
 - `elm-test-rs -v`: Slightly verbose. This will print to stderr some additional info
   like the version of elm-test-rs being used, or the total amount of time
   spent in the Node process spawned to run the tests.
+  In addition, the console report will display a listing of all the tests being run.
 - `elm-test-rs -vv`: Very verbose. This will print to stderr all the steps
   leading to running the tests.
 - `elm-test-rs -vvv`: Debug verbose. This will print some additional info to stderr
   that might be useful to report in an issue if you encounter a crash.
-
-Currently, the verbosity level only impacts the stderr output generated
-by elm-test-rs before and after running the tests.
-It does not change the stdout output of the tests runner itself.
-We could also change verbosity of the console reporter in the future,
-but that is not planned as a priority.
 
 ### Choose newest or oldest package dependencies
 
