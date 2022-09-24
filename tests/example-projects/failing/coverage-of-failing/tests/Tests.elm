@@ -2,14 +2,14 @@ module Tests exposing (..)
 
 import Expect
 import Fuzz
+import Question
 import Test exposing (Test)
-import Test.Coverage
 
 
 suite : Test
 suite =
     Test.fuzzWith
-        { runs = 10000
+        { runs = 100
         , coverage =
             Test.reportCoverage
                 [ ( "low", \n -> n == 1 )
@@ -19,5 +19,5 @@ suite =
                 ]
         }
         (Fuzz.intRange 1 20)
-        "Will show the coverage table when the test passes"
-        (\n -> Expect.pass)
+        "Failing test with coverage report"
+        (\n -> Expect.fail "Test fails no matter what")
