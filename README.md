@@ -163,8 +163,8 @@ For `mdgriffith/elm-ui` for example, it will give the following.
     "elm/html": "1.0.0",
     "elm/json": "1.1.3",
     "elm/virtual-dom": "1.0.2",
-    "elm-explorations/test": "1.2.2",
-    "mpizenberg/elm-test-runner": "4.0.3"
+    "elm-explorations/test": "2.0.0",
+    "mpizenberg/elm-test-runner": "6.0.0"
   },
   "indirect": {
     "elm/random": "1.0.0",
@@ -182,8 +182,8 @@ While if you run `elm-test-rs -vv --dependencies oldest`, you will get those.
     "elm/html": "1.0.0",
     "elm/json": "1.0.0",
     "elm/virtual-dom": "1.0.0",
-    "elm-explorations/test": "1.2.2",
-    "mpizenberg/elm-test-runner": "4.0.3"
+    "elm-explorations/test": "2.0.0",
+    "mpizenberg/elm-test-runner": "6.0.0"
   },
   "indirect": {
     "elm/random": "1.0.0",

@@ -92,7 +92,7 @@ fn init_app(
     }
 
     // Add elm-explorations/test to the dependencies
-    all_deps.insert(test_pkg.clone(), Range::between((1, 0, 0), (2, 0, 0)));
+    all_deps.insert(test_pkg.clone(), Range::between((2, 0, 0), (3, 0, 0)));
 
     // Solve dependencies
     let solution = solve_deps(
@@ -144,7 +144,7 @@ fn init_pkg(
     }
 
     // Add elm-explorations/test to the dependencies
-    let test_range = Range::between((1, 0, 0), (2, 0, 0));
+    let test_range = Range::between((2, 0, 0), (3, 0, 0));
     all_deps.insert(test_pkg.clone(), test_range.clone());
 
     // Solve dependencies to check that elm-explorations/test is compatible
