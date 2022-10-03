@@ -14,6 +14,15 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [2.0.2] - (2022-10-03) [(diff)][diff-2.0.2]
+
+#### Changed
+
+- There are now bespoke error messages when using the wrong version of `elm-explorations/test`
+  instead of the generic dependency solver errors.
+  This is in preparation for the upcomming v2 of `elm-explorations/test`.
+
+
 ## [2.0.1] - (2022-04-07) [(diff)][diff-2.0.1]
 
 #### Added
@@ -272,6 +281,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[2.0.2]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0.2
 [2.0.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0.1
 [2.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0
 [1.2.2]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v1.2.2
@@ -289,7 +299,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.1...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.2...master
+[diff-2.0.2]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.1...v2.0.2
 [diff-2.0.1]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0...v2.0.1
 [diff-2.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.2...v2.0
 [diff-1.2.2]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.1...v1.2.2
