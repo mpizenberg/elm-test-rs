@@ -60,6 +60,9 @@ fn init_app(
         .map(|(p, v)| (p.clone(), Range::exact(*v)))
         .collect();
 
+    // Check that this app does not already depend on an incompatible version of elm-explorations/test
+    check_compatible_testlib(&all_deps, true)?;
+
     // Check that those dependencies are correct
     solve_check(elm_home, &all_deps, strategy, true)
         .context("The app dependencies are incorrect")?;
@@ -92,7 +95,8 @@ fn init_app(
     }
 
     // Add elm-explorations/test to the dependencies
-    all_deps.insert(test_pkg.clone(), Range::between((2, 0, 0), (3, 0, 0)));
+    let valid_test_range = supported_testlib_range();
+    all_deps.insert(test_pkg.clone(), valid_test_range.clone());
 
     // Solve dependencies
     let solution = solve_deps(
@@ -102,7 +106,7 @@ fn init_app(
         Pkg::new("root", ""),
         SemVer::zero(),
     )
-    .context("Adding elm-explorations/test to the dependencies failed")?;
+    .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {} but somehow this is incompatible with the packages you use.", valid_test_range))?;
 
     // Add the selected elm-explorations/test version to direct tests deps
     let test_version = solution.get(&test_pkg).unwrap(); // this unwrap is fine since test_pkg was inserted in all_deps just before.
@@ -132,6 +136,9 @@ fn init_pkg(
         .map(|(p, c)| (p.clone(), c.0.clone()))
         .collect();
 
+    // Check that this pkg does not already depend on an incompatible version of elm-explorations/test
+    check_compatible_testlib(&all_deps, false)?;
+
     // Check that those dependencies are correct
     solve_check(elm_home, &all_deps, strategy, false)
         .context("The package dependencies are incorrect")?;
@@ -144,8 +151,8 @@ fn init_pkg(
     }
 
     // Add elm-explorations/test to the dependencies
-    let test_range = Range::between((2, 0, 0), (3, 0, 0));
-    all_deps.insert(test_pkg.clone(), test_range.clone());
+    let valid_test_range = supported_testlib_range();
+    all_deps.insert(test_pkg.clone(), valid_test_range.clone());
 
     // Solve dependencies to check that elm-explorations/test is compatible
     solve_deps(
@@ -155,12 +162,12 @@ fn init_pkg(
         pkg_config.name.clone(),
         SemVer::zero(),
     )
-    .context("Adding elm-explorations/test to the dependencies failed")?;
+    .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {} but somehow this is incompatible with the packages you use.", valid_test_range))?;
 
     // Add elm-explorations/test to tests deps
     pkg_config
         .test_dependencies
-        .insert(test_pkg, Constraint(test_range));
+        .insert(test_pkg, Constraint(valid_test_range));
     Ok(pkg_config)
 }
 
@@ -178,6 +185,9 @@ pub fn solve<P: AsRef<Path>>(
                 .chain(app_config.test_dependencies.direct.iter())
                 .map(|(p, v)| (p.clone(), Range::exact(*v)))
                 .collect();
+            // Check that this does not already depend on an incompatible version of elm-explorations/test
+            check_testlib_present(&direct_deps)?;
+            check_compatible_testlib(&direct_deps, true)?;
             // TODO: take somehow into account already picked versions for indirect deps.
             solve_helper(
                 elm_home,
@@ -194,6 +204,9 @@ pub fn solve<P: AsRef<Path>>(
                 .chain(pkg_config.test_dependencies.iter())
                 .map(|(p, c)| (p.clone(), c.0.clone()))
                 .collect();
+            // Check that this does not already depend on an incompatible version of elm-explorations/test
+            check_testlib_present(&deps)?;
+            check_compatible_testlib(&deps, false)?;
             solve_helper(
                 elm_home,
                 connectivity,
@@ -204,6 +217,36 @@ pub fn solve<P: AsRef<Path>>(
             )
         }
     }
+}
+
+fn supported_testlib_range() -> Range<SemVer> {
+    Range::between((2, 0, 0), (3, 0, 0))
+}
+
+fn check_testlib_present(all_deps: &Map<Pkg, Range<SemVer>>) -> anyhow::Result<()> {
+    if !all_deps.contains_key(&Pkg::new("elm-explorations", "test")) {
+        anyhow::bail!("It seems you forgot to add elm-explorations/test to your dependencies. Try running `elm-test-rs init` first.")
+    }
+    Ok(())
+}
+
+fn check_compatible_testlib(
+    all_deps: &Map<Pkg, Range<SemVer>>,
+    is_app: bool,
+) -> anyhow::Result<()> {
+    let supported_range = supported_testlib_range();
+    let test_pkg = Pkg::new("elm-explorations", "test");
+    if let Some(v_test_range) = all_deps.get(&test_pkg) {
+        if is_app {
+            let v_test = v_test_range.lowest_version().unwrap(); // Fine since app range are singletons
+            if !supported_range.contains(&v_test) {
+                anyhow::bail!("This version of elm-test-rs only supports elm-explorations/test {}, but you have version {} in your dependencies", supported_range, v_test)
+            }
+        } else if supported_range.intersection(v_test_range) == Range::none() {
+            anyhow::bail!("This version of elm-test-rs only supports elm-explorations/test {}, but you have {} in your dependencies", supported_range, v_test_range)
+        }
+    }
+    Ok(())
 }
 
 #[allow(clippy::ptr_arg)]
