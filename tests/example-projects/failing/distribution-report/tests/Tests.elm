@@ -10,8 +10,8 @@ suite : Test
 suite =
     Test.fuzzWith
         { runs = 100
-        , coverage =
-            Test.reportCoverage
+        , distribution =
+            Test.reportDistribution
                 [ ( "low", \n -> n == 1 )
                 , ( "high", \n -> n == 20 )
                 , ( "in between", \n -> n > 1 && n < 20 )
@@ -19,5 +19,5 @@ suite =
                 ]
         }
         (Fuzz.intRange 1 20)
-        "Failing test with coverage report"
+        "Failing test with distribution report"
         (\n -> Expect.fail "Test fails no matter what")
