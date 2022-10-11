@@ -311,6 +311,7 @@ All notable changes to this project will be documented in this file.
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
 [diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0...master
+[diff-3.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.2...v3.0
 [diff-2.0.2]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.1...v2.0.2
 [diff-2.0.1]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0...v2.0.1
 [diff-2.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.2...v2.0
