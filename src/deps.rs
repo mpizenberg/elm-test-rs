@@ -220,7 +220,7 @@ pub fn solve<P: AsRef<Path>>(
 }
 
 fn supported_testlib_range() -> Range<SemVer> {
-    Range::between((1, 0, 0), (2, 0, 0))
+    Range::between((2, 0, 0), (3, 0, 0))
 }
 
 fn check_testlib_present(all_deps: &Map<Pkg, Range<SemVer>>) -> anyhow::Result<()> {
@@ -262,7 +262,7 @@ fn solve_helper<P: AsRef<Path>>(
     let mut deps = direct_deps;
     deps.insert(
         Pkg::new("mpizenberg", "elm-test-runner"),
-        Range::exact((5, 0, 0)),
+        Range::exact((6, 0, 0)),
     );
     // Add elm/json to the deps since it's used in Runner.elm and Reporter.elm.
     // TODO: maybe not the best way to handle but should work most of the time.

@@ -14,6 +14,16 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [3.0.0] - (2022-10-11) [(diff)][diff-3.0.0]
+
+#### Changed
+
+- This version now supports the new `elm-explorations/test` v2.
+- The reporters have been updated by `@Janiczek` to support the new fuzzer API
+  with information and checks about the random distributions.
+  More info about those changes in [that library changelog](https://github.com/elm-explorations/test/blob/master/CHANGELOG.md#changes-in-200).
+
+
 ## [2.0.2] - (2022-10-03) [(diff)][diff-2.0.2]
 
 #### Changed
@@ -281,6 +291,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[3.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v3.0
 [2.0.2]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0.2
 [2.0.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0.1
 [2.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0
@@ -299,7 +310,7 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.2...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0...master
 [diff-2.0.2]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.1...v2.0.2
 [diff-2.0.1]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0...v2.0.1
 [diff-2.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v1.2.2...v2.0
