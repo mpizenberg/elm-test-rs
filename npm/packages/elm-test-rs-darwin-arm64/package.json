@@ -1,0 +1,9 @@
+{
+  "name": "@mpizenberg/elm-test-rs-darwin-arm64",
+  "version": "3.0.0",
+  "description": "The macOS ARM 64-bit binary for elm-test-rs.",
+  "repository": "https://github.com/mpizenberg/elm-test-rs",
+  "license": "BSD-3-Clause",
+  "os": [ "darwin" ],
+  "cpu": [ "arm64" ]
+}

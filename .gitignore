@@ -224,3 +224,7 @@ $RECYCLE.BIN/
 
 # nix-build output
 /result
+
+# npm package binaries
+/packages/*/elm-test-rs
+/packages/*/elm-test-rs.exe
