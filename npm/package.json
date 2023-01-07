@@ -18,11 +18,11 @@
     "install": "node install.js"
   },
   "optionalDependencies": {
-    "@mpizenberg/elm-test-rs-darwin-arm64": "3.0.0-0",
-    "@mpizenberg/elm-test-rs-darwin-x64": "3.0.0-0",
-    "@mpizenberg/elm-test-rs-linux-arm": "3.0.0-0",
-    "@mpizenberg/elm-test-rs-linux-arm64": "3.0.0-0",
-    "@mpizenberg/elm-test-rs-linux-x64": "3.0.0-0",
-    "@mpizenberg/elm-test-rs-win32-x64": "3.0.0-0"
+    "@mattpiz/elm-test-rs-darwin-arm64": "3.0.0-0",
+    "@mattpiz/elm-test-rs-darwin-x64": "3.0.0-0",
+    "@mattpiz/elm-test-rs-linux-arm": "3.0.0-0",
+    "@mattpiz/elm-test-rs-linux-arm64": "3.0.0-0",
+    "@mattpiz/elm-test-rs-linux-x64": "3.0.0-0",
+    "@mattpiz/elm-test-rs-win32-x64": "3.0.0-0"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@mpizenberg/elm-test-rs-linux-x64",
+  "name": "@mattpiz/elm-test-rs-linux-x64",
   "version": "3.0.0-0",
   "description": "The Linux 64-bit binary for elm-test-rs.",
   "repository": "https://github.com/mpizenberg/elm-test-rs",

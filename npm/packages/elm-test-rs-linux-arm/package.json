@@ -1,5 +1,5 @@
 {
-  "name": "@mpizenberg/elm-test-rs-linux-arm",
+  "name": "@mattpiz/elm-test-rs-linux-arm",
   "version": "3.0.0-0",
   "description": "The Linux ARM 32-bit binary for elm-test-rs.",
   "repository": "https://github.com/mpizenberg/elm-test-rs",

@@ -4,7 +4,7 @@ var package = require("./package.json");
 
 module.exports = function () {
   var platform = `${process.platform}-${process.arch}`;
-  var subPackageName = `@mpizenberg/elm-test-rs-${platform}`;
+  var subPackageName = `@mattpiz/elm-test-rs-${platform}`;
 
   if (!(subPackageName in package.optionalDependencies)) {
     exitFailure(
@@ -55,7 +55,6 @@ module.exports = function () {
 };
 
 function exitFailure(message) {
-  var tag = `v${package.version.replace(/^(\d+\.\d+)\.0$/, "$1")})}`;
   console.error(
     `
 -- ERROR -----------------------------------------------------------------------
@@ -63,7 +62,7 @@ function exitFailure(message) {
 ${message}
 
 NOTE: You can avoid npm entirely by downloading directly from:
-https://github.com/mpizenberg/elm-test-rs/releases/tag/${tag}
+https://github.com/mpizenberg/elm-test-rs/releases
 All this package does is distributing a file from there.
 
 --------------------------------------------------------------------------------
