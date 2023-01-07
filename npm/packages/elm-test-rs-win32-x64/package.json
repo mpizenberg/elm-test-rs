@@ -1,6 +1,6 @@
 {
   "name": "@mpizenberg/elm-test-rs-win32-x64",
-  "version": "3.0.0",
+  "version": "3.0.0-0",
   "description": "The Windows 64-bit binary for elm-test-rs.",
   "repository": "https://github.com/mpizenberg/elm-test-rs",
   "license": "BSD-3-Clause",
