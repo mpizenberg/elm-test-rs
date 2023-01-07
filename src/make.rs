@@ -103,7 +103,7 @@ pub fn main_helper(
         .src_and_test_dirs
         .iter()
         .map(|path| {
-            pathdiff::diff_paths(&path, &tests_root).context(format!(
+            pathdiff::diff_paths(path, &tests_root).context(format!(
                 "Could not get path {} relative to path {}",
                 path.display(),
                 tests_root.display()
@@ -161,7 +161,7 @@ pub fn main_helper(
     let mut potential_tests = Vec::new();
     for (module_name, path) in module_names.iter().zip(&modules_abs_paths) {
         let source =
-            fs::read_to_string(&path).context(format!("Failed to read {}", path.display()))?;
+            fs::read_to_string(path).context(format!("Failed to read {}", path.display()))?;
         for potential_test in crate::parser::potential_tests(&source) {
             potential_tests.push(format!("check {}.{}", module_name, potential_test));
         }
@@ -191,7 +191,7 @@ pub fn main_helper(
         &options.compiler, // compiler
         &compiled_runner,  // output
         &options.report,   // report
-        &[Path::new("src").join("Runner.elm")],
+        [Path::new("src").join("Runner.elm")],
     )?;
     if command.status.success() {
         log::warn!("✓ Compilation of tests modules succeeded");
@@ -215,7 +215,7 @@ pub fn main_helper(
 fn elm_files_within<P: AsRef<Path>>(directory: P) -> impl Iterator<Item = PathBuf> {
     let walker = WalkDir::new(directory).follow_links(true);
     let entries = walker.into_iter().filter_map(|e| e.ok());
-    entries.map(|e| e.into_path()).filter(|p| is_elm_file(&p))
+    entries.map(|e| e.into_path()).filter(|p| is_elm_file(p))
 }
 
 fn is_elm_file<P: AsRef<Path>>(p: P) -> bool {

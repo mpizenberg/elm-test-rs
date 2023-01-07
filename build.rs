@@ -14,8 +14,7 @@ fn main() {
         .join("elm-test-runner")
         .join("6.0.0");
     let elm_stuff = Path::new("elm").join("elm-stuff");
-    std::fs::remove_dir_all(&elm_stuff)
-        .unwrap_or_else(|_| println!("Error removing elm/elm-stuff"));
+    std::fs::remove_dir_all(elm_stuff).unwrap_or_else(|_| println!("Error removing elm/elm-stuff"));
     std::fs::remove_dir_all(&installed_dir)
         .unwrap_or_else(|_| println!("Error removing elm-test-runner package in ~/.elm/"));
     std::fs::create_dir_all(&installed_dir)
