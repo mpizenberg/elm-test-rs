@@ -10,9 +10,10 @@ and put it in a directory in your `PATH` environment variable
 so that you can call `elm-test-rs` from anywhere.
 
 To install elm-test-rs **locally** per project,
+either run `npm install elm-test-rs` or
 add elm-test-rs in your `elm-tooling.json` config file
 and use [`elm-tooling install`][elm-tooling].
-In such case, you'll have to run it via npx: `npx elm-test-rs`.
+In both cases, you'll have to run it via npx: `npx elm-test-rs`.
 
 To install elm-test-rs **in your CI**,
 as well as elm and other tools, use this [GitHub action][action].

@@ -1,0 +1,9 @@
+{
+  "name": "@mattpiz/elm-test-rs-linux-arm64",
+  "version": "3.0.0-0",
+  "description": "The Linux ARM 64-bit binary for elm-test-rs.",
+  "repository": "https://github.com/mpizenberg/elm-test-rs",
+  "license": "BSD-3-Clause",
+  "os": [ "linux" ],
+  "cpu": [ "arm64" ]
+}
