@@ -1,5 +1,12 @@
 assets/*.png
 
+# nix-build output
+/result
+
+# npm package binaries
+npm/packages/*/elm-test-rs
+npm/packages/*/elm-test-rs.exe
+
 # Created by https://www.gitignore.io/api/osx,elm,vim,node,rust,linux,windows
 # Edit at https://www.gitignore.io/?templates=osx,elm,vim,node,rust,linux,windows
 
@@ -221,10 +228,3 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/osx,elm,vim,node,rust,linux,windows
-
-# nix-build output
-/result
-
-# npm package binaries
-/packages/*/elm-test-rs
-/packages/*/elm-test-rs.exe
