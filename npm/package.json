@@ -1,6 +1,6 @@
 {
   "name": "elm-test-rs",
-  "version": "3.0.0-1",
+  "version": "3.0.0-2",
   "author": "Matthieu Pizenberg",
   "license": "BSD-3-Clause",
   "description": "Fast and portable executable to run your Elm tests.",

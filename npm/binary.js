@@ -38,7 +38,7 @@ module.exports = function () {
     return subBinaryPath;
   }
 
-  var binaryPath = path.resolve(__dirname, package.bin.elm);
+  var binaryPath = path.resolve(__dirname, package.bin);
   var tmpPath = binaryPath + ".tmp";
 
   try {
