@@ -102,7 +102,7 @@ fn main_helper(
     };
     fs::write(
         &compiled_runner,
-        &kernel_patch_tests(&compiled_runner_src, es_module).context(format!(
+        kernel_patch_tests(&compiled_runner_src, es_module).context(format!(
             "Failed to patch the file {}",
             compiled_runner.display()
         ))?,
@@ -150,7 +150,7 @@ fn main_helper(
         &make_options.compiler, // compiler
         &compiled_reporter,     // output
         &make_options.report,   // report
-        &[&reporter_elm_path],
+        [&reporter_elm_path],
     )?;
     if !command.status.success() {
         return Ok(1);
