@@ -8,6 +8,9 @@ To install elm-test-rs **globally**, simply download the executable for your sys
 from the [latest release](https://github.com/mpizenberg/elm-test-rs/releases),
 and put it in a directory in your `PATH` environment variable
 so that you can call `elm-test-rs` from anywhere.
+It is also possible to install globally via NPM with `npm install -g elm-test-rs`.
+If you want to compile it yourself, you can also install via cargo with
+`cargo install --git https://github.com/mpizenberg/elm-test-rs --tag v3.0`.
 
 To install elm-test-rs **locally** per project,
 either run `npm install elm-test-rs` or
@@ -16,7 +19,7 @@ and use [`elm-tooling install`][elm-tooling].
 In both cases, you'll have to run it via npx: `npx elm-test-rs`.
 
 To install elm-test-rs **in your CI**,
-as well as elm and other tools, use this [GitHub action][action].
+as well as elm and other tools, use the [elm-tooling-action GitHub action][action].
 
 [elm-tooling]: https://elm-tooling.github.io/elm-tooling-cli/
 [action]: https://github.com/mpizenberg/elm-tooling-action
