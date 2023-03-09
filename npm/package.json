@@ -1,6 +1,6 @@
 {
   "name": "elm-test-rs",
-  "version": "3.0.0-3",
+  "version": "3.0.0-4",
   "author": "Matthieu Pizenberg",
   "license": "BSD-3-Clause",
   "description": "Fast and portable executable to run your Elm tests.",
@@ -24,6 +24,6 @@
     "@mattpiz/elm-test-rs-linux-arm": "3.0.0-0",
     "@mattpiz/elm-test-rs-linux-arm64": "3.0.0-0",
     "@mattpiz/elm-test-rs-linux-x64": "3.0.0-0",
-    "@mattpiz/elm-test-rs-win32-x64": "3.0.0-0"
+    "@mattpiz/elm-test-rs-win32-x64": "3.0.0-1"
   }
 }
