@@ -29,11 +29,8 @@ check =
 
 
 checkHelperReplaceMe___ : a -> b
-checkHelperReplaceMe___ _ =
-    Debug.todo """The regex for replacing this Debug.todo with some real code must have failed since you see this message!
-
-Please report this bug: https://github.com/mpizenberg/elm-test-rs/issues/new
-"""
+checkHelperReplaceMe___ a =
+    checkHelperReplaceMe___ a
 
 
 tests : List Test

@@ -324,6 +324,7 @@ If you installed elm locally with npm, maybe try running with npx such as:
         Command::new(executable)
             .env("ELM_HOME", elm_home)
             .arg("make")
+            .arg("--optimize")
             .arg(format!("--output={}", output))
             .args(report_arg)
             .args(src)
