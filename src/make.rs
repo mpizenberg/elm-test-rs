@@ -151,10 +151,7 @@ pub fn main_helper(
     }
 
     // Runner.elm imports of tests modules
-    let imports: Vec<String> = module_names
-        .iter()
-        .map(|m| format!("import {}", m))
-        .collect();
+    let imports: Vec<String> = module_names.iter().map(|m| format!("import {m}")).collect();
 
     // Find all potential tests
     log::info!("Finding all potential tests ...");
@@ -163,7 +160,7 @@ pub fn main_helper(
         let source =
             fs::read_to_string(path).context(format!("Failed to read {}", path.display()))?;
         for potential_test in crate::parser::potential_tests(&source) {
-            potential_tests.push(format!("check {}.{}", module_name, potential_test));
+            potential_tests.push(format!("check {module_name}.{potential_test}"));
         }
     }
 
@@ -234,7 +231,7 @@ fn get_elm_modules_abs_paths(args: &[String]) -> anyhow::Result<HashSet<PathBuf>
         .flatten()
         .map(|path| absolute_elm_path(&path))
         .collect::<Result<_, _>>()?;
-    glob_err.map_err(anyhow::Error::from)?;
+    glob_err?;
     Ok(abs_paths)
 }
 
@@ -252,7 +249,7 @@ fn resolve_glob_arg(arg: &str) -> anyhow::Result<impl Iterator<Item = PathBuf>> 
 
 fn resolve_glob_pattern(pattern: &str) -> anyhow::Result<impl Iterator<Item = PathBuf>> {
     Ok(glob(pattern)
-        .context(format!("Failed to read glob pattern {}", pattern))?
+        .context(format!("Failed to read glob pattern {pattern}"))?
         .filter_map(|gr| gr.ok()))
 }
 
@@ -282,11 +279,10 @@ where
 {
     let context_if_fails = format!(
         r#"
-Failed to run {}. Are you sure it's in your PATH?
+Failed to run {compiler}. Are you sure it's in your PATH?
 If you installed elm locally with npm, maybe try running with npx such as:
 
-    npx --no-install elm-test-rs"#,
-        compiler
+    npx --no-install elm-test-rs"#
     );
     let output = output.as_ref().to_str().context(format!(
         "Could not convert path into a String: {}",
@@ -324,7 +320,7 @@ If you installed elm locally with npm, maybe try running with npx such as:
         Command::new(executable)
             .env("ELM_HOME", elm_home)
             .arg("make")
-            .arg(format!("--output={}", output))
+            .arg(format!("--output={output}"))
             .args(report_arg)
             .args(src)
             .current_dir(current_dir)
@@ -445,7 +441,7 @@ fn get_module_name(
     for s in trimmed.iter() {
         module_name_parts.push(
             s.to_str()
-                .context(format!("Failed to convert path to string: {:?}", s))?,
+                .context(format!("Failed to convert path to string: {s:?}"))?,
         );
     }
     module_name_parts

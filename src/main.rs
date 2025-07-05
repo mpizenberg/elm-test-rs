@@ -133,7 +133,7 @@ fn main() -> anyhow::Result<()> {
         Some(str_path) => {
             // Create the path to make sure it exists.
             std::fs::create_dir_all(str_path)
-                .context(format!("{} does not exist and is not writable", str_path))?;
+                .context(format!("{str_path} does not exist and is not writable"))?;
             utils::absolute_path(str_path)?
         }
     };
