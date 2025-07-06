@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [3.0.1] - (2025-07-06) [(diff)][diff-3.0.1]
+
+#### Changed
+
+- Fix some test detection regex for compatibility with upcomming version of Lamdera, by `@miniBill`.
+
+
 ## [3.0.0] - (2022-10-11) [(diff)][diff-3.0.0]
 
 #### Changed
@@ -291,6 +298,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[3.0.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v3.0.1
 [3.0.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v3.0
 [2.0.2]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0.2
 [2.0.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v2.0.1
@@ -310,7 +318,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0.1...master
+[diff-3.0.1]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0...v3.0.1
 [diff-3.0.0]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.2...v3.0
 [diff-2.0.2]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0.1...v2.0.2
 [diff-2.0.1]: https://github.com/mpizenberg/elm-test-rs/compare/v2.0...v2.0.1
