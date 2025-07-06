@@ -353,7 +353,7 @@ module{--}Main {-
     #[test]
     fn get_all_top_level_values() {
         let helper = |source: &str, expected: Vec<&str>| {
-            let content = super::potential_tests(&source);
+            let content = super::potential_tests(source);
             assert_eq!(content, expected);
         };
 
