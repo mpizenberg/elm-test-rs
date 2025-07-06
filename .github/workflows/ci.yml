@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [master, main]
+    tags:
+      - "v*"
 
 env:
   ELM_HOME: "${{ github.workspace }}/elm-home"
