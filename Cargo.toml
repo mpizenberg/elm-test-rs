@@ -1,7 +1,10 @@
 [package]
 name = "elm-test-rs"
-version = "3.0.0"
-authors = ["Matthieu Pizenberg <matthieu.pizenberg@gmail.com>", "Harry Sarson <harry.sarson@hotmail.co.uk>"]
+version = "3.0.1"
+authors = [
+    "Matthieu Pizenberg <matthieu.pizenberg@gmail.com>",
+    "Harry Sarson <harry.sarson@hotmail.co.uk>",
+]
 edition = "2021"
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
 license = "BSD-3-Clause"
@@ -9,10 +12,10 @@ license = "BSD-3-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glob = "0.3.0" # to interpret CLI glob patterns
-pathdiff = "0.2.1" # to compute a path relative to another path
-num_cpus = "1.13.0" # to get the number of logic cores
-regex = "1.5.5" # to path the elm kernel code
+glob = "0.3.0"                                        # to interpret CLI glob patterns
+pathdiff = "0.2.1"                                    # to compute a path relative to another path
+num_cpus = "1.13.0"                                   # to get the number of logic cores
+regex = "1.5.5"                                       # to path the elm kernel code
 pubgrub = { version = "0.2.1", features = ["serde"] } # for dependency solving
 # pubgrub-dependency-provider-elm = { path = "../pubgrub-dependency-provider-elm" }
 pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub-dependency-provider-elm", rev = "a20a795f0" }
@@ -25,7 +28,9 @@ notify = "4.0.17" # for --watch mode
 atty = "0.2.14" # to handle color correctly in pipes
 anyhow = "1.0.51" # for error handling
 clap = { version = "2.34.0", default-features = false } # for CLI argument parsing
-log = { version = "0.4.14", default-features = false, features = ["std"] } # for debug logs with -vvv
+log = { version = "0.4.14", default-features = false, features = [
+    "std",
+] } # for debug logs with -vvv
 walkdir = "2.3.2" # to find all elm files in a given directory
 either = { version = "1.6.1", default-features = false } # for iterators on two branches
 which = "4.2.2" # to find the path of the elm executable

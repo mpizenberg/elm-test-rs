@@ -1,6 +1,6 @@
 {
   "name": "elm-test-rs",
-  "version": "3.0.0-5",
+  "version": "3.0.1-0",
   "author": "Matthieu Pizenberg",
   "license": "BSD-3-Clause",
   "description": "Fast and portable executable to run your Elm tests.",
@@ -14,16 +14,20 @@
     "cli",
     "rust"
   ],
-  "files": ["binary.js", "elm-test-rs.js", "install.js"],
+  "files": [
+    "binary.js",
+    "elm-test-rs.js",
+    "install.js"
+  ],
   "scripts": {
     "install": "node install.js"
   },
   "optionalDependencies": {
-    "@mattpiz/elm-test-rs-darwin-arm64": "3.0.0-1",
-    "@mattpiz/elm-test-rs-darwin-x64": "3.0.0-0",
-    "@mattpiz/elm-test-rs-linux-arm": "3.0.0-0",
-    "@mattpiz/elm-test-rs-linux-arm64": "3.0.0-0",
-    "@mattpiz/elm-test-rs-linux-x64": "3.0.0-0",
-    "@mattpiz/elm-test-rs-win32-x64": "3.0.0-0"
+    "@mattpiz/elm-test-rs-darwin-arm64": "3.0.1-0",
+    "@mattpiz/elm-test-rs-darwin-x64": "3.0.1-0",
+    "@mattpiz/elm-test-rs-linux-arm": "3.0.1-0",
+    "@mattpiz/elm-test-rs-linux-arm64": "3.0.1-0",
+    "@mattpiz/elm-test-rs-linux-x64": "3.0.1-0",
+    "@mattpiz/elm-test-rs-win32-x64": "3.0.1-0"
   }
 }

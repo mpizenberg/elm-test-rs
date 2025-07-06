@@ -79,14 +79,9 @@ jobs:
           # Extract the executables from the archives to each sub-package
           jq -c '.[]' .config/targets.json | while read -r item; do
             name=$(echo "$item" | jq -r '.name')
-            binary_name=$(echo "$item" | jq -r '.binary_name')
             archive_name=$(echo "$item" | jq -r '.archive_name')
             npm_platform=$(echo "$item" | jq -r '.npm_platform')
             npm_arch=$(echo "$item" | jq -r '.npm_arch')
-
-            echo "---------------------"
-            echo "name: $name"
-
             # Extract the executable into the sub-package
             tar xzf artifacts/$name/$archive_name -C npm/packages/elm-test-rs-$npm_platform-$npm_arch
           done
@@ -99,6 +94,38 @@ jobs:
           name: npm-package
           path: npm.tar.gz
           compression-level: 0
+
+  # Create GitHub Release
+  create-release:
+    needs: [build, create-npm-package]
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      - name: Prepare Release Files
+        run: |
+          mkdir -p release
+
+          # Copy all artifacts
+          for dir in artifacts/*; do
+            if [ -d "$dir" ]; then
+              cp -r $dir/* release/
+            fi
+          done
+
+          # Generate checksums
+          cd release
+          sha256sum * > checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: true
+          generate_release_notes: true
 
   test:
     name: Test
