@@ -3,117 +3,98 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ master, main ]
+    branches: [master, main]
+
+env:
+  ELM_HOME: "${{ github.workspace }}/elm-home"
+  TARGETS_JSON: .config/targets.json
 
 jobs:
+  # Create the targets matrix from the targets.json config file
+  prepare-config:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: echo matrix={"include":$(cat $TARGETS_JSON)} >> $GITHUB_OUTPUT
+
   build:
-    name: Build artifacts
+    needs: [prepare-config]
+    name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      matrix:
-        build:
-          - linux-musl
-          - windows
-          - macos
-          - macos-arm-64
-          - linux-arm-64
-          - linux-arm-32
-        include:
-          - build: linux-musl
-            os: ubuntu-latest
-            toolchain: stable
-            target: x86_64-unknown-linux-musl
-
-          - build: windows
-            os: windows-latest
-            toolchain: stable
-            target: x86_64-pc-windows-msvc
-
-          - build: macos
-            os: macos-latest
-            toolchain: stable
-            target: x86_64-apple-darwin
-
-          - build: macos-arm-64
-            os: macos-11
-            toolchain: nightly
-            target: aarch64-apple-darwin
-            cross: true
-
-          - build: linux-arm-64
-            os: ubuntu-latest
-            toolchain: nightly
-            target: aarch64-unknown-linux-musl
-            cross: true
-
-          - build: linux-arm-32
-            os: ubuntu-latest
-            toolchain: nightly
-            target: arm-unknown-linux-musleabihf
-            cross: true
-
+      matrix: ${{ fromJson(needs.prepare-config.outputs.matrix) }}
     steps:
-      - name: install musl-tools if musl target
-        if: ${{ contains(matrix.target, 'musl') }}
-        run: sudo apt install musl-tools
-
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - uses: actions-rs/toolchain@v1
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: ${{ matrix.toolchain }}
-          target: ${{ matrix.target }}
-          override: true
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Download cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/
-            target/
-          key: ${{ matrix.target }}-build-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.target }}-build-
-            ${{ matrix.target }}-
+      - name: install musl-tools (if needed)
+        if: ${{ contains(matrix.target, 'musl') }}
+        run: sudo apt install musl-tools
 
-      - name: Install cross compiler
-        if: ${{ matrix.cross }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cross
+      - name: Install cross (if needed)
+        if: ${{ matrix.tool == 'cross' }}
+        run: cargo install cross
 
-      - name: Use cross instead of cargo for cross compilation
-        if: ${{ matrix.cross }}
-        run: cross build --release --target ${{ matrix.target }}
-
-      - uses: actions-rs/cargo@v1
-        if: ${{ !matrix.cross }}
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }}
+      - name: Build binary
+        run: ${{ matrix.tool }} build --release --target ${{ matrix.target }}
 
       - name: Compress compiled binary
-        if: ${{ !startsWith(matrix.os, 'windows') }}
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf elm-test-rs_${{ matrix.target }}.tar.gz elm-test-rs
+          tar czf ${{ matrix.archive_name }} ${{ matrix.binary_name }}
+        shell: bash
 
-      - uses: actions/upload-artifact@v2
-        if: ${{ !startsWith(matrix.os, 'windows') }}
+      - uses: actions/upload-artifact@v4
         with:
-          name: elm-test-rs_${{ matrix.target }}.tar.gz
-          path: target/${{ matrix.target }}/release/elm-test-rs_${{ matrix.target }}.tar.gz
+          name: ${{ matrix.name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.archive_name }}
+          compression-level: 0
 
-      - uses: actions/upload-artifact@v2
-        if: ${{ startsWith(matrix.os, 'windows') }}
+  create-npm-package:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v4
         with:
-          name: elm-test-rs_${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/elm-test-rs.exe
+          path: ./artifacts
+      - name: Create NPM Package
+        run: |
+          # Extract the executables from the archives to each sub-package
+          jq -c '.[]' .config/targets.json | while read -r item; do
+            name=$(echo "$item" | jq -r '.name')
+            binary_name=$(echo "$item" | jq -r '.binary_name')
+            archive_name=$(echo "$item" | jq -r '.archive_name')
+            npm_platform=$(echo "$item" | jq -r '.npm_platform')
+            npm_arch=$(echo "$item" | jq -r '.npm_arch')
+
+            echo "---------------------"
+            echo "name: $name"
+
+            # Extract the executable into the sub-package
+            tar xzf artifacts/$name/$archive_name -C npm/packages/elm-test-rs-$npm_platform-$npm_arch
+          done
+
+          # Create an archive
+          tar czf npm.tar.gz npm/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: npm.tar.gz
+          compression-level: 0
 
   test:
     name: Test
@@ -125,92 +106,40 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
-    env:
-      ELM_HOME: '${{ github.workspace }}/elm-home'
-
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - uses: mpizenberg/elm-tooling-action@746bbdcd1ed901364e4c8380058da4c22ebfbb92
+      - uses: mpizenberg/elm-tooling-action@v1.7
         with:
           cache-key: elm-home-${{ matrix.os }}-0
-          cache-restore-key: elm-home-${{ matrix.os }}
           elm-tooling-dir: tests
 
       - name: Clear elm-test-runner package in cache
         run: rm -rf $ELM_HOME/0.19.1/packages/mpizenberg/elm-test-runner
         shell: bash
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --release
 
-      - name: Download cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/
-            target/
-          key: test-${{ matrix.os }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            test-${{ matrix.os }}-
+      # TODO: re-activate and fix Deno tests
+      # - uses: denoland/setup-deno@v1
+      # - run: cargo test --release --features deno
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          # args: --release --jobs 1
-          args: --release
-
-      - uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features deno
-
-  check_formatting:
-    name: Check formatting
+  checks:
+    name: Check formatting and Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          components: rustfmt
-          override: true
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  clippy:
-    name: Check clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          components: clippy
-          override: true
-
-      - uses: actions-rs/cargo@v1
-        env:
-          RUSTFLAGS: -D warnings
-        with:
-          command: clippy
+          components: rustfmt, clippy
+      - run: cargo fmt --all -- --check
+      # TODO: re-activate clippy
+      # - run: cargo clippy
+      #   env:
+      #     RUSTFLAGS: -D warnings

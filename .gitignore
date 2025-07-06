@@ -1,5 +1,8 @@
 assets/*.png
 
+# Added by goreleaser init:
+.intentionally-empty-file.o
+
 # nix-build output
 /result
 
