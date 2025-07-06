@@ -1,19 +1,11 @@
 [
   {
-    "name": "linux-x86_64",
-    "os": "ubuntu-latest",
-    "target": "x86_64-unknown-linux-musl",
-    "binary_name": "elm-test-rs",
-    "archive_name": "elm-test-rs_linux.tar.gz",
-    "tool": "cargo"
-  },
-  {
     "name": "linux-aarch64",
     "os": "ubuntu-latest",
     "target": "aarch64-unknown-linux-musl",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_linux-arm-64.tar.gz",
-    "tool": "cargo"
+    "tool": "cross"
   },
   {
     "name": "linux-arm32",
@@ -21,30 +13,6 @@
     "target": "arm-unknown-linux-musleabihf",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_linux-arm-32.tar.gz",
-    "tool": "cargo"
-  },
-  {
-    "name": "macos-x86_64",
-    "os": "macos-latest",
-    "target": "x86_64-apple-darwin",
-    "binary_name": "elm-test-rs",
-    "archive_name": "elm-test-rs_macos.tar.gz",
-    "tool": "cargo"
-  },
-  {
-    "name": "macos-aarch64",
-    "os": "macos-latest",
-    "target": "aarch64-apple-darwin",
-    "binary_name": "elm-test-rs",
-    "archive_name": "elm-test-rs_macos-arm.tar.gz",
-    "tool": "cargo"
-  },
-  {
-    "name": "windows-x86_64",
-    "os": "windows-latest",
-    "target": "x86_64-pc-windows-msvc",
-    "binary_name": "elm-test-rs.exe",
-    "archive_name": "elm-test-rs_windows.zip",
-    "tool": "cargo"
+    "tool": "cross"
   }
 ]

@@ -58,6 +58,7 @@ jobs:
         with:
           name: ${{ matrix.archive_name }}
           path: target/${{ matrix.target }}/release/${{ matrix.archive_name }}
+          compression-level: 0
 
   # test:
   #   name: Test
