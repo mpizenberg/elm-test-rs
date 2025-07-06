@@ -37,17 +37,21 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v0" # change to force new cache
+
+      - name: Install zigbuild (if needed)
+        if: ${{ contains(matrix.command, 'zig') }}
+        run: |
+          sudo snap install zig --classic --beta
+          cargo install --locked cargo-zigbuild
 
       - name: install musl-tools (if needed)
-        if: ${{ contains(matrix.target, 'musl') }}
+        if: ${{ contains(matrix.target, 'musl') && !contains(matrix.command, 'zig') }}
         run: sudo apt install musl-tools
 
-      - name: Install cross (if needed)
-        if: ${{ matrix.tool == 'cross' }}
-        run: cargo install cross
-
       - name: Build binary
-        run: ${{ matrix.tool }} build --release --target ${{ matrix.target }}
+        run: ${{ matrix.command }} --release --target ${{ matrix.target }}
 
       - name: Compress compiled binary
         run: |

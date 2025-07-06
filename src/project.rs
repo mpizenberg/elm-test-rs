@@ -81,7 +81,7 @@ impl Project {
                 DebouncedEvent::NoticeWrite(_) => {}
                 DebouncedEvent::NoticeRemove(_) => {}
                 event => {
-                    log::debug!("{:?}", event);
+                    log::debug!("{event:?}");
                     // Get the path of the file that triggered the event.
                     let path = match &event {
                         DebouncedEvent::Create(p) => Some(p.as_path()),

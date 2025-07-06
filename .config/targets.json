@@ -5,7 +5,7 @@
     "target": "x86_64-unknown-linux-musl",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_linux.tar.gz",
-    "tool": "cross",
+    "command": "cargo build",
     "npm_platform": "linux",
     "npm_arch": "x64"
   },
@@ -15,7 +15,7 @@
     "target": "aarch64-unknown-linux-musl",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_linux-arm-64.tar.gz",
-    "tool": "cross",
+    "command": "cargo zigbuild",
     "npm_platform": "linux",
     "npm_arch": "arm64"
   },
@@ -25,7 +25,7 @@
     "target": "arm-unknown-linux-musleabihf",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_linux-arm-32.tar.gz",
-    "tool": "cross",
+    "command": "cargo zigbuild",
     "npm_platform": "linux",
     "npm_arch": "arm"
   },
@@ -35,7 +35,7 @@
     "target": "x86_64-apple-darwin",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_macos.tar.gz",
-    "tool": "cross",
+    "command": "cargo build",
     "npm_platform": "darwin",
     "npm_arch": "x64"
   },
@@ -45,7 +45,7 @@
     "target": "aarch64-apple-darwin",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_macos-arm.tar.gz",
-    "tool": "cargo",
+    "command": "cargo build",
     "npm_platform": "darwin",
     "npm_arch": "arm64"
   },
@@ -55,7 +55,7 @@
     "target": "x86_64-pc-windows-msvc",
     "binary_name": "elm-test-rs.exe",
     "archive_name": "elm-test-rs_windows.zip",
-    "tool": "cargo",
+    "command": "cargo build",
     "npm_platform": "win32",
     "npm_arch": "x64"
   }

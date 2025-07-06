@@ -285,7 +285,7 @@ fn wait_child(child: &mut std::process::Child) -> Option<i32> {
             _ => None,
         },
         Err(e) => {
-            log::error!("Error attempting to wait for child: {}", e);
+            log::error!("Error attempting to wait for child: {e}");
             None
         }
     }

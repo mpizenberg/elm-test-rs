@@ -179,7 +179,7 @@ pub fn main_helper(
 
     // Compile the src/Runner.elm file into Runner.elm.js
     let _preparation_time = start_time.elapsed().as_secs_f32();
-    log::info!("Spent {}s generating Runner.elm", _preparation_time);
+    log::info!("Spent {_preparation_time}s generating Runner.elm");
     log::info!("Compiling the generated templated src/Runner.elm ...");
     let compiled_runner = tests_root.join("js").join("Runner.elm.js");
     let command = compile(
@@ -447,7 +447,7 @@ fn get_module_name(
     module_name_parts
         .iter()
         .filter(|s| !is_valid_module_name(s))
-        .for_each(|s| log::debug!("This part is not valid for a module name: {}", s));
+        .for_each(|s| log::debug!("This part is not valid for a module name: {s}"));
     if !module_name_parts.iter().all(|s| is_valid_module_name(s)) {
         anyhow::bail!("I could not guess the module name of {} from its trimmed path {}. It may contains invalid parts.", file.display(), trimmed.display());
     }
