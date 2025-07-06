@@ -306,7 +306,7 @@ fn kernel_patch_tests(elm_js: &str, esmodule: bool) -> anyhow::Result<String> {
     let test_variant_definition = Regex::new(
         r#"(?mx)
     ^var\s+\$elm_explorations\$test\$Test\$Internal\$
-    (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)
+    (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)\$?
     \s*=\s*(?:\w+\(\s*)?function\s*\([\w,\s]*\)\s*\{\s*return\s*\{
 "#,
     )?;
