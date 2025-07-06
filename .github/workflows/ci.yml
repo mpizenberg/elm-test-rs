@@ -36,7 +36,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --release
 
-      - uses: denoland/setup-deno@v2
+      - uses: denoland/setup-deno@v1
       - run: cargo test --release --features deno
 
   checks:
