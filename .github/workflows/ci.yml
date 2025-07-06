@@ -44,12 +44,14 @@ jobs:
         if: ${{ contains(matrix.target, 'musl') }}
         run: sudo apt install musl-tools
 
-      - name: Install cross (if needed)
-        if: ${{ matrix.tool == 'cross' }}
-        run: cargo install cross
+      - name: Install zigbuild (if needed)
+        if: ${{ contains(matrix.command, 'zig') }}
+        run: |
+          snap install zig --classic --beta
+          cargo install --locked cargo-zigbuild
 
       - name: Build binary
-        run: ${{ matrix.tool }} build --release --target ${{ matrix.target }}
+        run: ${{ matrix.command }} --release --target ${{ matrix.target }}
 
       - name: Compress compiled binary
         run: |
