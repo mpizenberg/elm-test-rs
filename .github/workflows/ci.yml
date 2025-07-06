@@ -139,7 +139,6 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: cargo fmt --all -- --check
-      # TODO: re-activate clippy
-      # - run: cargo clippy
-      #   env:
-      #     RUSTFLAGS: -D warnings
+      - run: cargo clippy
+        env:
+          RUSTFLAGS: -D warnings
