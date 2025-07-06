@@ -47,7 +47,7 @@ jobs:
       - name: Install zigbuild (if needed)
         if: ${{ contains(matrix.command, 'zig') }}
         run: |
-          snap install zig --classic --beta
+          sudo snap install zig --classic --beta
           cargo install --locked cargo-zigbuild
 
       - name: Build binary
