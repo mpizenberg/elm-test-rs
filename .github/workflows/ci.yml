@@ -9,6 +9,27 @@ env:
   ELM_HOME: "${{ github.workspace }}/elm-home"
 
 jobs:
+  goreleaser:
+    name: Build on all platforms
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          args: build --snapshot --clean
+
   test:
     name: Test
     runs-on: ${{ matrix.os }}
