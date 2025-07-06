@@ -1,0 +1,50 @@
+[
+  {
+    "name": "linux-x86_64",
+    "os": "ubuntu-latest",
+    "target": "x86_64-unknown-linux-musl",
+    "binary_name": "elm-cardano",
+    "asset_name": "elm-cardano-x86_64-unknown-linux-musl",
+    "use_cross": true
+  },
+  {
+    "name": "linux-aarch64",
+    "os": "ubuntu-latest",
+    "target": "aarch64-unknown-linux-musl",
+    "binary_name": "elm-cardano",
+    "asset_name": "elm-cardano-aarch64-unknown-linux-musl",
+    "use_cross": true
+  },
+  {
+    "name": "macos-x86_64",
+    "os": "macos-latest",
+    "target": "x86_64-apple-darwin",
+    "binary_name": "elm-cardano",
+    "asset_name": "elm-cardano-x86_64-apple-darwin",
+    "use_cross": false
+  },
+  {
+    "name": "macos-aarch64",
+    "os": "macos-latest",
+    "target": "aarch64-apple-darwin",
+    "binary_name": "elm-cardano",
+    "asset_name": "elm-cardano-aarch64-apple-darwin",
+    "use_cross": false
+  },
+  {
+    "name": "windows-x86_64",
+    "os": "windows-latest",
+    "target": "x86_64-pc-windows-msvc",
+    "binary_name": "elm-cardano.exe",
+    "asset_name": "elm-cardano-x86_64-pc-windows-msvc.exe",
+    "use_cross": false
+  },
+  {
+    "name": "windows-arm64",
+    "os": "windows-latest",
+    "target": "aarch64-pc-windows-msvc",
+    "binary_name": "elm-cardano.exe",
+    "asset_name": "elm-cardano-aarch64-pc-windows-msvc.exe",
+    "use_cross": false
+  }
+]
