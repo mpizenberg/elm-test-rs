@@ -35,7 +35,7 @@
     "target": "x86_64-apple-darwin",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_macos.tar.gz",
-    "tool": "cross",
+    "tool": "cargo",
     "npm_platform": "darwin",
     "npm_arch": "x64"
   },
