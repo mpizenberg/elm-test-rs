@@ -76,8 +76,13 @@ jobs:
           # Extract the version from the git tag
           VERSION="v3.1.0"
           # VERSION="${{ github.ref_name }}"
-          VERSION=${VERSION#v}
-          echo "version: ${VERSION}"
+          VERSION=${VERSION#v}-0
+          jq --arg v "$VERSION" '
+            .version = $v |
+            .optionalDependencies |= with_entries(.value = $v)
+          ' npm/package.json > tmp.json && mv tmp.json npm/package.json
+          # Display the updated package.json
+          jq . npm/package.json
 
           # Extract the executables from the archives to each sub-package
           ls artifacts/
@@ -92,6 +97,9 @@ jobs:
             echo "archive_name: $archive_name"
             echo "npm_platform: $npm_platform"
             echo "npm_arch: $npm_arch"
+
+            # Extract the executable into the sub-package
+            tar xzf artifacts/$archive_name -C npm/packages/elm-test-rs-$npm_platform-$npm_arch
           done
 
       # - name: Upload NPM Package Tarball
