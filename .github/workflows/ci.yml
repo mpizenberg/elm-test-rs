@@ -36,6 +36,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
 
       - name: install musl-tools (if needed)
         if: ${{ contains(matrix.target, 'musl') }}
@@ -62,7 +63,7 @@ jobs:
 
   create-npm-package:
     needs: [build]
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    # if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +74,8 @@ jobs:
       - name: Create NPM Package
         run: |
           # Extract the version from the git tag
-          VERSION="${{ github.ref_name }}"
+          VERSION="v3.1.0"
+          # VERSION="${{ github.ref_name }}"
           VERSION=${VERSION#v}
           echo $VERSION
 
