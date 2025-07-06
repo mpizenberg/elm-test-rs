@@ -40,15 +40,15 @@ jobs:
         with:
           prefix-key: "v0" # change to force new cache
 
-      - name: install musl-tools (if needed)
-        if: ${{ contains(matrix.target, 'musl') }}
-        run: sudo apt install musl-tools
-
       - name: Install zigbuild (if needed)
         if: ${{ contains(matrix.command, 'zig') }}
         run: |
           sudo snap install zig --classic --beta
           cargo install --locked cargo-zigbuild
+
+      - name: install musl-tools (if needed)
+        if: ${{ contains(matrix.target, 'musl') && !contains(matrix.command, 'zig') }}
+        run: sudo apt install musl-tools
 
       - name: Build binary
         run: ${{ matrix.command }} --release --target ${{ matrix.target }}
