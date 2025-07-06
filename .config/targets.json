@@ -5,7 +5,7 @@
     "target": "x86_64-unknown-linux-musl",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_linux.tar.gz",
-    "tool": "cargo",
+    "tool": "cross",
     "npm_platform": "linux",
     "npm_arch": "x64"
   },
@@ -35,7 +35,7 @@
     "target": "x86_64-apple-darwin",
     "binary_name": "elm-test-rs",
     "archive_name": "elm-test-rs_macos.tar.gz",
-    "tool": "cargo",
+    "tool": "cross",
     "npm_platform": "darwin",
     "npm_arch": "x64"
   },
