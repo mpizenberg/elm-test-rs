@@ -37,6 +37,8 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v0" # change to force new cache
 
       - name: install musl-tools (if needed)
         if: ${{ contains(matrix.target, 'musl') }}
