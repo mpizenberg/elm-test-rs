@@ -57,7 +57,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.archive_name }}
+          name: ${{ matrix.name }}
           path: target/${{ matrix.target }}/release/${{ matrix.archive_name }}
           compression-level: 0
 
@@ -73,40 +73,29 @@ jobs:
           path: ./artifacts
       - name: Create NPM Package
         run: |
-          # Extract the version from the git tag
-          VERSION="v3.1.0"
-          # VERSION="${{ github.ref_name }}"
-          VERSION=${VERSION#v}-0
-          jq --arg v "$VERSION" '
-            .version = $v |
-            .optionalDependencies |= with_entries(.value = $v)
-          ' npm/package.json > tmp.json && mv tmp.json npm/package.json
-          # Display the updated package.json
-          jq . npm/package.json
-
           # Extract the executables from the archives to each sub-package
-          ls artifacts/
           jq -c '.[]' .config/targets.json | while read -r item; do
+            name=$(echo "$item" | jq -r '.name')
             binary_name=$(echo "$item" | jq -r '.binary_name')
             archive_name=$(echo "$item" | jq -r '.archive_name')
             npm_platform=$(echo "$item" | jq -r '.npm_platform')
             npm_arch=$(echo "$item" | jq -r '.npm_arch')
 
             echo "---------------------"
-            echo "binary_name: $binary_name"
-            echo "archive_name: $archive_name"
-            echo "npm_platform: $npm_platform"
-            echo "npm_arch: $npm_arch"
+            echo "name: $name"
 
             # Extract the executable into the sub-package
-            tar xzf artifacts/$archive_name -C npm/packages/elm-test-rs-$npm_platform-$npm_arch
+            tar xzf artifacts/$name/$archive_name -C npm/packages/elm-test-rs-$npm_platform-$npm_arch
           done
 
-      # - name: Upload NPM Package Tarball
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: npm-package-tarball
-      #     path: "*.tgz"
+          # Create an archive
+          tar czf npm.tar.gz npm/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: npm.tar.gz
+          compression-level: 0
 
   # test:
   #   name: Test
