@@ -9,7 +9,7 @@ This is taking the 3.0.0 release as an example.
 - Update all the NPM package versions inside the npm/ directory
 - `git tag -a v3.0.0 -m "v3.0.0: Support for the new elm-explorations/test v2"`
 - (Optional) cryptographically sign the tag
-- Push release to github: git push --tags
+- Push release to github: git push --follow-tags
 - TODO: edit the draft release notes and then publish the release
 - TODO: remove the steps below
 - On GitHub, create a release from that tag
