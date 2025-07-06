@@ -122,7 +122,7 @@ fn main_helper(
     let runner_path = tests_root.join("js").join(runner_name);
     let filter = match &run_options.filter {
         None => "null".to_string(),
-        Some(s) => format!("\"{}\"", s),
+        Some(s) => format!("\"{s}\""),
     };
     crate::make::create_templated(
         runner_template, // template

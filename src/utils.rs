@@ -77,7 +77,7 @@ pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
     let response = agent
         .get(url)
         .call()
-        .context(format!("Error getting {}", url))?
+        .context(format!("Error getting {url}"))?
         .into_string()
         .context("Error converting the http response body to a String")?;
     Ok(response)

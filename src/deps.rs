@@ -106,7 +106,7 @@ fn init_app(
         Pkg::new("root", ""),
         SemVer::zero(),
     )
-    .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {} but somehow this is incompatible with the packages you use.", valid_test_range))?;
+    .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {valid_test_range} but somehow this is incompatible with the packages you use."))?;
 
     // Add the selected elm-explorations/test version to direct tests deps
     let test_version = solution.get(&test_pkg).unwrap(); // this unwrap is fine since test_pkg was inserted in all_deps just before.
@@ -162,7 +162,7 @@ fn init_pkg(
         pkg_config.name.clone(),
         SemVer::zero(),
     )
-    .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {} but somehow this is incompatible with the packages you use.", valid_test_range))?;
+    .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {valid_test_range} but somehow this is incompatible with the packages you use."))?;
 
     // Add elm-explorations/test to tests deps
     pkg_config
