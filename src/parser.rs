@@ -27,7 +27,7 @@ fn parse_file(input: &str) -> IResult<&str, Vec<&str>> {
     parse_content(input)
 }
 
-fn module_declaration(input: &str) -> IResult<&str, Exposing> {
+fn module_declaration(input: &str) -> IResult<&str, Exposing<'_>> {
     // port can be a keyword
     let (input, _) = alt((tag("port"), success("")))(input)?;
 
