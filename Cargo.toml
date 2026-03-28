@@ -1,6 +1,6 @@
 [package]
 name = "elm-test-rs"
-version = "3.0.1"
+version = "3.0.2"
 authors = [
     "Matthieu Pizenberg <matthieu.pizenberg@gmail.com>",
     "Harry Sarson <harry.sarson@hotmail.co.uk>",
