@@ -184,6 +184,8 @@ fn main_helper(
         ),
     };
     let supervisor_js_file = tests_root.join("js").join(supervisor_name);
+    let mut sorted_paths = modules_abs_paths.iter().collect::<Vec<_>>();
+    sorted_paths.sort();
     crate::make::create_templated(
         supervisor_template, // template
         &supervisor_js_file, // output
@@ -194,7 +196,7 @@ fn main_helper(
             ("{{ reporter }}", &run_options.reporter),
             ("{{ verbosity }}", &make_options.verbosity.to_string()),
             ("{{ globs }}", &serde_json::to_string(&make_options.files).context("Failed to convert the list of tests files passed as CLI arguments to a JSON list")?),
-            ("{{ paths }}", &serde_json::to_string(&modules_abs_paths).context("Failed to convert the list of actual tests files to a JSON list")?),
+            ("{{ paths }}", &serde_json::to_string(&sorted_paths).context("Failed to convert the list of actual tests files to a JSON list")?),
             ("{{ polyfills }}", polyfills),
         ],
     )
