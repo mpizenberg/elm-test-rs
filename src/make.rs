@@ -151,7 +151,8 @@ pub fn main_helper(
     }
 
     // Runner.elm imports of tests modules
-    let imports: Vec<String> = module_names.iter().map(|m| format!("import {m}")).collect();
+    let mut imports: Vec<String> = module_names.iter().map(|m| format!("import {m}")).collect();
+    imports.sort();
 
     // Find all potential tests
     log::info!("Finding all potential tests ...");
@@ -163,6 +164,7 @@ pub fn main_helper(
             potential_tests.push(format!("check {module_name}.{potential_test}"));
         }
     }
+    potential_tests.sort();
 
     // Generate templated src/Runner.elm
     let runner_template = include_template!("Runner.elm");
