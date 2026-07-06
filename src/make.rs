@@ -36,7 +36,7 @@ pub struct Options {
 pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyhow::Result<i32> {
     // Prints to stderr the current version
     let title = format!(
-        "elm-test-rs {} for elm 0.19.1",
+        "elm-test-rs {} for elm 0.19.1 and 0.19.2",
         std::env!("CARGO_PKG_VERSION")
     );
     log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
@@ -94,10 +94,15 @@ pub fn main_helper(
         }
     }
 
+    let elm_version = match &project.config {
+        ProjectConfig::Application(application_config) => application_config.elm_version,
+        ProjectConfig::Package(package_config) => Project::elm_version_for_package(package_config),
+    };
+
     let tests_root = project
         .root_directory
         .join("elm-stuff")
-        .join("tests-0.19.1");
+        .join("tests-".to_string() + &elm_version.to_string());
     // Make src dirs relative to the generated tests root
     let source_directories_for_runner = project
         .src_and_test_dirs

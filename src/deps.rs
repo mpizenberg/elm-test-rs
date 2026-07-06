@@ -16,6 +16,8 @@ use pubgrub_dependency_provider_elm::project_config::{
     AppDependencies, ApplicationConfig, PackageConfig, Pkg, ProjectConfig,
 };
 
+use crate::project::Project;
+
 #[derive(Debug)]
 pub enum ConnectivityStrategy {
     Progressive,
@@ -140,7 +142,7 @@ fn init_pkg(
     // Check that this pkg does not already depend on an incompatible version of elm-explorations/test
     check_compatible_testlib(&all_deps, false)?;
 
-    let elm_version = elm_version_for_package(&pkg_config);
+    let elm_version = Project::elm_version_for_package(&pkg_config);
 
     // Check that those dependencies are correct
     solve_check(elm_home, &all_deps, strategy, false, elm_version)
@@ -219,18 +221,9 @@ pub fn solve<P: AsRef<Path>>(
                 &pkg_config.name,
                 pkg_config.version,
                 deps,
-                elm_version_for_package(pkg_config),
+                Project::elm_version_for_package(pkg_config),
             )
         }
-    }
-}
-
-fn elm_version_for_package(pkg_config: &PackageConfig) -> SemVer {
-    let Constraint(ranges) = &pkg_config.elm_version;
-    if ranges.contains(&SemVer::new(0, 19, 2)) {
-        SemVer::new(0, 19, 2)
-    } else {
-        SemVer::new(0, 19, 1)
     }
 }
 
