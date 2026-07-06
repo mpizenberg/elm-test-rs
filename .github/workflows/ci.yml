@@ -144,13 +144,13 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: mpizenberg/elm-tooling-action@v1.7
+      - uses: mpizenberg/elm-tooling-action@v2.0.0
         with:
           cache-key: elm-home-${{ matrix.os }}-0
           elm-tooling-dir: tests
 
       - name: Clear elm-test-runner package in cache
-        run: rm -rf $ELM_HOME/0.19.1/packages/mpizenberg/elm-test-runner
+        run: rm -rf $ELM_HOME/0.19.2/packages/mpizenberg/elm-test-runner
         shell: bash
 
       - uses: dtolnay/rust-toolchain@stable

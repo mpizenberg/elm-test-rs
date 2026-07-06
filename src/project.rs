@@ -1,6 +1,8 @@
 use anyhow::Context;
 use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
-use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
+use pubgrub::version::SemanticVersion;
+use pubgrub_dependency_provider_elm::constraint::Constraint;
+use pubgrub_dependency_provider_elm::project_config::{PackageConfig, ProjectConfig};
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -15,6 +17,15 @@ pub struct Project {
 }
 
 impl Project {
+    pub fn elm_version_for_package(pkg_config: &PackageConfig) -> SemanticVersion {
+        let Constraint(ranges) = &pkg_config.elm_version;
+        if ranges.contains(&SemanticVersion::new(0, 19, 2)) {
+            SemanticVersion::new(0, 19, 2)
+        } else {
+            SemanticVersion::new(0, 19, 1)
+        }
+    }
+
     pub fn from_dir<P: AsRef<Path>>(root_directory: P) -> anyhow::Result<Project> {
         let root_directory = crate::utils::absolute_path(root_directory)?;
 

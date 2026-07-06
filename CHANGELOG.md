@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased [(diff)][diff-unreleased]
 
 #### Added
+- Added support for elm 0.19.2, by `@miniBill`.
 
 #### Changed
 
@@ -28,7 +29,7 @@ All notable changes to this project will be documented in this file.
 
 #### Changed
 
-- Fix some test detection regex for compatibility with upcomming version of Lamdera, by `@miniBill`.
+- Fix some test detection regex for compatibility with upcoming version of Lamdera, by `@miniBill`.
 
 
 ## [3.0.0] - (2022-10-11) [(diff)][diff-3.0.0]
