@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased [(diff)][diff-unreleased]
 
 #### Added
+- Added support for elm 0.19.2, by `@miniBill`.
 
 #### Changed
 

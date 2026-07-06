@@ -45,7 +45,7 @@ pub fn main(
 ) -> anyhow::Result<i32> {
     // Prints to stderr the current version
     let title = format!(
-        "elm-test-rs {} for elm 0.19.1",
+        "elm-test-rs {} for elm 0.19.1 and 0.19.2",
         std::env!("CARGO_PKG_VERSION")
     );
     log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));

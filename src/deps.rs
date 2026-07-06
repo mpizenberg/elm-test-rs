@@ -64,7 +64,7 @@ fn init_app(
     check_compatible_testlib(&all_deps, true)?;
 
     // Check that those dependencies are correct
-    solve_check(elm_home, &all_deps, strategy, true)
+    solve_check(elm_home, &all_deps, strategy, true, app_config.elm_version)
         .context("The app dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
@@ -105,6 +105,7 @@ fn init_app(
         &all_deps,
         Pkg::new("root", ""),
         SemVer::zero(),
+        app_config.elm_version
     )
     .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {valid_test_range} but somehow this is incompatible with the packages you use."))?;
 
@@ -139,8 +140,10 @@ fn init_pkg(
     // Check that this pkg does not already depend on an incompatible version of elm-explorations/test
     check_compatible_testlib(&all_deps, false)?;
 
+    let elm_version = elm_version_for_package(&pkg_config);
+
     // Check that those dependencies are correct
-    solve_check(elm_home, &all_deps, strategy, false)
+    solve_check(elm_home, &all_deps, strategy, false, elm_version)
         .context("The package dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
@@ -161,6 +164,7 @@ fn init_pkg(
         &all_deps,
         pkg_config.name.clone(),
         SemVer::zero(),
+        elm_version
     )
     .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {valid_test_range} but somehow this is incompatible with the packages you use."))?;
 
@@ -196,6 +200,7 @@ pub fn solve<P: AsRef<Path>>(
                 &Pkg::new("root", ""),
                 SemVer::zero(),
                 direct_deps,
+                app_config.elm_version,
             )
         }
         ProjectConfig::Package(pkg_config) => {
@@ -214,8 +219,18 @@ pub fn solve<P: AsRef<Path>>(
                 &pkg_config.name,
                 pkg_config.version,
                 deps,
+                elm_version_for_package(pkg_config),
             )
         }
+    }
+}
+
+fn elm_version_for_package(pkg_config: &PackageConfig) -> SemVer {
+    let Constraint(ranges) = &pkg_config.elm_version;
+    if ranges.contains(&SemVer::new(0, 19, 2)) {
+        SemVer::new(0, 19, 2)
+    } else {
+        SemVer::new(0, 19, 1)
     }
 }
 
@@ -257,6 +272,7 @@ fn solve_helper<P: AsRef<Path>>(
     pkg_id: &Pkg,
     version: SemVer,
     direct_deps: Map<Pkg, Range<SemVer>>,
+    elm_version: SemVer,
 ) -> anyhow::Result<ApplicationConfig> {
     // TODO: there might be an issue if that was already in the dependencies.
     let mut deps = direct_deps;
@@ -268,8 +284,15 @@ fn solve_helper<P: AsRef<Path>>(
     // TODO: maybe not the best way to handle but should work most of the time.
     deps.entry(Pkg::new("elm", "json"))
         .or_insert_with(|| Range::between((1, 0, 0), (2, 0, 0)));
-    let mut solution = solve_deps(elm_home, connectivity, &deps, pkg_id.clone(), version)
-        .context("Combining the project dependencies with the ones of the test runner failed")?;
+    let mut solution = solve_deps(
+        elm_home,
+        connectivity,
+        &deps,
+        pkg_id.clone(),
+        version,
+        elm_version,
+    )
+    .context("Combining the project dependencies with the ones of the test runner failed")?;
     solution.remove(pkg_id);
 
     // Split solution into direct and indirect deps.
@@ -295,8 +318,7 @@ fn solve_helper<P: AsRef<Path>>(
         .collect();
     Ok(ApplicationConfig {
         source_directories,
-        // TODO: might have to change that
-        elm_version: SemVer::new(0, 19, 1),
+        elm_version,
         dependencies,
         test_dependencies,
     })
@@ -309,10 +331,18 @@ fn solve_check(
     deps: &Map<Pkg, Range<SemVer>>,
     strategy: &ConnectivityStrategy,
     is_app: bool,
+    elm_version: SemVer,
 ) -> anyhow::Result<()> {
     let pkg_id = Pkg::new("root", "");
     let version = SemVer::zero();
-    let mut solution = solve_deps(elm_home, strategy, deps, pkg_id.clone(), version)?;
+    let mut solution = solve_deps(
+        elm_home,
+        strategy,
+        deps,
+        pkg_id.clone(),
+        version,
+        elm_version,
+    )?;
     // Check that indirect deps are correct if this is for an application.
     // All packages in the solution must exist in the original dependencies.
     if is_app {
@@ -333,6 +363,7 @@ fn solve_deps(
     deps: &Map<Pkg, Range<SemVer>>,
     pkg_id: Pkg,
     version: SemVer,
+    elm_version: SemVer,
 ) -> anyhow::Result<Map<Pkg, SemVer>> {
     let solution = |resolution| match resolution {
         Ok(sol) => Ok(sol),
@@ -379,7 +410,7 @@ fn solve_deps(
     };
     match connectivity {
         ConnectivityStrategy::Offline => {
-            let offline_provider = ElmPackageProviderOffline::new(elm_home, "0.19.1");
+            let offline_provider = ElmPackageProviderOffline::new(elm_home, elm_version);
             let deps_provider =
                 ProjectAdapter::new(pkg_id.clone(), version, deps, &offline_provider);
             solution(resolve(&deps_provider, pkg_id, version))
@@ -387,8 +418,8 @@ fn solve_deps(
         ConnectivityStrategy::Online(strategy) => {
             let online_provider = match ElmPackageProviderOnline::new(
                 elm_home,
-                "0.19.1",
-                "https://package.elm-lang.org",
+                &elm_version.to_string(),
+                &"https://package.elm-lang.org".to_string(),
                 crate::utils::http_fetch,
                 strategy.clone(),
             ) {
@@ -413,6 +444,7 @@ fn solve_deps(
             deps,
             pkg_id.clone(),
             version,
+            elm_version,
         )
         .or_else(|_| {
             log::info!("Solving dependencies in offline mode failed, switching to online mode");
@@ -422,6 +454,7 @@ fn solve_deps(
                 deps,
                 pkg_id,
                 version,
+                elm_version,
             )
         }),
     }

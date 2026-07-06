@@ -1,14 +1,14 @@
 use std::path::{Path, PathBuf};
 
 /// Copy the content of the elm/ dir into
-/// ~/.elm/0.19.1/packages/mpizenberg/elm-test-runner/1.0.0/
+/// ~/.elm/0.19.2/packages/mpizenberg/elm-test-runner/1.0.0/
 fn main() {
     // todo!();
     println!("Hello from build.rs");
     let mut copy_options = fs_extra::dir::CopyOptions::new();
     copy_options.content_only = true;
     let installed_dir = elm_home()
-        .join("0.19.1")
+        .join("0.19.2")
         .join("packages")
         .join("mpizenberg")
         .join("elm-test-runner")
