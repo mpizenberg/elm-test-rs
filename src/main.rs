@@ -146,11 +146,15 @@ fn main() -> anyhow::Result<()> {
     logger::init(verbosity).context("Failed to initialize logger")?;
 
     match matches.subcommand() {
-        ("init", Some(sub_matches)) => init::main(
-            elm_home,
-            elm_project_root,
-            sub_matches.is_present("offline"),
-        ),
+        ("init", Some(sub_matches)) => {
+            let init_options = get_init_options(&matches)?;
+            init::main(
+                elm_home,
+                elm_project_root,
+                sub_matches.is_present("offline"),
+                init_options,
+            )
+        }
         ("install", Some(sub_matches)) => {
             let packages: Vec<String> = sub_matches
                 .values_of("PACKAGE")
@@ -257,6 +261,21 @@ fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Option
         reporter,
         runtime,
     })
+}
+
+/// Retrieve options related to the init command.
+fn get_init_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<init::Options> {
+    // Handle relative paths for --compiler
+    let mut compiler = arg_matches.value_of("compiler").unwrap().to_string(); // unwrap is fine since compiler has a default value
+    let compiler_path = std::path::Path::new(&compiler);
+    if compiler_path.components().count() > 1 {
+        compiler = utils::absolute_path(compiler_path)?
+            .to_str()
+            .context("Could not convert to &str")?
+            .to_string();
+    }
+
+    Ok(init::Options { compiler })
 }
 
 /// Returns "consoleColor" or "consoleNoColor" based on the following two standards:

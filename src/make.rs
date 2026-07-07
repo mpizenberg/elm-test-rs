@@ -94,10 +94,7 @@ pub fn main_helper(
         }
     }
 
-    let elm_version = match &project.config {
-        ProjectConfig::Application(application_config) => application_config.elm_version,
-        ProjectConfig::Package(package_config) => Project::elm_version_for_package(package_config),
-    };
+    let elm_version = crate::utils::elm_version_from_compiler(&options.compiler)?;
 
     let tests_root = project
         .root_directory
@@ -127,6 +124,7 @@ pub fn main_helper(
         &options.connectivity,
         &project.config,
         source_directories_for_runner.as_slice(),
+        elm_version,
     )
     .context("Failed to solve dependencies for tests to run")?;
     log::info!(

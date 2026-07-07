@@ -2,9 +2,12 @@
 
 use anyhow::Context;
 use path_absolutize::Absolutize;
+use pubgrub::version::SemanticVersion;
 use std::error::Error;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::str::FromStr;
 
 #[macro_export]
 #[cfg(unix)]
@@ -106,4 +109,10 @@ pub fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
         "Error trying to get absolute path of: {}",
         path.display()
     ))
+}
+
+pub fn elm_version_from_compiler(compiler: &str) -> anyhow::Result<SemanticVersion> {
+    let output = Command::new(compiler).arg("--version").output()?;
+    let output_string = String::from_utf8(output.stdout)?;
+    Ok(SemanticVersion::from_str(output_string.trim())?)
 }
