@@ -112,12 +112,15 @@ pub fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
 }
 
 pub fn elm_version_from_compiler(compiler: &str) -> anyhow::Result<SemanticVersion> {
-    let output = Command::new(compiler)
+    let context_if_fails = format!("Failed to run {compiler}. Are you sure it's in your PATH?");
+    // Resolve the compiler through PATH the same way the compile step does, so
+    // that Windows PATHEXT shims (such as an `elm.cmd` installed by npm) are
+    // found instead of failing with "program not found".
+    let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
+    let output = compiler_command(compiler, executable.as_path())
         .arg("--version")
         .output()
-        .context(format!(
-            "Failed to run {compiler}. Are you sure it's in your PATH?"
-        ))?;
+        .context(context_if_fails)?;
     if !output.status.success() {
         anyhow::bail!(
             "`{compiler} --version` failed with {}:\n{}",
@@ -132,4 +135,21 @@ pub fn elm_version_from_compiler(compiler: &str) -> anyhow::Result<SemanticVersi
     SemanticVersion::from_str(trimmed).context(format!(
         "Could not parse the output of `{compiler} --version` as an Elm version: {trimmed:?}"
     ))
+}
+
+/// Build a [`Command`] that invokes the Elm compiler, routing through a cmd
+/// shell on Windows when the resolved `executable` is a `.cmd` shim (npm and
+/// elm-tooling install elm that way, and a `.cmd` cannot be executed directly).
+///
+/// `executable` is the path resolved by [`which::CanonicalPath`]. The caller
+/// adds the compiler arguments, env, and stdio configuration.
+#[allow(unused_variables)]
+pub fn compiler_command(compiler: &str, executable: &Path) -> Command {
+    #[cfg(windows)]
+    if executable.extension() == Some(std::ffi::OsStr::new("cmd")) {
+        let mut command = Command::new("cmd");
+        command.arg("/D").arg("/Q").arg("/C").arg(compiler);
+        return command;
+    }
+    Command::new(executable)
 }
