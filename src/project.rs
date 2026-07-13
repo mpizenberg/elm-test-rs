@@ -1,8 +1,7 @@
 use anyhow::Context;
 use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
-use pubgrub::version::SemanticVersion;
-use pubgrub_dependency_provider_elm::constraint::Constraint;
-use pubgrub_dependency_provider_elm::project_config::{PackageConfig, ProjectConfig};
+use pubgrub::version::SemanticVersion as SemVer;
+use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -17,12 +16,15 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn elm_version_for_package(pkg_config: &PackageConfig) -> SemanticVersion {
-        let Constraint(ranges) = &pkg_config.elm_version;
-        if ranges.contains(&SemanticVersion::new(0, 19, 2)) {
-            SemanticVersion::new(0, 19, 2)
-        } else {
-            SemanticVersion::new(0, 19, 1)
+    /// The Elm version to solve dependencies and generate the tests runner for.
+    ///
+    /// An application pins an exact version in its elm.json, so that is
+    /// authoritative. A package only declares a version constraint, so we ask
+    /// the compiler which version is actually installed.
+    pub fn elm_version(config: &ProjectConfig, compiler: &str) -> anyhow::Result<SemVer> {
+        match config {
+            ProjectConfig::Application(app_config) => Ok(app_config.elm_version),
+            ProjectConfig::Package(_) => crate::utils::elm_version_from_compiler(compiler),
         }
     }
 

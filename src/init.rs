@@ -5,14 +5,26 @@ use crate::project::Project;
 use anyhow::Context;
 use std::path::Path;
 
+#[derive(Debug)]
+pub struct Options {
+    pub compiler: String,
+}
+
 /// Add elm-explorations/test to test dependencies
 /// and initialize a template tests/Tests.elm file.
-pub fn main<P: AsRef<Path>>(elm_home: P, project_root: P, offline: bool) -> anyhow::Result<()> {
+pub fn main<P: AsRef<Path>>(
+    elm_home: P,
+    project_root: P,
+    offline: bool,
+    options: Options,
+) -> anyhow::Result<()> {
     // Install elm-explorations/test in the tests dependencies
     let project = Project::from_dir(project_root)?;
-    let updated_config = crate::deps::init(elm_home, project.config, offline).context(
-        "Something went wrong when installing elm-explorations/test to the tests dependencies",
-    )?;
+    let elm_version = Project::elm_version(&project.config, &options.compiler)?;
+    let updated_config = crate::deps::init(elm_home, project.config, offline, elm_version)
+        .context(
+            "Something went wrong when installing elm-explorations/test to the tests dependencies",
+        )?;
     crate::utils::json_write(project.root_directory.join("elm.json"), &updated_config)
         .context("Unable to write the updated elm.json")?;
 

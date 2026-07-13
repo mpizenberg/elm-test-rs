@@ -8,7 +8,7 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use walkdir::WalkDir;
 
 use crate::include_template;
@@ -39,7 +39,7 @@ pub fn main(elm_home: &Path, elm_project_root: &Path, options: Options) -> anyho
         "elm-test-rs {} for elm 0.19.1 and 0.19.2",
         std::env!("CARGO_PKG_VERSION")
     );
-    log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
+    log::warn!("\n{}\n{}\n", title, "-".repeat(title.len()));
 
     let mut project = Project::from_dir(elm_project_root)?;
     if options.watch {
@@ -94,10 +94,7 @@ pub fn main_helper(
         }
     }
 
-    let elm_version = match &project.config {
-        ProjectConfig::Application(application_config) => application_config.elm_version,
-        ProjectConfig::Package(package_config) => Project::elm_version_for_package(package_config),
-    };
+    let elm_version = Project::elm_version(&project.config, &options.compiler)?;
 
     let tests_root = project
         .root_directory
@@ -127,6 +124,7 @@ pub fn main_helper(
         &options.connectivity,
         &project.config,
         source_directories_for_runner.as_slice(),
+        elm_version,
     )
     .context("Failed to solve dependencies for tests to run")?;
     log::info!(
@@ -303,58 +301,6 @@ If you installed elm locally with npm, maybe try running with npx such as:
     let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
     let executable = executable.as_path();
     log::debug!("We found an executable: {}", executable.display());
-    if executable.extension() == Some(OsStr::new("cmd")) {
-        shell_command(
-            elm_home,
-            compiler,
-            src,
-            output,
-            current_dir.as_ref(),
-            report,
-        )
-        .context(context_if_fails)
-    } else {
-        // Transform the --report argument into an argument for the elm compiler.
-        let report_arg = match report {
-            "json" => Some("--report=json"),
-            _ => None,
-        };
-        // Capture compiler output if --report=json.
-        let stderr = match report {
-            "json" => Stdio::piped(),
-            _ => Stdio::inherit(),
-        };
-        Command::new(executable)
-            .env("ELM_HOME", elm_home)
-            .arg("make")
-            .arg(format!("--output={output}"))
-            .args(report_arg)
-            .args(src)
-            .current_dir(current_dir)
-            // stdio config, comment to see elm make output for debug
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(stderr)
-            .output()
-            .context(context_if_fails)
-    }
-}
-
-/// Uses cmd to execute a command on Windows
-#[cfg(windows)]
-fn shell_command<I, S>(
-    elm_home: &Path,
-    compiler: &str,
-    src: I,
-    output: &str,
-    current_dir: &Path,
-    report: &str,
-) -> Result<std::process::Output, std::io::Error>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    log::debug!("Trying with a cmd shell");
     // Transform the --report argument into an argument for the elm compiler.
     let report_arg = match report {
         "json" => Some("--report=json"),
@@ -365,14 +311,10 @@ where
         "json" => Stdio::piped(),
         _ => Stdio::inherit(),
     };
-    Command::new("cmd")
+    crate::utils::compiler_command(compiler, executable)
         .env("ELM_HOME", elm_home)
-        .arg("/D")
-        .arg("/Q")
-        .arg("/C")
-        .arg(compiler)
         .arg("make")
-        .arg(format!("--output={}", output))
+        .arg(format!("--output={output}"))
         .args(report_arg)
         .args(src)
         .current_dir(current_dir)
@@ -381,24 +323,7 @@ where
         .stdout(Stdio::null())
         .stderr(stderr)
         .output()
-}
-
-/// Fails on unix
-#[cfg(unix)]
-#[allow(unused_variables)]
-fn shell_command<I, S>(
-    elm_home: &Path,
-    compiler: &str,
-    src: I,
-    output: &str,
-    current_dir: &Path,
-    report: &str,
-) -> Result<std::process::Output, std::io::Error>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    Command::new(compiler).output()
+        .context(context_if_fails)
 }
 
 /// Replace the template keys and write result to output file.

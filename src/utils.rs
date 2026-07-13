@@ -2,9 +2,12 @@
 
 use anyhow::Context;
 use path_absolutize::Absolutize;
+use pubgrub::version::SemanticVersion;
 use std::error::Error;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::str::FromStr;
 
 #[macro_export]
 #[cfg(unix)]
@@ -106,4 +109,47 @@ pub fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
         "Error trying to get absolute path of: {}",
         path.display()
     ))
+}
+
+pub fn elm_version_from_compiler(compiler: &str) -> anyhow::Result<SemanticVersion> {
+    let context_if_fails = format!("Failed to run {compiler}. Are you sure it's in your PATH?");
+    // Resolve the compiler through PATH the same way the compile step does, so
+    // that Windows PATHEXT shims (such as an `elm.cmd` installed by npm) are
+    // found instead of failing with "program not found".
+    let executable = which::CanonicalPath::new(compiler).context(context_if_fails.clone())?;
+    let output = compiler_command(compiler, executable.as_path())
+        .arg("--version")
+        .output()
+        .context(context_if_fails)?;
+    if !output.status.success() {
+        anyhow::bail!(
+            "`{compiler} --version` failed with {}:\n{}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+    let output_string = String::from_utf8(output.stdout).context(format!(
+        "The output of `{compiler} --version` is not valid UTF-8"
+    ))?;
+    let trimmed = output_string.trim();
+    SemanticVersion::from_str(trimmed).context(format!(
+        "Could not parse the output of `{compiler} --version` as an Elm version: {trimmed:?}"
+    ))
+}
+
+/// Build a [`Command`] that invokes the Elm compiler, routing through a cmd
+/// shell on Windows when the resolved `executable` is a `.cmd` shim (npm and
+/// elm-tooling install elm that way, and a `.cmd` cannot be executed directly).
+///
+/// `executable` is the path resolved by [`which::CanonicalPath`]. The caller
+/// adds the compiler arguments, env, and stdio configuration.
+#[allow(unused_variables)]
+pub fn compiler_command(compiler: &str, executable: &Path) -> Command {
+    #[cfg(windows)]
+    if executable.extension() == Some(std::ffi::OsStr::new("cmd")) {
+        let mut command = Command::new("cmd");
+        command.arg("/D").arg("/Q").arg("/C").arg(compiler);
+        return command;
+    }
+    Command::new(executable)
 }
