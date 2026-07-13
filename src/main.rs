@@ -192,15 +192,7 @@ fn get_make_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<make::Opti
         (false, Some(_)) => anyhow::bail!("Invalid --dependencies value"),
     };
 
-    // Handle relative paths for --compiler
-    let mut compiler = arg_matches.value_of("compiler").unwrap().to_string(); // unwrap is fine since compiler has a default value
-    let compiler_path = std::path::Path::new(&compiler);
-    if compiler_path.components().count() > 1 {
-        compiler = utils::absolute_path(compiler_path)?
-            .to_str()
-            .context("Could not convert to &str")?
-            .to_string();
-    }
+    let compiler = get_compiler(arg_matches)?;
 
     let report = match arg_matches.value_of("report").unwrap() {
         // unwrap is fine since there is a default value
@@ -265,17 +257,24 @@ fn get_run_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<run::Option
 
 /// Retrieve options related to the init command.
 fn get_init_options(arg_matches: &clap::ArgMatches) -> anyhow::Result<init::Options> {
-    // Handle relative paths for --compiler
-    let mut compiler = arg_matches.value_of("compiler").unwrap().to_string(); // unwrap is fine since compiler has a default value
-    let compiler_path = std::path::Path::new(&compiler);
+    Ok(init::Options {
+        compiler: get_compiler(arg_matches)?,
+    })
+}
+
+/// Retrieve the path to the Elm compiler, resolving relative paths to absolute
+/// ones (a bare command such as "elm" is left as-is to be looked up in PATH).
+fn get_compiler(arg_matches: &clap::ArgMatches) -> anyhow::Result<String> {
+    let compiler = arg_matches.value_of("compiler").unwrap(); // unwrap is fine since compiler has a default value
+    let compiler_path = std::path::Path::new(compiler);
     if compiler_path.components().count() > 1 {
-        compiler = utils::absolute_path(compiler_path)?
+        Ok(utils::absolute_path(compiler_path)?
             .to_str()
             .context("Could not convert to &str")?
-            .to_string();
+            .to_string())
+    } else {
+        Ok(compiler.to_string())
     }
-
-    Ok(init::Options { compiler })
 }
 
 /// Returns "consoleColor" or "consoleNoColor" based on the following two standards:
