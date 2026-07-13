@@ -112,7 +112,23 @@ pub fn absolute_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
 }
 
 pub fn elm_version_from_compiler(compiler: &str) -> anyhow::Result<SemanticVersion> {
-    let output = Command::new(compiler).arg("--version").output()?;
-    let output_string = String::from_utf8(output.stdout)?;
-    Ok(SemanticVersion::from_str(output_string.trim())?)
+    let output = Command::new(compiler)
+        .arg("--version")
+        .output()
+        .context(format!(
+            "Failed to run {compiler}. Are you sure it's in your PATH?"
+        ))?;
+    if !output.status.success() {
+        anyhow::bail!(
+            "`{compiler} --version` failed with {}:\n{}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+    let output_string = String::from_utf8(output.stdout)
+        .context(format!("The output of `{compiler} --version` is not valid UTF-8"))?;
+    let trimmed = output_string.trim();
+    SemanticVersion::from_str(trimmed).context(format!(
+        "Could not parse the output of `{compiler} --version` as an Elm version: {trimmed:?}"
+    ))
 }
