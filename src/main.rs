@@ -11,6 +11,7 @@ mod utils;
 use anyhow::Context;
 use clap::{App, AppSettings, Arg, SubCommand};
 use pubgrub_dependency_provider_elm::dependency_provider::VersionStrategy;
+use std::io::IsTerminal;
 use std::num::NonZeroU32;
 
 /// Main entry point of elm-test-rs.
@@ -287,7 +288,7 @@ fn console_color_mode() -> &'static str {
         "consoleNoColor"
     } else {
         match (
-            atty::is(atty::Stream::Stdout),
+            std::io::stdout().is_terminal(),
             std::env::var("CLICOLOR").as_deref(),
         ) {
             (false, _) => "consoleNoColor",
