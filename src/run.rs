@@ -48,7 +48,7 @@ pub fn main(
         "elm-test-rs {} for elm 0.19.1 and 0.19.2",
         std::env!("CARGO_PKG_VERSION")
     );
-    log::warn!("\n{}\n{}\n", &title, "-".repeat(title.len()));
+    log::warn!("\n{}\n{}\n", title, "-".repeat(title.len()));
 
     let mut project = Project::from_dir(elm_project_root)?;
     if make_options.watch {
