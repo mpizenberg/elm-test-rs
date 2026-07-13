@@ -1,5 +1,6 @@
 use anyhow::Context;
-use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
+use notify_debouncer_mini::new_debouncer;
+use notify_debouncer_mini::notify::RecursiveMode;
 use pubgrub::version::SemanticVersion as SemVer;
 use pubgrub_dependency_provider_elm::project_config::ProjectConfig;
 use std::collections::BTreeSet;
@@ -67,20 +68,22 @@ impl Project {
     pub fn watch(&mut self, call_back: impl Fn(&Self) -> anyhow::Result<()>) -> anyhow::Result<()> {
         // Create a channel to receive the events.
         let (tx, rx) = channel();
-        // Create a watcher object, delivering debounced events.
+        // Create a debounced watcher, delivering batches of settled events.
         // See discussion here for the debouncing duration.
         // https://users.rust-lang.org/t/how-to-make-good-usage-of-the-notify-crate-for-responsive-events/55891
-        let mut watcher =
-            watcher(tx, Duration::from_millis(100)).context("Failed to start watcher")?;
+        let mut debouncer =
+            new_debouncer(Duration::from_millis(100), tx).context("Failed to start watcher")?;
         let recursive = RecursiveMode::Recursive;
 
         // Watch the elm.json and the content of source directories.
         let elm_json_path = self.root_directory.join("elm.json");
-        watcher
+        debouncer
+            .watcher()
             .watch(&elm_json_path, recursive)
             .context(format!("Failed to watch {}", elm_json_path.display()))?;
         for path in &self.src_and_test_dirs {
-            watcher
+            debouncer
+                .watcher()
                 .watch(path, recursive)
                 .context(format!("Failed to watch {}", path.display()))?;
         }
@@ -88,89 +91,80 @@ impl Project {
         // Call the function to execute passed as argument.
         call_back(self).context("Initial run in watch mode")?;
 
+        // We only process an event if it is of interest to us, meaning the path
+        // is an elm file or elm.json or a directory.
+        let is_of_interest = |p: &Path| {
+            p.extension() == Some(OsStr::new("elm")) // this is an elm file
+                || p.ends_with("elm.json") // elm.json changed
+                || p.is_dir() // a directory changed
+        };
+
         // Enter the watch loop.
         loop {
-            match rx.recv().context("Error watching files")? {
-                DebouncedEvent::NoticeWrite(_) => {}
-                DebouncedEvent::NoticeRemove(_) => {}
-                event => {
-                    log::debug!("{event:?}");
-                    // Get the path of the file that triggered the event.
-                    let path = match &event {
-                        DebouncedEvent::Create(p) => Some(p.as_path()),
-                        DebouncedEvent::Write(p) => Some(p.as_path()),
-                        DebouncedEvent::Chmod(p) => Some(p.as_path()),
-                        DebouncedEvent::Remove(p) => Some(p.as_path()),
-                        DebouncedEvent::Rename(_p1, p2) => Some(p2.as_path()), // TODO: Improve that
-                        _ => None,
-                    };
+            // Each message is a debounced batch of events (or a set of errors).
+            let events = match rx.recv().context("Error watching files")? {
+                Ok(events) => events,
+                Err(errors) => {
+                    log::debug!("Watch errors: {errors:?}");
+                    continue;
+                }
+            };
+            log::debug!("{events:?}");
 
-                    // We only process that event if it is of interest to us,
-                    // meaning the path is and elm file or elm.json or a directory.
-                    // If there was no path associated to the event we also might have
-                    // to process it so we that's what we do.
-                    let is_of_interest = |p: &Path| {
-                        p.extension() == Some(OsStr::new("elm")) // this is an elm file
-                            || p.ends_with("elm.json") // elm.json changed
-                            || p.is_dir() // a directory changed
-                    };
-                    match path {
-                        Some(p) if !is_of_interest(p) => continue,
-                        _ => (),
-                    };
+            // Find the first changed path that is of interest to us, if any.
+            let changed_path = events
+                .iter()
+                .map(|event| event.path.as_path())
+                .find(|p| is_of_interest(p));
+            let changed_path = match changed_path {
+                Some(p) => p.to_path_buf(),
+                None => continue,
+            };
 
-                    // drain event queue
-                    for _ in rx.try_iter() {}
+            // drain event queue
+            for _ in rx.try_iter() {}
 
-                    // Load the potential updated elm.json.
-                    let new_project = Project::from_dir(&self.root_directory)?;
+            // Load the potential updated elm.json.
+            let new_project = Project::from_dir(&self.root_directory)?;
 
-                    // Update watched directories if they changed.
-                    let old_src_dirs = &self.src_and_test_dirs;
-                    let new_src_dirs = &new_project.src_and_test_dirs;
-                    if old_src_dirs != new_src_dirs {
-                        for path in old_src_dirs.difference(new_src_dirs) {
-                            watcher
-                                .unwatch(path)
-                                .context(format!("Failed to unwatch {}", path.display()))?;
-                        }
-                        for path in new_src_dirs.difference(old_src_dirs) {
-                            watcher
-                                .watch(path, recursive)
-                                .context(format!("Failed to watch {}", path.display()))?;
-                        }
-                    }
-
-                    // Update the current project since dependencies or source directories may have change.
-                    *self = new_project;
-
-                    // Log to stderr that a change was detected.
-                    let relative_path = match path {
-                        None => None,
-                        Some(p) => Some(pathdiff::diff_paths(p, &self.root_directory).context(
-                            format!(
-                                "Could not get path {} relative to path {}",
-                                p.display(),
-                                self.root_directory.display()
-                            ),
-                        )?),
-                    };
-                    let detection_msg = format!(
-                        "Change detected in {}",
-                        relative_path
-                            .unwrap_or_else(|| PathBuf::from("unknown file"))
-                            .display()
-                    );
-                    log::error!(
-                        "\n\n\n\n{}\n{}\n\n\n\n",
-                        detection_msg,
-                        "=".repeat(detection_msg.len())
-                    );
-
-                    // Call the function to execute passed as argument.
-                    call_back(self).context("Subsequent run in watch mode")?;
+            // Update watched directories if they changed.
+            let old_src_dirs = &self.src_and_test_dirs;
+            let new_src_dirs = &new_project.src_and_test_dirs;
+            if old_src_dirs != new_src_dirs {
+                for path in old_src_dirs.difference(new_src_dirs) {
+                    debouncer
+                        .watcher()
+                        .unwatch(path)
+                        .context(format!("Failed to unwatch {}", path.display()))?;
+                }
+                for path in new_src_dirs.difference(old_src_dirs) {
+                    debouncer
+                        .watcher()
+                        .watch(path, recursive)
+                        .context(format!("Failed to watch {}", path.display()))?;
                 }
             }
+
+            // Update the current project since dependencies or source directories may have change.
+            *self = new_project;
+
+            // Log to stderr that a change was detected.
+            let relative_path = pathdiff::diff_paths(&changed_path, &self.root_directory).context(
+                format!(
+                    "Could not get path {} relative to path {}",
+                    changed_path.display(),
+                    self.root_directory.display()
+                ),
+            )?;
+            let detection_msg = format!("Change detected in {}", relative_path.display());
+            log::error!(
+                "\n\n\n\n{}\n{}\n\n\n\n",
+                detection_msg,
+                "=".repeat(detection_msg.len())
+            );
+
+            // Call the function to execute passed as argument.
+            call_back(self).context("Subsequent run in watch mode")?;
         }
     }
 }
