@@ -1,12 +1,12 @@
 [package]
 name = "elm-test-rs"
-version = "3.1.0"
+version = "3.2.0"
 authors = [
     "Matthieu Pizenberg <matthieu.pizenberg@gmail.com>",
     "Harry Sarson <harry.sarson@hotmail.co.uk>",
 ]
 edition = "2021"
-rust-version = "1.70" # std::io::IsTerminal was stabilized in 1.70
+rust-version = "1.77" # required by notify/notify-debouncer-mini (std::io::IsTerminal needs only 1.70)
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
 license = "BSD-3-Clause"
 

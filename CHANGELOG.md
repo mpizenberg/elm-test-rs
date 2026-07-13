@@ -14,6 +14,26 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 
 
+## [3.2.0] - (2026-07-13) [(diff)][diff-3.2.0]
+
+#### Changed
+
+- Derive the Elm version for packages from the running compiler, with a single
+  source of truth (`Project::elm_version`), fixing drift between the
+  `tests-<version>` directory name and the version used for dependency solving,
+  by `@miniBill`.
+- Replaced the unmaintained `atty` crate with the standard library's
+  `std::io::IsTerminal` for terminal detection.
+- Migrated `--watch` mode from `notify` 4 to `notify-debouncer-mini`, removing
+  the unmaintained `net2` transitive dependency.
+- Set the minimum supported Rust version (MSRV) to 1.77 (required by `notify`).
+
+#### Security
+
+- Updated dependencies to resolve RustSec advisories, and removed the
+  unmaintained/unsound `atty` and `net2` crates.
+
+
 ## [3.1.0] - (2026-07-06) [(diff)][diff-3.1.0]
 
 #### Added
@@ -314,6 +334,7 @@ All notable changes to this project will be documented in this file.
 - `.gitmodules` git submodules.
 - `.github/workflows/` CI to automatically build and test on pull requests.
 
+[3.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v3.2.0
 [3.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v3.1.0
 [3.0.2]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v3.0.2
 [3.0.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v3.0.1
@@ -336,7 +357,8 @@ All notable changes to this project will be documented in this file.
 [0.2.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.2
 [0.1.1]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mpizenberg/elm-test-rs/releases/tag/v0.1
-[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v3.1.0...master
+[diff-unreleased]: https://github.com/mpizenberg/elm-test-rs/compare/v3.2.0...master
+[diff-3.2.0]: https://github.com/mpizenberg/elm-test-rs/compare/v3.1.0...v3.2.0
 [diff-3.1.0]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0.2...v3.1.0
 [diff-3.0.2]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0.1...v3.0.2
 [diff-3.0.1]: https://github.com/mpizenberg/elm-test-rs/compare/v3.0...v3.0.1
