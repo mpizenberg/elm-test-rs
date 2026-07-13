@@ -94,7 +94,7 @@ pub fn main_helper(
         }
     }
 
-    let elm_version = crate::utils::elm_version_from_compiler(&options.compiler)?;
+    let elm_version = Project::elm_version(&project.config, &options.compiler)?;
 
     let tests_root = project
         .root_directory

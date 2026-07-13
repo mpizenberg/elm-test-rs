@@ -20,7 +20,7 @@ pub fn main<P: AsRef<Path>>(
 ) -> anyhow::Result<()> {
     // Install elm-explorations/test in the tests dependencies
     let project = Project::from_dir(project_root)?;
-    let elm_version = crate::utils::elm_version_from_compiler(&options.compiler)?;
+    let elm_version = Project::elm_version(&project.config, &options.compiler)?;
     let updated_config = crate::deps::init(elm_home, project.config, offline, elm_version)
         .context(
             "Something went wrong when installing elm-explorations/test to the tests dependencies",

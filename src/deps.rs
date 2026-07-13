@@ -37,7 +37,7 @@ pub fn init<P: AsRef<Path>>(
     };
     match config {
         ProjectConfig::Application(app_config) => Ok(ProjectConfig::Application(
-            init_app(elm_home.as_ref(), &strategy, app_config)
+            init_app(elm_home.as_ref(), &strategy, app_config, elm_version)
                 .context("Error while setting up the app test dependencies")?,
         )),
         ProjectConfig::Package(pkg_config) => Ok(ProjectConfig::Package(
@@ -51,6 +51,7 @@ fn init_app(
     elm_home: &Path,
     strategy: &ConnectivityStrategy,
     mut app_config: ApplicationConfig,
+    elm_version: SemVer,
 ) -> anyhow::Result<ApplicationConfig> {
     // Retrieve all direct and indirect dependencies
     let indirect_test_deps = app_config.test_dependencies.indirect.iter();
@@ -65,7 +66,7 @@ fn init_app(
     check_compatible_testlib(&all_deps, true)?;
 
     // Check that those dependencies are correct
-    solve_check(elm_home, &all_deps, strategy, true, app_config.elm_version)
+    solve_check(elm_home, &all_deps, strategy, true, elm_version)
         .context("The app dependencies are incorrect")?;
 
     // Check if elm-explorations/test is already in the dependencies.
@@ -106,7 +107,7 @@ fn init_app(
         &all_deps,
         Pkg::new("root", ""),
         SemVer::zero(),
-        app_config.elm_version
+        elm_version
     )
     .context(format!("Adding elm-explorations/test to the dependencies failed. This version of elm-test-rs only supports elm-explorations/test {valid_test_range} but somehow this is incompatible with the packages you use."))?;
 
@@ -201,7 +202,7 @@ pub fn solve<P: AsRef<Path>>(
                 &Pkg::new("root", ""),
                 SemVer::zero(),
                 direct_deps,
-                app_config.elm_version,
+                elm_version,
             )
         }
         ProjectConfig::Package(pkg_config) => {
