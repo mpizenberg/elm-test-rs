@@ -4,10 +4,15 @@
   "author": "Matthieu Pizenberg",
   "license": "BSD-3-Clause",
   "description": "Fast and portable executable to run your Elm tests.",
-  "repository": "mpizenberg/elm-test-rs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mpizenberg/elm-test-rs.git"
+  },
   "type": "commonjs",
   "exports": {},
-  "bin": "./elm-test-rs.js",
+  "bin": {
+    "elm-test-rs": "elm-test-rs.js"
+  },
   "keywords": [
     "elm",
     "elm-test",

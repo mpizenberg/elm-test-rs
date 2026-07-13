@@ -2,7 +2,10 @@
   "name": "@mattpiz/elm-test-rs-linux-arm64",
   "version": "3.2.0-0",
   "description": "The Linux ARM 64-bit binary for elm-test-rs.",
-  "repository": "https://github.com/mpizenberg/elm-test-rs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mpizenberg/elm-test-rs.git"
+  },
   "license": "BSD-3-Clause",
   "os": [
     "linux"
