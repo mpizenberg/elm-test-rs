@@ -149,13 +149,12 @@ impl Project {
             *self = new_project;
 
             // Log to stderr that a change was detected.
-            let relative_path = pathdiff::diff_paths(&changed_path, &self.root_directory).context(
-                format!(
+            let relative_path =
+                pathdiff::diff_paths(&changed_path, &self.root_directory).context(format!(
                     "Could not get path {} relative to path {}",
                     changed_path.display(),
                     self.root_directory.display()
-                ),
-            )?;
+                ))?;
             let detection_msg = format!("Change detected in {}", relative_path.display());
             log::error!(
                 "\n\n\n\n{}\n{}\n\n\n\n",
