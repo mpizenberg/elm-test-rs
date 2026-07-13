@@ -125,8 +125,9 @@ pub fn elm_version_from_compiler(compiler: &str) -> anyhow::Result<SemanticVersi
             String::from_utf8_lossy(&output.stderr).trim()
         );
     }
-    let output_string = String::from_utf8(output.stdout)
-        .context(format!("The output of `{compiler} --version` is not valid UTF-8"))?;
+    let output_string = String::from_utf8(output.stdout).context(format!(
+        "The output of `{compiler} --version` is not valid UTF-8"
+    ))?;
     let trimmed = output_string.trim();
     SemanticVersion::from_str(trimmed).context(format!(
         "Could not parse the output of `{compiler} --version` as an Elm version: {trimmed:?}"
