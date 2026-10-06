@@ -1,10 +1,6 @@
 // From templates/polyfills.js
 {{ polyfills }}
 
-// Capture Debug.log from elm code
-// which has been kernel-switched to "console.elmlog"
-import { logs } from "./deno_logger.mjs";
-
 // Compiled by elm-test-rs from templates/Runner.elm
 import { Elm } from "./Runner.elm.js";
 
@@ -31,14 +27,9 @@ self.onmessage = (msg) => {
 // Subscribe to outgoing Elm ports defined in templates/Runner.elm
 app.ports.sendResult.subscribe((msg) => {
   msg.type_ = "testResult";
-  msg.duration = performance.now() - startTime;
-  msg.logs = logs;
   self.postMessage(msg);
-  logs.length = 0;
 });
 app.ports.sendTestsCount.subscribe((msg) => {
   msg.type_ = "testsCount";
-  msg.logs = logs;
   self.postMessage(msg);
-  logs.length = 0;
 });

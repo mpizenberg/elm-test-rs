@@ -160,7 +160,7 @@ fn main_helper(
         let compiled_reporter_code = fs::read_to_string(&compiled_reporter)?;
         fs::write(
             &compiled_reporter,
-            into_es_module(&replace_console_log(&compiled_reporter_code)),
+            into_es_module(&remove_console_warn(&compiled_reporter_code)),
         )?;
     }
 
@@ -204,14 +204,11 @@ fn main_helper(
         supervisor_js_file.display()
     ))?;
 
-    // For a Deno runtime, make deno_linereader.mjs and deno_logger.mjs available.
+    // For a Deno runtime, make deno_linereader.mjs available.
     if let Runtime::Deno = run_options.runtime {
         let linereader_template = include_template!("deno_linereader.mjs");
         let linereader_path = tests_root.join("js").join("deno_linereader.mjs");
         std::fs::write(linereader_path, linereader_template)?;
-        let logger_template = include_template!("deno_logger.mjs");
-        let logger_path = tests_root.join("js").join("deno_logger.mjs");
-        std::fs::write(logger_path, logger_template)?;
     }
 
     // Start the tests supervisor
@@ -269,8 +266,7 @@ fn main_helper(
 /// Add a kernel patch to the generated code in order to be able to recognize
 /// values of type Test at runtime with the `check: a -> Maybe Test` function.
 ///
-/// Also replace the unique call to console.log in Debug.log
-/// by a call to the "yet-to-be-defined" console.elmlog
+/// Also remove the console.warn() at the beginning due to not compiling with --optimize.
 ///
 /// Transformation to an esmodule is also possible.
 fn kernel_patch_tests(elm_js: &str, esmodule: bool) -> anyhow::Result<String> {
@@ -301,22 +297,14 @@ fn kernel_patch_tests(elm_js: &str, esmodule: bool) -> anyhow::Result<String> {
 
     // If an ES module is asked, the following transformation is applied.
     if esmodule {
-        Ok(into_es_module(&replace_console_log(&elm_js)))
+        Ok(into_es_module(&remove_console_warn(&elm_js)))
     } else {
-        Ok(replace_console_log(&elm_js))
+        Ok(remove_console_warn(&elm_js))
     }
 }
 
-/// Replace console.log with console.elmlog and remove console.warn.
-fn replace_console_log(elm_js: &str) -> String {
-    // WARNING: this may fail if a user has this as a string somewhere
-    // and it is located before its definition by elm in the file.
-    let elm_js = elm_js.replacen(
-        "console.log(tag + ': ' + _Debug_toString(value));",
-        "console.elmlog(tag + ': ' + _Debug_toString(value));",
-        1,
-    );
-    // Remove the console.warn() at the begining due to not compiling with --optimize
+/// Remove the console.warn() at the beginning due to not compiling with --optimize
+fn remove_console_warn(elm_js: &str) -> String {
     elm_js.replacen("console.warn", "", 1)
 }
 
