@@ -25,9 +25,7 @@ const flags = {
 reporter = Elm.Reporter.init({ flags: flags });
 
 // Pipe the Elm stdout port to stdout
-reporter.ports.stdout.subscribe(
-  (str) => Deno.stdout.write(new TextEncoder().encode(str))
-);
+reporter.ports.stdout.subscribe((str) => writeAllSync(Deno.stdout, str));
 
 // When the reporter has finished clean runners
 reporter.ports.signalFinished.subscribe(async ({ exitCode, testsCount }) => {
@@ -61,7 +59,17 @@ function startWork(runnerFile) {
 }
 
 function stderrLog(str) {
-    Deno.stderr.writeSync(new TextEncoder().encode(str));
+  writeAllSync(Deno.stderr, str);
+}
+
+// Write the whole string synchronously: writeSync may write only part of the
+// buffer, and pending async writes are lost when Deno.exit() is called.
+function writeAllSync(writer, str) {
+  const bytes = new TextEncoder().encode(str);
+  let written = 0;
+  while (written < bytes.length) {
+    written += writer.writeSync(bytes.subarray(written));
+  }
 }
 
 // Handle a test result
