@@ -6,7 +6,7 @@ authors = [
     "Harry Sarson <harry.sarson@hotmail.co.uk>",
 ]
 edition = "2021"
-rust-version = "1.85" # required by ureq 3 (and others)
+rust-version = "1.91" # required by usage-rs
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
 license = "BSD-3-Clause"
 
@@ -15,7 +15,6 @@ license = "BSD-3-Clause"
 [dependencies]
 glob = "0.3.0"                                        # to interpret CLI glob patterns
 pathdiff = "0.2.1"                                    # to compute a path relative to another path
-num_cpus = "1.13.0"                                   # to get the number of logic cores
 regex = "1.5.5"                                       # to path the elm kernel code
 pubgrub = { version = "0.2.1", features = ["serde"] } # for dependency solving
 # pubgrub-dependency-provider-elm = { path = "../pubgrub-dependency-provider-elm" }
@@ -27,7 +26,13 @@ dirs-next = "2.0.0" # to handle ELM_HOME
 nom = "7.1.0" # to parse the tests files and extract potential tests
 notify-debouncer-mini = "0.7.0" # for --watch mode (debounced file events)
 anyhow = "1.0.51" # for error handling
-clap = { version = "2.34.0", default-features = false } # for CLI argument parsing
+# for CLI argument parsing
+# Pinned to 6.11.1 because usage-derive 6.12 adds toml and its dependencies to the build.
+# usage-derive and usage-argv are not used directly, they are only listed to pin them too,
+# since usage-rs requires them with ^6.11.1 (default features off to not enable more).
+usage = { package = "usage-rs", version = "=6.11.1", default-features = false, features = ["help", "diagnostics", "completions"] }
+usage-derive = "=6.11.1"
+usage-argv = { version = "=6.11.1", default-features = false }
 log = { version = "0.4.14", default-features = false, features = [
     "std",
 ] } # for debug logs with -vvv
