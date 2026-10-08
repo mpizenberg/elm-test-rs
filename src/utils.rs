@@ -74,14 +74,16 @@ fn default_elm_home() -> anyhow::Result<PathBuf> {
 }
 
 pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {
-    let agent = ureq::builder()
-        .timeout_connect(std::time::Duration::from_secs(10))
-        .build();
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_connect(Some(std::time::Duration::from_secs(10)))
+        .build()
+        .into();
     let response = agent
         .get(url)
         .call()
         .context(format!("Error getting {url}"))?
-        .into_string()
+        .body_mut()
+        .read_to_string()
         .context("Error converting the http response body to a String")?;
     Ok(response)
 }
