@@ -242,7 +242,7 @@ fn main_helper(
                 .context("Node supervisor failed to start")?
         }
         Runtime::Deno => Command::new("deno")
-            .args(["run", "--allow-read", "--allow-hrtime"])
+            .args(["run", "--allow-read"])
             .arg(supervisor_js_file)
             .current_dir(tests_root)
             .stdin(Stdio::piped())

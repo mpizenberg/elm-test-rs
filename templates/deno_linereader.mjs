@@ -3,7 +3,7 @@ const _readTillDone = async (rid, text = "") => {
   let buf = new Uint8Array(100);
   let indexOfLine = text.indexOf("\n");
   if (indexOfLine === -1) {
-    const num = await Deno.read(rid, buf);
+    const num = await rid.read(buf);
     if (num) {
       text = text + decoder.decode(buf.slice(0, num));
       return _readTillDone(rid, text);
