@@ -8,15 +8,11 @@ import { Elm } from "./Runner.elm.js";
 const flags = { initialSeed: {{ initialSeed }}, fuzzRuns: {{ fuzzRuns }}, filter: {{ filter }} };
 const app = Elm.Runner.init({ flags: flags });
 
-// Record the timing at which we received the last "runTest" message
-let startTime;
-
 // Communication from Supervisor to Elm runner via port
 self.onmessage = (msg) => {
   if (msg.data.type_ == "askTestsCount") {
     app.ports.askTestsCount.send();
   } else if (msg.data.type_ == "runTest") {
-    startTime = performance.now();
     app.ports.receiveRunTest.send(msg.data.id);
   } else {
     console.error("Invalid supervisor msg.type_:", msg.data.type_);
