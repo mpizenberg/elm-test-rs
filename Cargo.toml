@@ -6,7 +6,7 @@ authors = [
     "Harry Sarson <harry.sarson@hotmail.co.uk>",
 ]
 edition = "2021"
-rust-version = "1.77" # required by notify/notify-debouncer-mini (std::io::IsTerminal needs only 1.70)
+rust-version = "1.85" # required by ureq 3 (and others)
 description = "Simple and fast Rust alternative to node-test-runner to run elm tests"
 license = "BSD-3-Clause"
 
@@ -22,7 +22,7 @@ pubgrub = { version = "0.2.1", features = ["serde"] } # for dependency solving
 pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub-dependency-provider-elm", rev = "a20a795f0" }
 serde_json = "1.0.72" # for JSON serialization
 serde = { version = "1.0.130", default-features = false }
-ureq = "2.3.1" # for https requests to the package website
+ureq = "3.4.2" # for https requests to the package website
 dirs-next = "2.0.0" # to handle ELM_HOME
 nom = "7.1.0" # to parse the tests files and extract potential tests
 notify-debouncer-mini = "0.7.0" # for --watch mode (debounced file events)
@@ -33,8 +33,8 @@ log = { version = "0.4.14", default-features = false, features = [
 ] } # for debug logs with -vvv
 walkdir = "2.3.2" # to find all elm files in a given directory
 either = { version = "1.6.1", default-features = false } # for iterators on two branches
-which = "4.2.2" # to find the path of the elm executable
-path-absolutize = "3.0.11" # simple absolute paths (no Windows UNC)
+which = "8.0.6" # to find the path of the elm executable
+path-absolutize = "4.0.1" # simple absolute paths (no Windows UNC)
 
 [dev-dependencies]
 assert_cmd = "2.0.2"

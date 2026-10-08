@@ -18,7 +18,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: set-matrix
         run: echo matrix={"include":$(cat $TARGETS_JSON)} >> $GITHUB_OUTPUT
 
@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-config.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -42,15 +42,14 @@ jobs:
         with:
           prefix-key: "v0" # change to force new cache
 
-      - name: Install zigbuild (if needed)
+      # Only needed for cross-compiling with cargo-zigbuild (see targets.json)
+      - name: Install uv (if needed)
         if: ${{ contains(matrix.command, 'zig') }}
-        run: |
-          sudo snap install zig --classic --beta
-          cargo install --locked cargo-zigbuild
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
 
       - name: install musl-tools (if needed)
         if: ${{ contains(matrix.target, 'musl') && !contains(matrix.command, 'zig') }}
-        run: sudo apt install musl-tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Build binary
         run: ${{ matrix.command }} --release --target ${{ matrix.target }}
@@ -58,10 +57,14 @@ jobs:
       - name: Compress compiled binary
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ${{ matrix.archive_name }} ${{ matrix.binary_name }}
+          if [[ "${{ matrix.archive_name }}" == *.zip ]]; then
+            7z a ${{ matrix.archive_name }} ${{ matrix.binary_name }}
+          else
+            tar czf ${{ matrix.archive_name }} ${{ matrix.binary_name }}
+          fi
         shell: bash
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}
           path: target/${{ matrix.target }}/release/${{ matrix.archive_name }}
@@ -71,9 +74,8 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: ./artifacts
       - name: Create NPM Package
@@ -85,13 +87,18 @@ jobs:
             npm_platform=$(echo "$item" | jq -r '.npm_platform')
             npm_arch=$(echo "$item" | jq -r '.npm_arch')
             # Extract the executable into the sub-package
-            tar xzf artifacts/$name/$archive_name -C npm/packages/elm-test-rs-$npm_platform-$npm_arch
+            package_dir=npm/packages/elm-test-rs-$npm_platform-$npm_arch
+            if [[ "$archive_name" == *.zip ]]; then
+              unzip -o artifacts/$name/$archive_name -d $package_dir
+            else
+              tar xzf artifacts/$name/$archive_name -C $package_dir
+            fi
           done
 
           # Create an archive
           tar czf npm.tar.gz npm/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: npm-package
           path: npm.tar.gz
@@ -103,8 +110,8 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: ./artifacts
       - name: Prepare Release Files
@@ -123,7 +130,7 @@ jobs:
           sha256sum * > checksums.txt
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: release/*
           draft: true
@@ -140,11 +147,11 @@ jobs:
           - windows-latest
           - macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
-      - uses: mpizenberg/elm-tooling-action@v2.0.0
+      - uses: mpizenberg/elm-tooling-action@v2.1.0
         with:
           cache-key: elm-home-${{ matrix.os }}-0
           elm-tooling-dir: tests
@@ -154,17 +161,17 @@ jobs:
         shell: bash
 
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - run: cargo test --release
 
-      # TODO: re-activate and fix Deno tests
-      # - uses: denoland/setup-deno@v1
-      # - run: cargo test --release --features deno
+      - uses: denoland/setup-deno@v2
+      - run: cargo test --release --features deno
 
   checks:
     name: Check formatting and Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
