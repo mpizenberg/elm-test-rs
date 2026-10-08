@@ -11,7 +11,7 @@ import Test.RunnerV2
 port askTestsCount : (Value -> msg) -> Sub msg
 
 
-port sendTestsCount : { kind : String, testsCount : Int } -> Cmd msg
+port sendTestsCount : { kind : String, testsCount : Int, logs : String } -> Cmd msg
 
 
 port receiveRunTest : (Int -> msg) -> Sub msg
