@@ -208,6 +208,20 @@ Note that the `--offline` and `--dependencies` flags are incompatible with each 
 as you generally can't know which are the oldest or newest existing packages
 without asking the package site which version exist.
 
+### Shell completions
+
+`elm-test-rs completions <shell>` prints a completion script
+for bash, elvish, fish, nu, powershell or zsh. For example:
+
+```sh
+# bash
+elm-test-rs completions bash > ~/.local/share/bash-completion/completions/elm-test-rs
+# fish
+elm-test-rs completions fish > ~/.config/fish/completions/elm-test-rs.fish
+# zsh (in ~/.zshrc, after compinit)
+source <(elm-test-rs completions zsh)
+```
+
 ### Other useful features
 
 - `--workers N` lets you specify the amount of worker threads spawn to run the tests.
