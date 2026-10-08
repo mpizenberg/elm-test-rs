@@ -45,7 +45,7 @@ jobs:
       # Only needed for cross-compiling with cargo-zigbuild (see targets.json)
       - name: Install uv (if needed)
         if: ${{ contains(matrix.command, 'zig') }}
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
 
       - name: install musl-tools (if needed)
         if: ${{ contains(matrix.target, 'musl') && !contains(matrix.command, 'zig') }}
