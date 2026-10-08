@@ -39,6 +39,13 @@ reporter.ports.signalFinished.subscribe(async ({ exitCode, testsCount }) => {
   if (verbosity >= 1) {
     console.warn("Running duration (since Node.js start):", Math.round(performance.now()), "ms\n");
   }
+  // Writes to pipes are asynchronous on macOS, and process.exit() drops
+  // pending output, so wait for stdout and stderr to be flushed first.
+  await Promise.all(
+    [process.stdout, process.stderr].map(
+      (stream) => new Promise((resolve) => stream.write("", resolve))
+    )
+  );
   process.exit(exitCode);
 });
 
