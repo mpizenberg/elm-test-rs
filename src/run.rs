@@ -273,23 +273,14 @@ fn main_helper(
         .context("Failed to write runner path to supervisor stdin")?;
 
     // Wait for supervisor child process to end and terminate with same exit code
-    let exit_code = wait_child(&mut supervisor);
-    Ok(exit_code.unwrap_or(0))
-}
-
-/// Wait for child process to end
-fn wait_child(child: &mut std::process::Child) -> Option<i32> {
-    match child.try_wait() {
-        Ok(Some(status)) => status.code(),
-        Ok(None) => match child.wait() {
-            Ok(status) => status.code(),
-            _ => None,
-        },
-        Err(e) => {
-            log::error!("Error attempting to wait for child: {e}");
-            None
-        }
-    }
+    let status = supervisor
+        .wait()
+        .context("Failed to wait for the supervisor")?;
+    // There is no exit code if the supervisor was killed by a signal, which is a failure.
+    Ok(status.code().unwrap_or_else(|| {
+        log::error!("The supervisor was killed: {status}");
+        1
+    }))
 }
 
 /// Add a kernel patch to the generated code in order to be able to recognize
