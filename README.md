@@ -349,13 +349,12 @@ The CLI program, if asked to run the tests, performs the following actions.
  1. Compile `Reporter.elm` into a Node module.
  1. Generate and start the Node supervisor program.
 
-To find all tests, we perform a small trick, depending on kernel code (compiled elm code to JS).
-First we parse all the tests modules to extract all potential `Test` exposed values.
+To find all tests, we first parse all the tests modules to extract all potential `Test` exposed values.
 Then in the template file `Runner.elm` we embed code shaped like this (but not exactly).
 
 ```elm
 check : a -> Maybe Test
-check = ...
+check = Test.RunnerV2.identifyTest
 
 main : Program Flags Model Msg
 main =
@@ -365,10 +364,9 @@ main =
         |> ...
 ```
 
-This template file gets compiled into a JavaScript file `Runner.elm.js`,
-on which we perform the aforementioned kernel patch.
-The patch consists in modifying all variants constructors of the `Test` type
-to embed a marker, and modifying the `check` function to look for that marker.
+The `identifyTest` function from `elm-explorations/test` recognizes values of type `Test` at runtime,
+so the potential tests that are not actually tests are filtered out.
+This template file gets compiled into a JavaScript file `Runner.elm.js`.
 
 Once all the JavaScript code has been generated, it is time to start
 the supervisor Node file, which will orchestrate tests runners.

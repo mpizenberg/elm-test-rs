@@ -78,7 +78,7 @@ function handleRunnerMsg(runner, runnerFile, msg) {
   if (msg.type_ == "testsCount") {
     if (msg.logs.length > 0) {
       console.warn("Debug logs captured when setting up tests: -----------\n");
-      msg.logs.forEach((str) => process.stderr.write(str));
+      process.stderr.write(msg.logs);
       console.warn("\n------------------------------------------------------\n");
     }
     setupWithTestsCount(runnerFile, msg);

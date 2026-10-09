@@ -3,7 +3,6 @@
 use crate::make::Output;
 use crate::project::Project;
 use anyhow::Context;
-use regex::Regex;
 use std::fs;
 use std::io::Write;
 use std::num::NonZeroU32;
@@ -65,7 +64,7 @@ pub fn main(
 /// It has multiple steps that can be summarized as:
 ///
 ///  1. Generate and compile `Runner.elm` with a master test concatenating all found exposed tests.
-///  2. Kernel-patch it and wrapp it into a Node worker module.
+///  2. Wrap it into a Node worker module.
 ///  3. Compile `Reporter.elm` into a Node module.
 ///  4. Generate and start the Node supervisor program.
 ///
@@ -89,25 +88,19 @@ fn main_helper(
             } => (tests_root, modules_abs_paths, compiled_runner),
         };
 
-    // Add a kernel patch to the generated code in order to be able to recognize
-    // values of type Test at runtime with the `check: a -> Maybe Test` function.
-    log::info!("Kernel-patching Runner.elm.js ...");
+    // Remove the console.warn() of the compiled runner,
+    // and convert it into an ES module for a Deno runtime.
+    log::info!("Patching Runner.elm.js ...");
     let compiled_runner_src = fs::read_to_string(&compiled_runner).context(format!(
         "Failed to read newly created file {}",
         compiled_runner.display()
     ))?;
-    let es_module = match run_options.runtime {
-        Runtime::Node => false,
-        Runtime::Deno => true,
+    let compiled_runner_src = remove_console_warn(&compiled_runner_src);
+    let compiled_runner_src = match run_options.runtime {
+        Runtime::Node => compiled_runner_src,
+        Runtime::Deno => into_es_module(&compiled_runner_src),
     };
-    fs::write(
-        &compiled_runner,
-        kernel_patch_tests(&compiled_runner_src, es_module).context(format!(
-            "Failed to patch the file {}",
-            compiled_runner.display()
-        ))?,
-    )
-    .context(format!(
+    fs::write(&compiled_runner, compiled_runner_src).context(format!(
         "Failed to write the patched file {}",
         compiled_runner.display()
     ))?;
@@ -160,7 +153,7 @@ fn main_helper(
         let compiled_reporter_code = fs::read_to_string(&compiled_reporter)?;
         fs::write(
             &compiled_reporter,
-            into_es_module(&replace_console_log(&compiled_reporter_code)),
+            into_es_module(&remove_console_warn(&compiled_reporter_code)),
         )?;
     }
 
@@ -204,14 +197,11 @@ fn main_helper(
         supervisor_js_file.display()
     ))?;
 
-    // For a Deno runtime, make deno_linereader.mjs and deno_logger.mjs available.
+    // For a Deno runtime, make deno_linereader.mjs available.
     if let Runtime::Deno = run_options.runtime {
         let linereader_template = include_template!("deno_linereader.mjs");
         let linereader_path = tests_root.join("js").join("deno_linereader.mjs");
         std::fs::write(linereader_path, linereader_template)?;
-        let logger_template = include_template!("deno_logger.mjs");
-        let logger_path = tests_root.join("js").join("deno_logger.mjs");
-        std::fs::write(logger_path, logger_template)?;
     }
 
     // Start the tests supervisor
@@ -266,57 +256,8 @@ fn main_helper(
     }))
 }
 
-/// Add a kernel patch to the generated code in order to be able to recognize
-/// values of type Test at runtime with the `check: a -> Maybe Test` function.
-///
-/// Also replace the unique call to console.log in Debug.log
-/// by a call to the "yet-to-be-defined" console.elmlog
-///
-/// Transformation to an esmodule is also possible.
-fn kernel_patch_tests(elm_js: &str, esmodule: bool) -> anyhow::Result<String> {
-    // For older versions of elm-explorations/test we need to list every single
-    // variant of the `Test` type. To avoid having to update this regex if a new
-    // variant is added, newer versions of elm-explorations/test have prefixed all
-    // variants with `ElmTestVariant__` so we can match just on that.
-    let test_variant_definition = Regex::new(
-        r#"(?mx)
-    ^var\s+\$elm_explorations\$test\$Test\$Internal\$
-    (?:ElmTestVariant__\w+|UnitTest|FuzzTest|Labeled|Skipped|Only|Batch)\$?
-    \s*=\s*(?:\w+\(\s*)?function\s*\([\w,\s]*\)\s*\{\s*return\s*\{
-"#,
-    )?;
-
-    let check_definition = Regex::new(
-        r#"(?mx)
-    ^(var\s+\$author\$project\$Runner\$check)
-    \s*=\s*\$author\$project\$Runner\$checkHelperReplaceMe___;?$
-"#,
-    )?;
-
-    let elm_js =
-        test_variant_definition.replace_all(elm_js, "$0 __elmTestSymbol: __elmTestSymbol,");
-    let elm_js = check_definition.replace(&elm_js, "$1 = value => value && value.__elmTestSymbol === __elmTestSymbol ? $$elm$$core$$Maybe$$Just(value) : $$elm$$core$$Maybe$$Nothing;");
-
-    let elm_js = ["const __elmTestSymbol = Symbol('elmTestSymbol');", &elm_js].join("\n");
-
-    // If an ES module is asked, the following transformation is applied.
-    if esmodule {
-        Ok(into_es_module(&replace_console_log(&elm_js)))
-    } else {
-        Ok(replace_console_log(&elm_js))
-    }
-}
-
-/// Replace console.log with console.elmlog and remove console.warn.
-fn replace_console_log(elm_js: &str) -> String {
-    // WARNING: this may fail if a user has this as a string somewhere
-    // and it is located before its definition by elm in the file.
-    let elm_js = elm_js.replacen(
-        "console.log(tag + ': ' + _Debug_toString(value));",
-        "console.elmlog(tag + ': ' + _Debug_toString(value));",
-        1,
-    );
-    // Remove the console.warn() at the begining due to not compiling with --optimize
+/// Remove the console.warn() at the beginning due to not compiling with --optimize
+fn remove_console_warn(elm_js: &str) -> String {
     elm_js.replacen("console.warn", "", 1)
 }
 
