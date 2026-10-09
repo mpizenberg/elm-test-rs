@@ -308,7 +308,7 @@ It's an easy fix though, just update your test dependencies in the `elm.json`.
 ## Minimum supported version
 
 - Elm 0.19.1
-- Node 10.5
+- Node 12
 
 ## Design goals
 

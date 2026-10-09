@@ -217,29 +217,12 @@ fn main_helper(
     // Start the tests supervisor
     log::info!("Starting the supervisor ...");
     let mut supervisor = match run_options.runtime {
-        Runtime::Node => {
-            let node_version = Command::new("node")
-                .arg("--version")
-                .output()
-                .context("\"node --version\" failed to start")?
-                .stdout;
-
-            // Node supports worker_threads as experimental feature since 10.5,
-            // but it is unknown whether all versions since 10.5 actually work with elm-test-rs.
-            let experimental_arg = if node_version.starts_with(b"v10.") {
-                Some("--experimental-worker")
-            } else {
-                None
-            };
-
-            Command::new("node")
-                .args(experimental_arg)
-                .arg(supervisor_js_file)
-                .current_dir(tests_root)
-                .stdin(Stdio::piped())
-                .spawn()
-                .context("Node supervisor failed to start")?
-        }
+        Runtime::Node => Command::new("node")
+            .arg(supervisor_js_file)
+            .current_dir(tests_root)
+            .stdin(Stdio::piped())
+            .spawn()
+            .context("Node supervisor failed to start")?,
         Runtime::Deno => Command::new("deno")
             .args(["run", "--allow-read"])
             .arg(supervisor_js_file)
