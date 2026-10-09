@@ -36,7 +36,6 @@ log = { version = "0.4.14", default-features = false, features = [
     "std",
 ] } # for debug logs with -vvv
 walkdir = "2.3.2" # to find all elm files in a given directory
-either = { version = "1.6.1", default-features = false } # for iterators on two branches
 which = "8.0.6" # to find the path of the elm executable
 path-absolutize = "4.0.1" # simple absolute paths (no Windows UNC)
 

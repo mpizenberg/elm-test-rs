@@ -226,36 +226,24 @@ fn is_elm_file<P: AsRef<Path>>(p: P) -> bool {
 
 /// Collect absolute paths of all elm files matching the patterns given as arguments.
 fn get_elm_modules_abs_paths(args: &[String]) -> anyhow::Result<HashSet<PathBuf>> {
-    let mut glob_err = Ok(());
-    let abs_paths: HashSet<PathBuf> = args
-        .iter()
-        .map(|arg| resolve_glob_arg(arg))
-        .scan(&mut glob_err, |err, res| {
-            res.map_err(|e| **err = Err(e)).ok()
-        })
-        .flatten()
-        .map(|path| absolute_elm_path(&path))
-        .collect::<Result<_, _>>()?;
-    glob_err?;
+    let mut abs_paths = HashSet::new();
+    for arg in args {
+        for path in resolve_glob_arg(arg)? {
+            abs_paths.insert(absolute_elm_path(&path)?);
+        }
+    }
     Ok(abs_paths)
 }
 
-/// If the argument is a path to an existing file,
-/// return an iterator with just this file.
-/// Otherwise, interpret it as a glob pattern and resolve it into a file iterator.
-fn resolve_glob_arg(arg: &str) -> anyhow::Result<impl Iterator<Item = PathBuf>> {
+/// If the argument is a path to an existing file, return just this file.
+/// Otherwise, interpret it as a glob pattern and resolve it into a list of files.
+fn resolve_glob_arg(arg: &str) -> anyhow::Result<Vec<PathBuf>> {
     let path = PathBuf::from(arg);
     if path.exists() {
-        Ok(either::Left(std::iter::once(path)))
-    } else {
-        resolve_glob_pattern(arg).map(either::Right)
+        return Ok(vec![path]);
     }
-}
-
-fn resolve_glob_pattern(pattern: &str) -> anyhow::Result<impl Iterator<Item = PathBuf>> {
-    Ok(glob(pattern)
-        .context(format!("Failed to read glob pattern {pattern}"))?
-        .filter_map(|gr| gr.ok()))
+    let paths = glob(arg).context(format!("Failed to read glob pattern {arg}"))?;
+    Ok(paths.filter_map(|gr| gr.ok()).collect())
 }
 
 /// Transform path into an absolute path and check that it is an elm file.
