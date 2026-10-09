@@ -89,7 +89,10 @@ impl Project {
         }
 
         // Call the function to execute passed as argument.
-        call_back(self).context("Initial run in watch mode")?;
+        // Errors are only reported, to keep watching until they are fixed.
+        if let Err(e) = call_back(self) {
+            log::error!("Error: {e:?}");
+        }
 
         // We only process an event if it is of interest to us, meaning the path
         // is an elm file or elm.json or a directory.
@@ -124,37 +127,9 @@ impl Project {
             // drain event queue
             for _ in rx.try_iter() {}
 
-            // Load the potential updated elm.json.
-            let new_project = Project::from_dir(&self.root_directory)?;
-
-            // Update watched directories if they changed.
-            let old_src_dirs = &self.src_and_test_dirs;
-            let new_src_dirs = &new_project.src_and_test_dirs;
-            if old_src_dirs != new_src_dirs {
-                for path in old_src_dirs.difference(new_src_dirs) {
-                    debouncer
-                        .watcher()
-                        .unwatch(path)
-                        .context(format!("Failed to unwatch {}", path.display()))?;
-                }
-                for path in new_src_dirs.difference(old_src_dirs) {
-                    debouncer
-                        .watcher()
-                        .watch(path, recursive)
-                        .context(format!("Failed to watch {}", path.display()))?;
-                }
-            }
-
-            // Update the current project since dependencies or source directories may have change.
-            *self = new_project;
-
             // Log to stderr that a change was detected.
-            let relative_path =
-                pathdiff::diff_paths(&changed_path, &self.root_directory).context(format!(
-                    "Could not get path {} relative to path {}",
-                    changed_path.display(),
-                    self.root_directory.display()
-                ))?;
+            let relative_path = pathdiff::diff_paths(&changed_path, &self.root_directory)
+                .unwrap_or_else(|| changed_path.clone());
             let detection_msg = format!("Change detected in {}", relative_path.display());
             log::error!(
                 "\n\n\n\n{}\n{}\n\n\n\n",
@@ -162,8 +137,37 @@ impl Project {
                 "=".repeat(detection_msg.len())
             );
 
+            // Load the potential updated elm.json.
+            // If it is invalid, report it and wait for the next change.
+            let new_project = match Project::from_dir(&self.root_directory) {
+                Ok(project) => project,
+                Err(e) => {
+                    log::error!("Error: {e:?}");
+                    continue;
+                }
+            };
+
+            // Update watched directories if they changed.
+            let old_src_dirs = &self.src_and_test_dirs;
+            let new_src_dirs = &new_project.src_and_test_dirs;
+            for path in old_src_dirs.difference(new_src_dirs) {
+                if let Err(e) = debouncer.watcher().unwatch(path) {
+                    log::error!("Failed to unwatch {}: {e}", path.display());
+                }
+            }
+            for path in new_src_dirs.difference(old_src_dirs) {
+                if let Err(e) = debouncer.watcher().watch(path, recursive) {
+                    log::error!("Failed to watch {}: {e}", path.display());
+                }
+            }
+
+            // Update the current project since dependencies or source directories may have change.
+            *self = new_project;
+
             // Call the function to execute passed as argument.
-            call_back(self).context("Subsequent run in watch mode")?;
+            if let Err(e) = call_back(self) {
+                log::error!("Error: {e:?}");
+            }
         }
     }
 }
