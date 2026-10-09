@@ -61,16 +61,17 @@ pub fn elm_home() -> anyhow::Result<PathBuf> {
 
 #[cfg(target_family = "unix")]
 fn default_elm_home() -> anyhow::Result<PathBuf> {
-    dirs_next::home_dir()
+    std::env::home_dir()
         .context("Unknown home directory")
         .map(|p| p.join(".elm"))
 }
 
+/// Same as the Elm compiler, which uses the roaming AppData directory.
 #[cfg(target_family = "windows")]
 fn default_elm_home() -> anyhow::Result<PathBuf> {
-    dirs_next::data_dir()
-        .context("Unknown data directory")
-        .map(|p| p.join("elm"))
+    std::env::var_os("APPDATA")
+        .context("Unknown data directory, APPDATA is not set")
+        .map(|p| PathBuf::from(p).join("elm"))
 }
 
 pub fn http_fetch(url: &str) -> Result<String, Box<dyn Error>> {

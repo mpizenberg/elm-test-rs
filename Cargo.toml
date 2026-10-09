@@ -22,7 +22,6 @@ pubgrub-dependency-provider-elm = { git = "https://github.com/mpizenberg/pubgrub
 serde_json = "1.0.72" # for JSON serialization
 serde = { version = "1.0.130", default-features = false }
 ureq = "3.4.2" # for https requests to the package website
-dirs-next = "2.0.0" # to handle ELM_HOME
 nom = "7.1.0" # to parse the tests files and extract potential tests
 notify-debouncer-mini = "0.7.0" # for --watch mode (debounced file events)
 anyhow = "1.0.51" # for error handling
@@ -46,7 +45,6 @@ assert_cmd = "2.0.2"
 
 [build-dependencies]
 fs_extra = "1.2.0"
-dirs-next = "2.0.0"
 
 [features]
 # Feature to run the tests with the Deno runtime

@@ -34,14 +34,12 @@ pub fn elm_home() -> PathBuf {
 
 #[cfg(target_family = "unix")]
 fn default_elm_home() -> PathBuf {
-    dirs_next::home_dir()
+    std::env::home_dir()
         .expect("Unknown home directory")
         .join(".elm")
 }
 
 #[cfg(target_family = "windows")]
 fn default_elm_home() -> PathBuf {
-    dirs_next::data_dir()
-        .expect("Unknown data directory")
-        .join("elm")
+    PathBuf::from(std::env::var_os("APPDATA").expect("Unknown data directory")).join("elm")
 }
