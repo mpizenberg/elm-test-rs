@@ -120,10 +120,9 @@ fn main_helper(
     };
     let polyfills = include_template!("node_polyfills.js");
     let runner_path = tests_root.join("js").join(runner_name);
-    let filter = match &run_options.filter {
-        None => "null".to_string(),
-        Some(s) => format!("\"{s}\""),
-    };
+    // JSON escaping makes it a valid JS string literal (or null).
+    let filter = serde_json::to_string(&run_options.filter)
+        .context("Failed to convert the filter to a JSON string")?;
     crate::make::create_templated(
         runner_template, // template
         &runner_path,    // output
